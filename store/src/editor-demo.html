@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- 1280×800 store screenshot of the real screenshot editor, annotated by demo-stub.js. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { margin: 0; overflow: hidden; }
+    iframe { display: block; width: 1280px; height: 800px; border: 0; }
+  </style>
+</head>
+<body>
+  <iframe id="editor"></iframe>
+  <script src="demo-shared.js"></script>
+  <script type="module">
+    import { saveAttachment } from '/lib/attachments-db.js';
+    // The editor reads its screenshot from IndexedDB as a draft; seed one, then open it.
+    const { blob } = await DemoShared.mockPng(DemoShared.BASE_W, DemoShared.BASE_H);
+    const id = await saveAttachment(new File([blob], 'screenshot-demo.png', { type: 'image/png' }), { draft: true });
+    const frame = document.getElementById('editor');
+    frame.src = `/editor/editor.html?draft=${id}&demo=editor`;
+    const poll = setInterval(() => {
+      if (frame.contentWindow?.__ready) {
+        clearInterval(poll);
+        window.__ready = true;
+      }
+    }, 100);
+  </script>
+</body>
+</html>

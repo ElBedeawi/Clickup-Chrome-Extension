@@ -1,0 +1,96 @@
+<!doctype html>
+<!-- 1280×800 store screenshot: caption + mock page on the left, the real side panel
+     (running ?demo=<scene> against sample data) on the right. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="store.css" />
+  <style>
+    body {
+      width: 1280px;
+      height: 800px;
+      display: flex;
+      background: linear-gradient(135deg, #eef3ff 0%, #f7f8fc 55%, #fff7e6 100%);
+    }
+    .left {
+      flex: 1;
+      padding: 48px 44px 32px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      max-width: 720px;
+    }
+    h1 em { font-style: normal; color: var(--blue); }
+    .sub { margin: 10px 0 0; font-size: 18px; line-height: 1.45; color: var(--muted); max-width: 700px; }
+    .browser { width: 760px; }
+    .brandline { margin-top: auto; }
+    .panel {
+      width: 400px;
+      height: 800px;
+      border: 0;
+      background: #fff;
+      box-shadow: -10px 0 40px rgb(15 23 42 / 0.12);
+      border-left: 1px solid #e2e2e8;
+    }
+  </style>
+</head>
+<body>
+  <div class="left">
+    <div>
+      <h1 id="title"></h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="browser">
+      <div class="chrome"><i></i><i></i><i></i><div class="url" id="url"></div></div>
+      <canvas id="page" width="760" height="475"></canvas>
+    </div>
+    <div class="brandline">
+      <img src="icon.svg" alt="" />
+      <span><strong>Video &amp; Screenshot Uploader for ClickUp</strong> · by MacawsHub</span>
+    </div>
+  </div>
+  <iframe class="panel" id="panel"></iframe>
+
+  <script src="demo-shared.js"></script>
+  <script>
+    const SCENES = {
+      new: {
+        title: 'Record your screen and attach it to a <em>new ClickUp task</em>',
+        sub: 'Screen + microphone recordings, annotated screenshots and files — uploaded straight from Chrome’s side panel.',
+        url: 'shop.acme.dev/checkout',
+      },
+      details: {
+        title: 'All the task details — <em>only when you need them</em>',
+        sub: 'Assignees, due date, tags and custom fields stay tucked away under “More details”.',
+        url: 'shop.acme.dev/checkout',
+      },
+      existing: {
+        title: 'Add to an <em>existing task</em>, even mid-recording',
+        sub: 'Paste a task link — or open the task and it’s picked up automatically. Close the panel; the recording keeps going.',
+        url: 'shop.acme.dev/checkout',
+      },
+    };
+    const scene = new URLSearchParams(location.search).get('scene') || 'new';
+    const s = SCENES[scene];
+    document.getElementById('title').innerHTML = s.title;
+    document.getElementById('sub').textContent = s.sub;
+    document.getElementById('url').textContent = s.url;
+    DemoShared.drawMockApp(document.getElementById('page').getContext('2d'), 760, 475);
+
+    const panel = document.getElementById('panel');
+    panel.src = `/sidepanel/sidepanel.html?demo=${scene}`;
+    const poll = setInterval(() => {
+      if (panel.contentWindow?.__ready) {
+        clearInterval(poll);
+        window.__ready = true;
+      }
+    }, 100);
+  </script>
+</body>
+</html>

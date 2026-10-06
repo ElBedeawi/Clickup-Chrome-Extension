@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Video &amp; Screenshot Uploader for ClickUp</title>
+  <style>
+    :root { color-scheme: light dark; --text: #1f1f29; --muted: #5b5b6b; --bg: #fff; --accent: #2e6bff; --line: #e4e4ea; }
+    @media (prefers-color-scheme: dark) { :root { --text: #ececf1; --muted: #a3a3b3; --bg: #16161c; --accent: #7aa2ff; --line: #2e2e38; } }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+    h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; }
+    h2 { font-size: 20px; margin: 36px 0 8px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .meta { color: var(--muted); margin: 0 0 28px; }
+    a { color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+    th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+    th { font-weight: 600; }
+    .summary { padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; }
+    .summary li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Privacy Policy</h1>
+  <p class="meta">
+    Video &amp; Screenshot Uploader for ClickUp — published by MacawsHub<br />
+    Effective date: October 6, 2026
+  </p>
+
+  <div class="summary">
+    <strong>In short</strong>
+    <ul>
+      <li>Everything stays in your browser until you choose to send it to ClickUp.</li>
+      <li>Data goes to one place only: ClickUp’s API (<code>api.clickup.com</code>), using your own token.</li>
+      <li>MacawsHub runs no servers for this extension and receives none of your data.</li>
+      <li>No analytics, no tracking, no ads, and nothing is ever sold.</li>
+    </ul>
+  </div>
+
+  <h2>Who we are</h2>
+  <p>
+    Video &amp; Screenshot Uploader for ClickUp (“the extension”) is a Chrome extension made by MacawsHub.
+    It is an independent product and is not affiliated with, endorsed by or sponsored by ClickUp.
+    “ClickUp” is a trademark of its owner and is used only to describe what the extension works with.
+  </p>
+
+  <h2>What the extension handles, and where it goes</h2>
+  <table>
+    <tr><th>Data</th><th>Why</th><th>Where it is kept / sent</th></tr>
+    <tr>
+      <td>Your ClickUp personal API token</td>
+      <td>To create tasks and upload attachments on your behalf.</td>
+      <td>Stored only in your browser (<code>chrome.storage.local</code>). Sent only to <code>api.clickup.com</code> to authorize your requests.</td>
+    </tr>
+    <tr>
+      <td>Screen recordings, microphone audio, screenshots and files you add</td>
+      <td>To attach them to the ClickUp task you choose.</td>
+      <td>Held in your browser (IndexedDB) until you upload or remove them, then sent to <code>api.clickup.com</code> when you press Create/Upload.</td>
+    </tr>
+    <tr>
+      <td>Task details you type (title, description, assignees, due date, tags, custom fields, comments)</td>
+      <td>To create the task or post the comment.</td>
+      <td>Sent to <code>api.clickup.com</code> when you submit. Not stored by the extension afterwards.</td>
+    </tr>
+    <tr>
+      <td>Your last-used Workspace / Space / Folder / List</td>
+      <td>To preselect them next time.</td>
+      <td>Stored only in your browser.</td>
+    </tr>
+    <tr>
+      <td>The address (URL) of your current tab</td>
+      <td>To detect when you are viewing a ClickUp task, so it can be prefilled, and to know whether the page can be captured.</td>
+      <td>Read locally and never stored or sent anywhere. Only a detected task ID is sent to ClickUp, to look up that task.</td>
+    </tr>
+  </table>
+
+  <h2>Page access, screen and microphone</h2>
+  <ul>
+    <li>
+      The extension can capture the page you are viewing <strong>only when you click a screenshot button</strong>.
+      “Area” mode briefly shows a selection overlay on the page, which is removed as soon as you finish.
+      The extension does not otherwise read, collect or change the content of the websites you visit.
+    </li>
+    <li>
+      Screen recording and “Screen” screenshots start only when you click them, and Chrome always shows its own
+      picker so you choose exactly what is shared. Recording stops when you press Stop or use Chrome’s
+      “Stop sharing” bar.
+    </li>
+    <li>The microphone is used only during a recording you start with “Microphone” ticked.</li>
+  </ul>
+
+  <h2>What we do not do</h2>
+  <ul>
+    <li>We do not collect, receive or store your data on any MacawsHub server.</li>
+    <li>We do not use analytics, telemetry, tracking pixels or advertising.</li>
+    <li>We do not sell, rent or share your data with anyone, and do not use it for any purpose other than the feature you are using.</li>
+    <li>We do not use your data to determine creditworthiness or for lending purposes.</li>
+    <li>We do not load or run code from remote servers.</li>
+  </ul>
+
+  <h2>How long data is kept</h2>
+  <ul>
+    <li>Recordings, screenshots and files: until you upload or remove them in the side panel. Unfinished screenshot drafts are deleted automatically after 24 hours.</li>
+    <li>Your API token and preferences: until you press <strong>Revoke</strong> in the extension’s settings or uninstall the extension.</li>
+    <li>Uninstalling the extension removes everything it stored in your browser.</li>
+  </ul>
+  <p>
+    Once uploaded, attachments and task details are stored by ClickUp and governed by
+    <a href="https://clickup.com/privacy" target="_blank" rel="noopener">ClickUp’s privacy policy</a>.
+    To revoke the extension’s access entirely, regenerate your API token in ClickUp → Settings → Apps.
+  </p>
+
+  <h2>Security</h2>
+  <p>
+    All communication with ClickUp uses HTTPS. Your token never leaves your browser except in requests to
+    <code>api.clickup.com</code>. Anyone with access to your browser profile could read locally stored data,
+    so use Revoke on shared computers.
+  </p>
+
+  <h2>Children</h2>
+  <p>The extension is a work tool and is not directed at children under 13.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>
+    If this policy changes, we will update the effective date above and, for material changes, note them in the
+    extension’s Chrome Web Store listing.
+  </p>
+
+  <h2>Contact</h2>
+  <p>Questions or requests: MacawsHub — <a href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a></p>
+</main>
+</body>
+</html>

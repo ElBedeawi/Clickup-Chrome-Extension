@@ -1,0 +1,72 @@
+<!doctype html>
+<!-- Store promo tiles: ?size=small (440×280) or ?size=marquee (1400×560). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="store.css" />
+  <style>
+    body {
+      color: #fff;
+      background:
+        radial-gradient(circle at 85% 15%, rgb(255 200 61 / 0.25), transparent 40%),
+        linear-gradient(135deg, var(--blue) 0%, var(--navy) 100%);
+    }
+    .tag { color: var(--gold); font-weight: 700; letter-spacing: 0.04em; }
+    .by { opacity: 0.8; }
+
+    /* small 440×280 */
+    .small { width: 440px; height: 280px; padding: 30px 32px; display: flex; flex-direction: column; }
+    .small img { width: 64px; height: 64px; }
+    .small h1 { margin: 18px 0 0; font-size: 27px; line-height: 1.12; letter-spacing: -0.01em; }
+    .small .tag { margin-top: 10px; font-size: 15px; }
+    .small .by { margin-top: auto; font-size: 13px; }
+
+    /* marquee 1400×560 */
+    .marquee { width: 1400px; height: 560px; display: flex; align-items: center; gap: 56px; padding: 0 72px; }
+    .marquee .text { flex: 1; }
+    .marquee img.logo { width: 96px; height: 96px; }
+    .marquee h1 { margin: 24px 0 0; font-size: 54px; line-height: 1.08; letter-spacing: -0.02em; }
+    .marquee .tag { margin-top: 18px; font-size: 22px; }
+    .marquee .by { margin-top: 28px; font-size: 18px; }
+    .marquee .browser { width: 660px; transform: rotate(-1.5deg); }
+  </style>
+</head>
+<body>
+  <script src="demo-shared.js"></script>
+  <script>
+    const size = new URLSearchParams(location.search).get('size') || 'small';
+    if (size === 'small') {
+      document.body.innerHTML = `
+        <div class="small">
+          <img src="icon.svg" alt="" />
+          <h1>Video &amp; Screenshot<br />Uploader for ClickUp</h1>
+          <div class="tag">RECORD · ANNOTATE · ATTACH</div>
+          <div class="by">by MacawsHub</div>
+        </div>`;
+      window.__ready = true;
+    } else {
+      document.body.innerHTML = `
+        <div class="marquee">
+          <div class="text">
+            <img class="logo" src="icon.svg" alt="" />
+            <h1>Video &amp; Screenshot<br />Uploader for ClickUp</h1>
+            <div class="tag">RECORD · ANNOTATE · ATTACH</div>
+            <div class="by">by MacawsHub</div>
+          </div>
+          <div class="browser">
+            <div class="chrome"><i></i><i></i><i></i><div class="url">shop.acme.dev/checkout</div></div>
+            <canvas id="page" width="660" height="412"></canvas>
+          </div>
+        </div>`;
+      DemoShared.mockPng(660, 412, { annotated: true }).then(({ blob }) => {
+        const img = new Image();
+        img.onload = () => {
+          document.getElementById('page').getContext('2d').drawImage(img, 0, 0);
+          window.__ready = true;
+        };
+        img.src = URL.createObjectURL(blob);
+      });
+    }
+  </script>
+</body>
+</html>
