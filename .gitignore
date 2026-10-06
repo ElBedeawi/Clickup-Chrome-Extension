@@ -1,0 +1,11 @@
+# Build output
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node (asset scripts)
+node_modules/

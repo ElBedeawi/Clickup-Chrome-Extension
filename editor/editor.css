@@ -1,0 +1,106 @@
+/* Builds on ../sidepanel/sidepanel.css (tokens, buttons, notices). */
+
+html, body { height: 100%; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: #2a2a33;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.group { display: flex; align-items: center; gap: 4px; }
+.spacer { flex: 1; }
+
+.tool {
+  background: transparent;
+  color: var(--text);
+  border-color: transparent;
+}
+.tool:hover:not(:disabled) { background: var(--surface); }
+.tool.active,
+.tool.active:hover { background: var(--info-bg); color: var(--info-text); border-color: var(--accent); }
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--c);
+}
+.swatch:hover:not(:disabled) { background: var(--c); transform: scale(1.1); }
+.swatch.active { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.size {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border-color: transparent;
+}
+.size:hover:not(:disabled) { background: var(--surface); }
+.size.active,
+.size.active:hover { background: var(--info-bg); border-color: var(--accent); }
+.size span {
+  width: var(--d);
+  height: var(--d);
+  border-radius: 50%;
+  background: var(--text);
+}
+
+.hint {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: #c9c9d6;
+  background: #23232b;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+}
+
+.canvas-wrap {
+  position: relative;
+  box-shadow: 0 6px 30px rgb(0 0 0 / 0.45);
+  line-height: 0;
+}
+
+#canvas { display: block; touch-action: none; }
+#canvas[data-tool="text"] { cursor: text; }
+#canvas:not([data-tool="text"]) { cursor: crosshair; }
+
+.text-input {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  min-width: 40px;
+  border: 1px dashed currentColor;
+  outline: none;
+  background: transparent;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: pre;
+  overflow: hidden;
+  resize: none;
+  field-sizing: content;
+}

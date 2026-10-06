@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit screenshot — ClickUp Video Upload</title>
+  <link rel="stylesheet" href="../sidepanel/sidepanel.css" />
+  <link rel="stylesheet" href="editor.css" />
+</head>
+<body>
+  <header class="toolbar">
+    <div class="group" role="toolbar" aria-label="Tools">
+      <button class="tool" data-tool="pen" title="Draw (P)">✎ Draw</button>
+      <button class="tool" data-tool="text" title="Text (T)">T Text</button>
+      <button class="tool" data-tool="blur" title="Blur (B)">▦ Blur</button>
+      <button class="tool" data-tool="crop" title="Crop (C)">⛶ Crop</button>
+    </div>
+
+    <div class="group" id="colors" aria-label="Color"></div>
+
+    <div class="group" id="sizes" aria-label="Size">
+      <button class="size" data-size="s" title="Small"><span style="--d: 4px"></span></button>
+      <button class="size" data-size="m" title="Medium"><span style="--d: 8px"></span></button>
+      <button class="size" data-size="l" title="Large"><span style="--d: 13px"></span></button>
+    </div>
+
+    <div class="group">
+      <button id="undo" class="secondary" title="Undo (Ctrl+Z)">↶</button>
+      <button id="redo" class="secondary" title="Redo (Ctrl+Shift+Z)">↷</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <button id="cancel" class="secondary">Cancel</button>
+    <button id="attach">Attach</button>
+  </header>
+
+  <p id="hint" class="hint"></p>
+
+  <main id="stage" class="stage">
+    <div id="canvas-wrap" class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <textarea id="text-input" class="text-input" spellcheck="false" hidden></textarea>
+    </div>
+    <div id="message" class="notice error" hidden></div>
+  </main>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Microphone access — ClickUp Video Upload</title>
+  <link rel="stylesheet" href="../sidepanel/sidepanel.css" />
+  <style>
+    body { max-width: 520px; margin: 48px auto; padding: 0 16px; }
+  </style>
+</head>
+<body>
+  <h1>Microphone access</h1>
+  <p class="muted">
+    Chrome can't show the microphone prompt inside the side panel. Allow it here once and
+    recordings in the side panel will include your voice.
+  </p>
+  <button id="grant">Allow microphone</button>
+  <div id="status" class="notice" hidden></div>
+  <script type="module" src="microphone.js"></script>
+</body>
+</html>

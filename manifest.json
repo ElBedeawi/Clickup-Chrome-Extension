@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "ClickUp Video Upload",
+  "version": "0.1.0",
+  "description": "Create ClickUp tasks (or pick an existing one) and attach screen recordings, images and files straight from Chrome's side panel.",
+  "minimum_chrome_version": "116",
+  "permissions": ["sidePanel", "storage", "tabs", "offscreen", "scripting"],
+  "host_permissions": ["https://api.clickup.com/*", "<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "ClickUp Video Upload"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "options_page": "options/options.html"
+}

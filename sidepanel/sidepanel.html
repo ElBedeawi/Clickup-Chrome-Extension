@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ClickUp Video Upload</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>ClickUp Video Upload</h1>
+    <button id="open-options" class="icon-btn" title="Settings" aria-label="Settings">⚙</button>
+  </header>
+
+  <!-- Shown when no API token is saved -->
+  <section id="no-token" class="notice info" hidden>
+    <p>Add your ClickUp API token to get started.</p>
+    <button id="no-token-options">Open settings</button>
+  </section>
+
+  <main id="app" hidden>
+    <!-- Success card replaces the form after a submit -->
+    <section id="success" class="card success-card" hidden>
+      <h2 id="success-title">Done</h2>
+      <p><a id="success-link" href="#" target="_blank" rel="noopener">Open task in ClickUp ↗</a></p>
+      <p id="success-detail" class="muted"></p>
+      <button id="success-again">Create another</button>
+    </section>
+
+    <!-- Disabled while a submit is in progress -->
+    <fieldset id="form-area" class="bare">
+      <!-- Shown once a task has been created/found but some uploads failed -->
+      <div id="target-banner" class="notice info" hidden></div>
+
+      <!-- Locked once the target task is known (edits would no longer apply) -->
+      <fieldset id="task-fields" class="bare">
+      <nav class="tabs" role="tablist">
+        <button role="tab" id="tab-new" class="tab active" aria-selected="true" data-mode="new">New task</button>
+        <button role="tab" id="tab-existing" class="tab" aria-selected="false" data-mode="existing">Existing task</button>
+      </nav>
+
+      <!-- New task -->
+      <section id="panel-new" class="panel" role="tabpanel">
+        <label for="sel-workspace">Workspace</label>
+        <select id="sel-workspace"></select>
+
+        <label for="sel-space">Space</label>
+        <select id="sel-space" disabled></select>
+
+        <label for="sel-folder">Folder</label>
+        <select id="sel-folder" disabled></select>
+
+        <label for="sel-list">List</label>
+        <select id="sel-list" disabled></select>
+
+        <label for="task-title">Title <span class="req">*</span></label>
+        <input id="task-title" type="text" placeholder="Task name" />
+
+        <label for="task-desc">Description <span class="muted">(Markdown)</span></label>
+        <textarea id="task-desc" rows="4" placeholder="What happened? Steps to reproduce…"></textarea>
+
+        <div class="row">
+          <div class="col">
+            <label for="sel-status">Status</label>
+            <select id="sel-status" disabled></select>
+          </div>
+          <div class="col">
+            <label for="sel-priority">Priority</label>
+            <select id="sel-priority">
+              <option value="">None</option>
+              <option value="1">Urgent</option>
+              <option value="2">High</option>
+              <option value="3">Normal</option>
+              <option value="4">Low</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Existing task -->
+      <section id="panel-existing" class="panel" role="tabpanel" hidden>
+        <label for="task-ref">Task URL or ID</label>
+        <div class="inline">
+          <input id="task-ref" type="text" spellcheck="false" placeholder="https://app.clickup.com/t/… or 86abc123" />
+          <button id="task-check" class="secondary">Check</button>
+        </div>
+        <p id="task-ref-hint" class="muted small"></p>
+        <div id="task-found" class="task-found" hidden></div>
+      </section>
+      </fieldset>
+
+      <!-- Attachments (shared) -->
+      <section id="attachments" class="attachments">
+        <h2>Attachments</h2>
+
+        <div id="record-controls" class="record-controls">
+          <button id="btn-record" class="record-btn"><span class="dot"></span> Record screen</button>
+          <label class="checkbox"><input id="chk-mic" type="checkbox" checked /> Microphone</label>
+        </div>
+        <div class="capture-row">
+          <button id="btn-shot-visible" class="secondary" title="Screenshot the visible part of the current tab">📷 Visible tab</button>
+          <button id="btn-shot-area" class="secondary" title="Drag to select an area of the current tab">⬚ Select area</button>
+        </div>
+        <p id="record-hint" class="muted small"></p>
+
+        <div id="recording" class="recording" hidden>
+          <span class="rec-dot"></span>
+          <span>Recording</span>
+          <span id="rec-time" class="rec-time">00:00</span>
+          <button id="btn-stop" class="danger">Stop</button>
+          <p class="muted small">
+            You can close this panel — recording keeps going. Stop it with Chrome’s
+            “Stop sharing” bar, or reopen the panel from the toolbar icon.
+          </p>
+        </div>
+
+        <div id="mic-notice" class="notice warn" hidden>
+          <p>Microphone access was blocked, so this recording has no mic audio.</p>
+          <button id="btn-grant-mic" class="secondary">Grant microphone access</button>
+        </div>
+
+        <div id="dropzone" class="dropzone">
+          <button id="btn-add-files" class="secondary">Add files</button>
+          <span class="muted small">or drop / paste images here</span>
+          <input id="file-input" type="file" multiple hidden />
+        </div>
+
+        <ul id="attachment-list" class="attachment-list"></ul>
+      </section>
+
+      <div id="error" class="notice error" hidden></div>
+
+      <button id="btn-submit" class="primary submit">Create task</button>
+    </fieldset>
+  </main>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
