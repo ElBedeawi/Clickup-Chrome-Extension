@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ClickUp Video Upload — Options</title>
+  <title>Settings — Video &amp; Screenshot Uploader for ClickUp</title>
   <link rel="stylesheet" href="../sidepanel/sidepanel.css" />
   <style>
     body { max-width: 560px; margin: 32px auto; padding: 0 16px; }
+    .brand { margin-bottom: 18px; }
+    .brand h1 { font-size: 18px; }
     .token-row { display: flex; gap: 8px; }
     .token-row input { flex: 1; }
     #saved { margin-top: 16px; }
@@ -14,7 +16,13 @@
   </style>
 </head>
 <body>
-  <h1>ClickUp Video Upload</h1>
+  <header class="brand">
+    <img src="../icons/icon-48.png" width="40" height="40" alt="" />
+    <div>
+      <h1>Video &amp; Screenshot Uploader for ClickUp</h1>
+      <p class="byline">by MacawsHub</p>
+    </div>
+  </header>
   <p class="muted">
     Paste your ClickUp personal API token. Get it from
     <a href="https://app.clickup.com/settings/apps" target="_blank" rel="noopener">ClickUp → Settings → Apps</a>
@@ -46,6 +54,11 @@
       <a href="https://app.clickup.com/settings/apps" target="_blank" rel="noopener">ClickUp → Settings → Apps</a>.
     </p>
   </section>
+
+  <footer class="app-footer">
+    Made by <strong>MacawsHub</strong> · Not affiliated with or endorsed by ClickUp.
+    “ClickUp” is a trademark of its owner, used only to describe compatibility.
+  </footer>
 
   <script type="module" src="options.js"></script>
 </body>

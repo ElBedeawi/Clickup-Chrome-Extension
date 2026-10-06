@@ -3,12 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ClickUp Video Upload</title>
+  <title>Video &amp; Screenshot Uploader for ClickUp</title>
   <link rel="stylesheet" href="sidepanel.css" />
 </head>
 <body>
   <header class="app-header">
-    <h1>ClickUp Video Upload</h1>
+    <div class="brand">
+      <img src="../icons/icon-32.png" width="24" height="24" alt="" />
+      <div>
+        <h1>Video &amp; Screenshot Uploader</h1>
+        <p class="byline">for ClickUp · by MacawsHub</p>
+      </div>
+    </div>
     <button id="open-options" class="icon-btn" title="Settings" aria-label="Settings">⚙</button>
   </header>
 
@@ -75,6 +81,30 @@
             </select>
           </div>
         </div>
+
+        <!-- Optional extras, collapsed by default; loaded on first open -->
+        <details id="more-details" class="more">
+          <summary>More details <span id="more-count" class="badge" hidden></span></summary>
+          <div class="more-body">
+            <p id="more-status" class="muted small" hidden></p>
+
+            <label for="sel-assignee">Assignees</label>
+            <div id="assignee-chips" class="chips"></div>
+            <select id="sel-assignee"></select>
+
+            <label for="due-date">Due date</label>
+            <div class="row">
+              <input id="due-date" type="date" class="col" />
+              <input id="due-time" type="time" class="col" title="Optional time" />
+            </div>
+
+            <label for="sel-tag">Tags</label>
+            <div id="tag-chips" class="chips"></div>
+            <select id="sel-tag"></select>
+
+            <div id="custom-fields"></div>
+          </div>
+        </details>
       </section>
 
       <!-- Existing task -->
@@ -86,6 +116,14 @@
         </div>
         <p id="task-ref-hint" class="muted small"></p>
         <div id="task-found" class="task-found" hidden></div>
+
+        <details id="comment-details" class="more">
+          <summary>Add a comment</summary>
+          <div class="more-body">
+            <label for="comment-text">Comment</label>
+            <textarea id="comment-text" rows="3" placeholder="Posted on the task after the upload"></textarea>
+          </div>
+        </details>
       </section>
       </fieldset>
 
@@ -97,9 +135,12 @@
           <button id="btn-record" class="record-btn"><span class="dot"></span> Record screen</button>
           <label class="checkbox"><input id="chk-mic" type="checkbox" checked /> Microphone</label>
         </div>
-        <div class="capture-row">
-          <button id="btn-shot-visible" class="secondary" title="Screenshot the visible part of the current tab">📷 Visible tab</button>
-          <button id="btn-shot-area" class="secondary" title="Drag to select an area of the current tab">⬚ Select area</button>
+
+        <div class="capture-row" role="group" aria-label="Screenshot">
+          <span class="capture-label">Screenshot</span>
+          <button id="btn-shot-visible" class="secondary" title="The visible part of the current tab">Tab</button>
+          <button id="btn-shot-area" class="secondary" title="Drag to select an area of the current tab">Area</button>
+          <button id="btn-shot-screen" class="secondary" title="Your whole screen, a window or a tab — Chrome asks which">Screen</button>
         </div>
         <p id="record-hint" class="muted small"></p>
 
@@ -133,6 +174,10 @@
       <button id="btn-submit" class="primary submit">Create task</button>
     </fieldset>
   </main>
+
+  <footer class="app-footer">
+    Made by <strong>MacawsHub</strong> · Not affiliated with or endorsed by ClickUp.
+  </footer>
 
   <script type="module" src="sidepanel.js"></script>
 </body>

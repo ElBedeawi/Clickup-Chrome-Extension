@@ -203,8 +203,84 @@ button.danger:hover:not(:disabled) { background: var(--danger); filter: brightne
   gap: 12px;
 }
 
-.capture-row { display: flex; gap: 8px; margin-top: 8px; }
-.capture-row button { flex: 1; }
+.capture-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.capture-row button { flex: 1; padding: 6px 8px; }
+.capture-label { font-weight: 600; font-size: 12px; margin-right: 2px; }
+
+/* ---- Branding ---- */
+.brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.brand img { flex: none; }
+.brand h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.byline { margin: 0; font-size: 11px; color: var(--muted); }
+
+.app-footer {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---- Collapsible extras ---- */
+details.more {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+details.more > summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  font-weight: 600;
+  font-size: 12px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before {
+  content: "▸";
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+details.more[open] > summary::before { transform: rotate(90deg); }
+.more-body { padding: 0 10px 10px; }
+.more-body > label:first-of-type { margin-top: 0; }
+.more-body h3 { font-size: 12px; margin: 14px 0 0; padding-top: 10px; border-top: 1px solid var(--border); }
+
+.badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips:not(:empty) { margin-bottom: 5px; }
+.chip {
+  --chip: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--chip) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chip) 45%, transparent);
+}
+.chip button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  padding: 0 3px;
+  font-size: 11px;
+  line-height: 1;
+}
+.chip button:hover:not(:disabled) { background: none; color: var(--danger); }
 
 #record-hint { margin: 6px 0 0; }
 #record-hint:empty { display: none; }

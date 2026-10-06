@@ -1,8 +1,11 @@
-// Owns the MediaRecorder. Driven by background.js; finished recordings go to IndexedDB.
-import { createRecorder } from '../lib/recorder.js';
-import { saveAttachment } from '../lib/attachments-db.js';
+// Owns the MediaRecorder (and one-off "Entire screen" screenshots). Driven by background.js;
+// results go to IndexedDB for the side panel / editor to pick up.
+import { createRecorder, captureDisplayFrame } from '../lib/recorder.js';
+import { saveAttachment, createChunkSink } from '../lib/attachments-db.js';
+import { screenshotFileName } from '../lib/screenshot.js';
 
-const recorder = createRecorder();
+// Chunks are written to disk as they arrive, so long recordings don't sit in memory.
+const recorder = createRecorder({ sink: createChunkSink() });
 
 // User clicked Chrome's "Stop sharing" bar — nobody asked us to stop, so tell the background.
 recorder.onAutoStop = async ({ file }) => {
@@ -25,6 +28,11 @@ async function handle(msg) {
       const { file } = await recorder.stop();
       await saveAttachment(file);
       return { ok: true };
+    }
+    case 'shot:screen': {
+      const file = await captureDisplayFrame(screenshotFileName());
+      const draftId = await saveAttachment(file, { draft: true });
+      return { ok: true, draftId };
     }
     default:
       return { ok: false, error: `Unknown message ${msg.type}` };

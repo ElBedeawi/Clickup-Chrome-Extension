@@ -2,6 +2,7 @@ import * as api from '../lib/clickup-api.js';
 import { getToken, getPrefs, setPrefs, onTokenChanged } from '../lib/storage.js';
 import { listAttachments, deleteAttachment } from '../lib/attachments-db.js';
 import { captureScreenshot, openEditor } from '../lib/screenshot.js';
+import { createDetails } from './details.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -35,6 +36,9 @@ const el = {
   recordHint: $('record-hint'),
   btnShotVisible: $('btn-shot-visible'),
   btnShotArea: $('btn-shot-area'),
+  btnShotScreen: $('btn-shot-screen'),
+  commentDetails: $('comment-details'),
+  commentText: $('comment-text'),
   recording: $('recording'),
   recTime: $('rec-time'),
   btnStop: $('btn-stop'),
@@ -71,10 +75,15 @@ const state = {
   attachments: [],
   /** Mirrors chrome.storage.session `recording`: { startedAt } while the offscreen recorder runs. */
   recording: null,
+  /** Existing-task comment: posted once per submit, even across retries. */
+  commentPosted: false,
+  commentError: false,
 };
 
 let nextAttachmentId = 1;
 let recTimer = null;
+
+const details = createDetails({ getListId: () => el.list.value, getSpaceId: () => el.space.value });
 
 // ---------------------------------------------------------------------------
 // Generic UI helpers
@@ -172,6 +181,7 @@ async function loadWorkspaces() {
 async function loadSpaces() {
   const teamId = el.workspace.value;
   [el.folder, el.list, el.status].forEach((s) => resetSelect(s));
+  details.reload();
   if (!teamId) return resetSelect(el.space);
   resetSelect(el.space, 'Loading…');
   try {
@@ -191,6 +201,7 @@ async function loadSpaces() {
 async function loadFolders() {
   const spaceId = el.space.value;
   [el.list, el.status].forEach((s) => resetSelect(s));
+  details.reload();
   state.folders.clear();
   if (!spaceId) return resetSelect(el.folder);
   resetSelect(el.folder, 'Loading…');
@@ -225,6 +236,7 @@ async function loadLists() {
       placeholder: lists.length === 1 ? undefined : lists.length ? 'Select list' : 'No lists here',
       value,
     });
+    details.reload();
     if (el.list.value) await loadStatuses();
   } catch (err) {
     resetSelect(el.list, 'Failed to load');
@@ -262,6 +274,7 @@ el.folder.addEventListener('change', async () => {
 });
 el.list.addEventListener('change', async () => {
   await remember('list', el.list.value);
+  details.reload();
   loadStatuses();
 });
 
@@ -614,15 +627,33 @@ function withTimeout(promise, ms, message) {
   ]).finally(() => clearTimeout(timer));
 }
 
+/** "Entire screen": Chrome's share picker runs in the offscreen document (see background.js). */
+async function captureEntireScreen() {
+  const res = await sendToBackground({ type: 'shot:screen' });
+  if (!res?.ok) {
+    if (res?.name === 'NotAllowedError') return null; // picker cancelled
+    throw new Error(res?.error || 'unknown error');
+  }
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return { draftId: res.draftId, tab };
+}
+
+const HINTS = {
+  visible: 'Capturing…',
+  area: 'Drag over the page to select an area…',
+  screen: 'Choose a screen, window or tab in Chrome’s picker…',
+};
+
 async function onScreenshot(mode) {
+  const buttons = [el.btnShotVisible, el.btnShotArea, el.btnShotScreen];
   showError('');
-  el.btnShotVisible.disabled = el.btnShotArea.disabled = true;
-  el.recordHint.textContent = mode === 'area' ? 'Drag over the page to select an area…' : 'Capturing…';
+  buttons.forEach((b) => (b.disabled = true));
+  el.recordHint.textContent = HINTS[mode];
   try {
-    // Area mode waits for the user to drag, so it gets a generous limit; never hang forever.
+    // Area and screen modes wait for the user, so they get a generous limit; never hang forever.
     const shot = await withTimeout(
-      captureScreenshot(mode),
-      mode === 'area' ? 5 * 60_000 : 15_000,
+      mode === 'screen' ? captureEntireScreen() : captureScreenshot(mode),
+      mode === 'visible' ? 15_000 : 5 * 60_000,
       'Screenshot timed out. Reload the page you’re capturing and try again.',
     );
     if (shot) await openEditor(shot.draftId, shot.tab);
@@ -631,12 +662,13 @@ async function onScreenshot(mode) {
     showError(`Screenshot failed: ${err.message}`);
   } finally {
     el.recordHint.textContent = '';
-    el.btnShotVisible.disabled = el.btnShotArea.disabled = false;
+    buttons.forEach((b) => (b.disabled = false));
   }
 }
 
 el.btnShotVisible.addEventListener('click', () => onScreenshot('visible'));
 el.btnShotArea.addEventListener('click', () => onScreenshot('area'));
+el.btnShotScreen.addEventListener('click', () => onScreenshot('screen'));
 
 // ---------------------------------------------------------------------------
 // Submit
@@ -683,7 +715,10 @@ async function submit() {
   showError('');
   if (state.recording) return showError('Stop the recording first.');
 
+  const comment = state.mode === 'existing' ? el.commentText.value.trim() : '';
+
   // Resolve the target task (unless a previous attempt already created / found it).
+  let extra;
   if (!state.target) {
     if (state.mode === 'new') {
       if (!el.list.value) return showError('Pick a list for the new task.');
@@ -691,8 +726,13 @@ async function submit() {
         el.title.focus();
         return showError('Give the task a title.');
       }
-    } else if (!state.attachments.length) {
-      return showError('Add a file or record a video to upload.');
+      extra = details.collect();
+      if (extra.missing.length) {
+        details.open();
+        return showError(`Fill in the required field${extra.missing.length > 1 ? 's' : ''}: ${extra.missing.join(', ')}.`);
+      }
+    } else if (!state.attachments.length && !comment) {
+      return showError('Add a file, record a video or write a comment.');
     }
   }
 
@@ -705,6 +745,11 @@ async function submit() {
           markdown_description: el.desc.value.trim(),
           status: el.status.value || undefined,
           priority: el.priority.value ? Number(el.priority.value) : undefined,
+          assignees: extra.assignees,
+          tags: extra.tags,
+          due_date: extra.due_date,
+          due_date_time: extra.due_date_time,
+          custom_fields: extra.custom_fields,
         });
         state.target = { id: task.id, url: task.url, name: task.name, customTaskIds: false, created: true };
       } else {
@@ -718,9 +763,23 @@ async function submit() {
     if (failed) {
       showTargetBanner();
       showError(`${failed} file${failed > 1 ? 's' : ''} failed to upload. Fix the issue and press Retry.`);
-    } else {
-      showSuccess();
+      return;
     }
+
+    // Comment last, so it lands under the new attachments. Posted once, even across retries.
+    if (comment && !state.commentPosted) {
+      try {
+        await api.createTaskComment(state.target.id, comment, state.target);
+        state.commentPosted = true;
+      } catch (err) {
+        state.commentError = true;
+        showTargetBanner();
+        showError(`The upload worked, but the comment wasn’t posted: ${err.message}`);
+        return;
+      }
+    }
+    state.commentError = false;
+    showSuccess(comment && state.commentPosted);
   } catch (err) {
     showError(err.message);
   } finally {
@@ -747,15 +806,15 @@ function showTargetBanner() {
   el.targetBanner.hidden = false;
 }
 
-function showSuccess() {
+function showSuccess(commented) {
   const t = state.target;
   const count = state.attachments.length;
-  el.successTitle.textContent = t.created ? 'Task created' : 'Uploaded to task';
+  el.successTitle.textContent = t.created ? 'Task created' : count ? 'Uploaded to task' : 'Comment posted';
   el.successLink.href = t.url;
   el.successLink.textContent = `${t.name} ↗`;
-  el.successDetail.textContent = count
-    ? `${count} attachment${count > 1 ? 's' : ''} uploaded.`
-    : 'No attachments.';
+  const parts = [count ? `${count} attachment${count > 1 ? 's' : ''} uploaded.` : 'No attachments.'];
+  if (commented) parts.push('Comment posted.');
+  el.successDetail.textContent = parts.join(' ');
   el.successAgain.textContent = t.created ? 'Create another' : 'Upload more';
   el.success.hidden = false;
   el.formArea.hidden = true;
@@ -763,11 +822,16 @@ function showSuccess() {
 
 function resetForm() {
   state.target = null;
+  state.commentPosted = false;
+  state.commentError = false;
   clearAttachments();
   el.title.value = '';
   el.desc.value = '';
   el.priority.value = '';
   if (el.status.options.length) el.status.selectedIndex = 0;
+  details.reset();
+  el.commentText.value = '';
+  el.commentDetails.open = false;
   el.targetBanner.hidden = true;
   el.success.hidden = true;
   el.formArea.hidden = false;
@@ -795,8 +859,9 @@ function render() {
 
   if (state.busy) el.submit.textContent = 'Working…';
   else if (hasFailed && state.target) el.submit.textContent = 'Retry failed uploads';
+  else if (state.commentError && state.target) el.submit.textContent = 'Retry comment';
   else if (state.mode === 'new') el.submit.textContent = state.attachments.length ? 'Create task & upload' : 'Create task';
-  else el.submit.textContent = 'Upload to task';
+  else el.submit.textContent = state.attachments.length ? 'Upload to task' : 'Post comment';
 }
 
 // ---------------------------------------------------------------------------

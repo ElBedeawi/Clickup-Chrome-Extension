@@ -30,7 +30,7 @@ async function ensureOffscreen() {
     .createDocument({
       url: OFFSCREEN_URL,
       reasons: ['DISPLAY_MEDIA', 'USER_MEDIA'],
-      justification: 'Record the screen and microphone while the side panel is closed.',
+      justification: 'Record the screen and microphone, or take a screen screenshot, while the side panel may be closed.',
     })
     .finally(() => {
       creatingOffscreen = null;
@@ -76,6 +76,20 @@ async function handle(msg) {
       await setRecording(null);
       await closeOffscreen();
       return res;
+    }
+
+    // "Entire screen" screenshot: the offscreen document shows Chrome's share picker and
+    // grabs one frame. Keep the document if a recording is running in it.
+    case 'shot:screen': {
+      await ensureOffscreen();
+      let res;
+      try {
+        res = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'shot:screen' });
+      } finally {
+        const { recording } = await chrome.storage.session.get('recording');
+        if (!recording) await closeOffscreen();
+      }
+      return res ?? { ok: false, error: 'The capture page did not respond.' };
     }
 
     // Sent by the offscreen document when the user ended sharing from Chrome's own bar.
