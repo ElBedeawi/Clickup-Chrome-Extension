@@ -129,18 +129,38 @@
 
       <!-- Attachments (shared) -->
       <section id="attachments" class="attachments">
-        <h2>Attachments</h2>
-
-        <div id="record-controls" class="record-controls">
-          <button id="btn-record" class="record-btn"><span class="dot"></span> Record screen</button>
-          <label class="checkbox"><input id="chk-mic" type="checkbox" checked /> Microphone</label>
+        <div class="att-head">
+          <h2>Attachments</h2>
+          <span class="muted small">Drop or paste files anywhere</span>
         </div>
 
-        <div class="capture-row" role="group" aria-label="Screenshot">
-          <span class="capture-label">Screenshot</span>
-          <button id="btn-shot-visible" class="secondary" title="The visible part of the current tab">Tab</button>
-          <button id="btn-shot-area" class="secondary" title="Drag to select an area of the current tab">Area</button>
-          <button id="btn-shot-screen" class="secondary" title="Your whole screen, a window or a tab — Chrome asks which">Screen</button>
+        <div class="toolbar" role="toolbar" aria-label="Add attachments">
+          <button id="tool-record" class="tool-btn" aria-expanded="false" aria-controls="record-card">
+            <span data-icon="video"></span>Record clip
+          </button>
+          <div id="tool-shot"></div>
+          <button id="btn-add-files" class="tool-btn"><span data-icon="paperclip"></span>Attach</button>
+          <input id="file-input" type="file" multiple hidden />
+        </div>
+
+        <!-- Record clip options (ClickUp-style card) -->
+        <div id="record-card" class="record-card" hidden>
+          <div class="rc-row">
+            <span id="rc-source-icon" class="rc-icon" data-icon="monitor"></span>
+            <div id="rc-source" class="rc-select"></div>
+          </div>
+          <div class="rc-row">
+            <span class="rc-icon" data-icon="shrink"></span>
+            <div id="rc-resolution" class="rc-select"></div>
+          </div>
+          <div class="rc-row">
+            <span id="rc-mic-icon" class="rc-icon" data-icon="mic"></span>
+            <div class="rc-select">
+              <div id="rc-mic"></div>
+              <div class="rc-meter" aria-hidden="true"><div id="rc-meter-fill"></div></div>
+            </div>
+          </div>
+          <button id="btn-record" class="record-btn"><span data-icon="record"></span>Record Clip</button>
         </div>
         <p id="record-hint" class="muted small"></p>
 
@@ -156,14 +176,8 @@
         </div>
 
         <div id="mic-notice" class="notice warn" hidden>
-          <p>Microphone access was blocked, so this recording has no mic audio.</p>
+          <p>The microphone couldn’t be used, so this recording has no mic audio.</p>
           <button id="btn-grant-mic" class="secondary">Grant microphone access</button>
-        </div>
-
-        <div id="dropzone" class="dropzone">
-          <button id="btn-add-files" class="secondary">Add files</button>
-          <span class="muted small">or drop / paste images here</span>
-          <input id="file-input" type="file" multiple hidden />
         </div>
 
         <ul id="attachment-list" class="attachment-list"></ul>

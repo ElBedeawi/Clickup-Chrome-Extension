@@ -55,6 +55,15 @@
     permissions: { contains: async () => true },
   };
 
+  // Microphones shown in the Record clip card (no real devices in headless Chrome).
+  const fakeMics = [
+    { kind: 'audioinput', deviceId: 'default', label: 'Default - Microphone (HD Webcam)' },
+    { kind: 'audioinput', deviceId: 'mic-webcam', label: 'Microphone (HD Webcam)' },
+    { kind: 'audioinput', deviceId: 'mic-headset', label: 'Headset Microphone (USB Audio)' },
+  ];
+  if (navigator.mediaDevices) navigator.mediaDevices.enumerateDevices = async () => fakeMics;
+  navigator.permissions.query = async () => ({ state: 'prompt', onchange: null });
+
   // ---------------------------------------------------------------------------
   // ClickUp API stub
   // ---------------------------------------------------------------------------
@@ -133,8 +142,20 @@
       await fillNewTask();
       const video = new File([await DemoShared.mockVideo()], 'recording-2026-10-06-14-31.webm', { type: 'video/webm' });
       await addAttachments([video, await shotFile()]);
-      await sleep(600); // let the video preview decode its first frame
-      window.scrollTo(0, $('more-details').offsetTop - 84); // start at the Status row
+      $('tool-record').click(); // open the Record clip card
+      await sleep(600); // let the card refresh and the video preview decode its first frame
+      $('rc-meter-fill').style.width = '38%'; // as if someone is talking
+      window.scrollTo(0, $('more-details').offsetTop - 30);
+    },
+
+    async menu() {
+      await until(() => $('sel-list').value === '1000');
+      $('tool-record').click();
+      await sleep(400);
+      const which = new URLSearchParams(location.search).get('menu');
+      const target = which === 'shot' ? $('tool-shot') : $(`rc-${which}`);
+      target.querySelector('button').click();
+      window.scrollTo(0, $('attachments').offsetTop - 20);
     },
 
     async details() {

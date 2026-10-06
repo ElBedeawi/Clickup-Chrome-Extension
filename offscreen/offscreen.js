@@ -21,7 +21,11 @@ recorder.onAutoStop = async ({ file }) => {
 async function handle(msg) {
   switch (msg.type) {
     case 'rec:start': {
-      const { micError } = await recorder.start({ mic: msg.mic });
+      const { micError } = await recorder.start({
+        source: msg.source,
+        resolution: msg.resolution,
+        micDeviceId: msg.micDeviceId,
+      });
       return { ok: true, micError: micError?.name };
     }
     case 'rec:stop': {

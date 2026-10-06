@@ -29,17 +29,20 @@ The token is kept in `chrome.storage.local` on this machine only. **Revoke** on 
 
 **Existing task:** open a task in ClickUp and the panel picks it up from the current tab. You can also paste a task URL, a task ID, or a custom ID like `DEV-123`, then press **Check**. **Add a comment** (collapsed) posts a comment after the upload. You can also post just a comment.
 
-**Attachments**
-- **Record screen** records a screen, window or tab. Tick "Share audio" in Chrome's picker to include system or tab audio; **Microphone** mixes in your voice.
-  You can **close the side panel while recording**. A red **REC** badge shows it's running. Stop it with Chrome's "Stop sharing" bar, or reopen the panel and press **Stop**.
-  The recording is written to disk as it goes, so long recordings don't fill memory.
-- **Screenshot**:
-  - **Tab** captures the visible part of the current tab.
-  - **Area** lets you drag a rectangle on the page. Esc or a plain click cancels.
-  - **Screen** captures your whole screen, a window or a tab via Chrome's picker.
+**Attachments**: a toolbar with three tools.
+- **🎥 Record clip** opens the recording card:
+  - **Source:** Entire screen, Window or Current tab. Chrome's share picker opens on the matching pane. Tick "Share audio" there to include system or tab audio.
+  - **Resolution:** 720p (HD), 1080p (Full HD), 1440p (2K), 2160p (4K) or Native (Auto). The capture is scaled down to fit; bitrate follows the real size.
+  - **Microphone:** "No microphone" or any of your devices, with a live level meter. Until the extension has mic permission, the list shows "Default microphone" and an option to allow access.
+
+  Choices are remembered. Press **Record Clip** to start. You can **close the side panel while recording**: a red **REC** badge shows it's running. Stop with Chrome's "Stop sharing" bar, or reopen the panel and press **Stop**. Recordings are written to disk as they go, so long ones don't fill memory.
+- **📷 Screenshot ▾** has three modes:
+  - **Visible tab** captures the visible part of the current tab.
+  - **Select area** lets you drag a rectangle on the page. Esc or a plain click cancels.
+  - **Entire screen** captures a screen, window or tab via Chrome's picker.
 
   Each screenshot opens in an editor tab with **Draw**, **Text**, **Blur** (pixelates, safe for passwords and emails) and **Crop**. There are 8 colors, 3 sizes and undo/redo (Ctrl+Z / Ctrl+Shift+Z), with shortcuts P, T, B and C. An area selection opens already cropped; undo brings back the full screenshot.
-- **Add files**, drag and drop, or paste an image (Ctrl+V) anywhere in the panel.
+- **📎 Attach** picks files. You can also drop or paste files (Ctrl+V) anywhere in the panel.
 - Attachments you haven't uploaded are kept, even if you close the panel, until you upload or remove them.
 - Recordings are WebM (VP9/Opus), which plays in ClickUp's viewer. ClickUp's limit is 1 GB per file.
 
@@ -65,7 +68,9 @@ Bump `version` in `manifest.json` for each upload.
 ```
 manifest.json           MV3 manifest
 background.js           opens the side panel; starts/stops the offscreen recorder, REC badge
-sidepanel/              main UI (form, recording controls, uploads); details.js = "More details"
+sidepanel/              main UI: sidepanel.js (form, uploads), recorder-card.js (Record clip),
+                        details.js ("More details"), menu.js (dropdowns)
+lib/icons.js            inline SVG icon set
 offscreen/              hidden document that owns recordings and "Screen" screenshots
 editor/                 screenshot annotation editor (draw, text, blur, crop)
 options/                API token settings + revoke

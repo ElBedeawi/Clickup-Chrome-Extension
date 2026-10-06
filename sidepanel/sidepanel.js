@@ -3,6 +3,9 @@ import { getToken, getPrefs, setPrefs, onTokenChanged } from '../lib/storage.js'
 import { listAttachments, deleteAttachment } from '../lib/attachments-db.js';
 import { captureScreenshot, openEditor } from '../lib/screenshot.js';
 import { createDetails } from './details.js';
+import { createRecorderCard } from './recorder-card.js';
+import { createActionMenu } from './menu.js';
+import { icon, hydrateIcons } from '../lib/icons.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -30,13 +33,10 @@ const el = {
   taskRefHint: $('task-ref-hint'),
   taskFound: $('task-found'),
 
-  recordControls: $('record-controls'),
+  toolRecord: $('tool-record'),
+  recordCard: $('record-card'),
   btnRecord: $('btn-record'),
-  chkMic: $('chk-mic'),
   recordHint: $('record-hint'),
-  btnShotVisible: $('btn-shot-visible'),
-  btnShotArea: $('btn-shot-area'),
-  btnShotScreen: $('btn-shot-screen'),
   commentDetails: $('comment-details'),
   commentText: $('comment-text'),
   recording: $('recording'),
@@ -44,7 +44,6 @@ const el = {
   btnStop: $('btn-stop'),
   micNotice: $('mic-notice'),
   btnGrantMic: $('btn-grant-mic'),
-  dropzone: $('dropzone'),
   btnAddFiles: $('btn-add-files'),
   fileInput: $('file-input'),
   attachmentList: $('attachment-list'),
@@ -84,6 +83,16 @@ let nextAttachmentId = 1;
 let recTimer = null;
 
 const details = createDetails({ getListId: () => el.list.value, getSpaceId: () => el.space.value });
+
+hydrateIcons();
+
+// Side panels can't show the mic permission prompt; a normal extension tab can,
+// and the grant then applies to the whole extension origin (incl. the offscreen recorder).
+function openMicGrant() {
+  chrome.tabs.create({ url: chrome.runtime.getURL('permissions/microphone.html') });
+}
+
+const recorderCard = await createRecorderCard({ onGrantMic: openMicGrant });
 
 // ---------------------------------------------------------------------------
 // Generic UI helpers
@@ -477,14 +486,27 @@ el.fileInput.addEventListener('change', () => {
   el.fileInput.value = '';
 });
 
-el.dropzone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  el.dropzone.classList.add('dragover');
+// Drop files anywhere in the panel.
+let dragDepth = 0;
+const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+document.addEventListener('dragenter', (e) => {
+  if (!hasFiles(e)) return;
+  dragDepth++;
+  document.body.classList.add('dragging');
 });
-el.dropzone.addEventListener('dragleave', () => el.dropzone.classList.remove('dragover'));
-el.dropzone.addEventListener('drop', (e) => {
+document.addEventListener('dragleave', (e) => {
+  if (!hasFiles(e)) return;
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) document.body.classList.remove('dragging');
+});
+document.addEventListener('dragover', (e) => {
+  if (hasFiles(e)) e.preventDefault();
+});
+document.addEventListener('drop', (e) => {
+  if (!hasFiles(e)) return;
   e.preventDefault();
-  el.dropzone.classList.remove('dragover');
+  dragDepth = 0;
+  document.body.classList.remove('dragging');
   if (e.dataTransfer?.files.length && !state.busy) addFiles(e.dataTransfer.files);
 });
 
@@ -549,7 +571,8 @@ async function syncPending() {
 function applyRecordingState(recording) {
   state.recording = recording || null;
   clearInterval(recTimer);
-  el.recordControls.hidden = !!state.recording;
+  el.toolRecord.disabled = !!state.recording;
+  if (state.recording) setRecordCardOpen(false);
   el.recording.hidden = !state.recording;
   if (state.recording) {
     const tick = () => {
@@ -576,14 +599,16 @@ el.btnRecord.addEventListener('click', async () => {
   el.micNotice.hidden = true;
   el.btnRecord.disabled = true;
   el.recordHint.textContent = 'Choose what to share in Chrome’s picker…';
+  recorderCard.releaseMic(); // the level meter holds the mic; the recorder needs it
   try {
-    const res = await sendToBackground({ type: 'rec:start', mic: el.chkMic.checked });
+    const res = await sendToBackground({ type: 'rec:start', ...recorderCard.options() });
     el.recordHint.textContent = '';
     if (res?.ok) {
       if (res.micError) el.micNotice.hidden = false;
     } else if (res?.name === 'NotAllowedError') {
       // The user cancelled the screen picker.
       el.recordHint.textContent = 'Recording cancelled.';
+      recorderCard.setActive(!el.recordCard.hidden);
     } else {
       showError(`Could not start recording: ${res?.error || 'unknown error'}`);
     }
@@ -607,11 +632,7 @@ el.btnStop.addEventListener('click', async () => {
   }
 });
 
-// Side panels can't show the mic permission prompt; a normal extension tab can,
-// and the grant then applies to the whole extension origin.
-el.btnGrantMic.addEventListener('click', () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('permissions/microphone.html') });
-});
+el.btnGrantMic.addEventListener('click', openMicGrant);
 
 // ---------------------------------------------------------------------------
 // Screenshots — captured here, annotated in the editor tab, attached via IndexedDB
@@ -645,9 +666,8 @@ const HINTS = {
 };
 
 async function onScreenshot(mode) {
-  const buttons = [el.btnShotVisible, el.btnShotArea, el.btnShotScreen];
   showError('');
-  buttons.forEach((b) => (b.disabled = true));
+  shotMenu.setDisabled(true);
   el.recordHint.textContent = HINTS[mode];
   try {
     // Area and screen modes wait for the user, so they get a generous limit; never hang forever.
@@ -662,13 +682,38 @@ async function onScreenshot(mode) {
     showError(`Screenshot failed: ${err.message}`);
   } finally {
     el.recordHint.textContent = '';
-    buttons.forEach((b) => (b.disabled = false));
+    shotMenu.setDisabled(false);
   }
 }
 
-el.btnShotVisible.addEventListener('click', () => onScreenshot('visible'));
-el.btnShotArea.addEventListener('click', () => onScreenshot('area'));
-el.btnShotScreen.addEventListener('click', () => onScreenshot('screen'));
+const shotMenu = createActionMenu($('tool-shot'), {
+  label: 'Screenshot',
+  buttonClass: 'tool-btn',
+  items: [
+    { value: 'visible', label: 'Visible tab', icon: 'tab' },
+    { value: 'area', label: 'Select area', icon: 'crop' },
+    { value: 'screen', label: 'Entire screen', icon: 'monitor', hint: 'A screen, window or tab — Chrome asks which' },
+  ],
+  trigger: () => {
+    const span = document.createElement('span');
+    span.className = 'mi';
+    span.innerHTML = `${icon('camera')}<span>Screenshot</span>`;
+    return span;
+  },
+  onPick: (item) => onScreenshot(item.value),
+});
+
+// ---------------------------------------------------------------------------
+// Record clip card
+// ---------------------------------------------------------------------------
+
+function setRecordCardOpen(open) {
+  el.recordCard.hidden = !open;
+  el.toolRecord.setAttribute('aria-expanded', String(open));
+  recorderCard.setActive(open);
+}
+
+el.toolRecord.addEventListener('click', () => setRecordCardOpen(el.recordCard.hidden));
 
 // ---------------------------------------------------------------------------
 // Submit

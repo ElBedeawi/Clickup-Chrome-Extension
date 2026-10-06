@@ -24,7 +24,7 @@ Record your screen or capture and annotate screenshots, then attach them to a ne
 Report bugs and share feedback without leaving the page. Record your screen, grab an annotated screenshot, and attach it to a ClickUp task — new or existing — straight from Chrome's side panel.
 
 RECORD YOUR SCREEN
-• Record a tab, a window or your entire screen, with microphone and system audio
+• Record a clip of your entire screen, a window or a tab — pick the resolution (720p to 4K) and microphone
 • Keep recording with the side panel closed — a REC badge shows it's running
 • Preview the recording before it's uploaded
 
@@ -83,7 +83,7 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 |---|---|
 | `sidePanel` | The extension's whole UI (task form, recording controls, attachments) lives in Chrome's side panel so it stays open while the user switches tabs and records. |
 | `storage` | Stores the user's ClickUp API token and last-used Workspace/Space/Folder/List locally, and the current recording state so the side panel can show it after being reopened. |
-| `offscreen` | Screen recording runs in an offscreen document (reasons DISPLAY_MEDIA and USER_MEDIA) so it keeps going when the user closes the side panel. Also used for the "Entire screen" screenshot. |
+| `offscreen` | Screen recording ("Record clip") runs in an offscreen document (reasons DISPLAY_MEDIA and USER_MEDIA) so it keeps going when the user closes the side panel. Also used for the "Entire screen" screenshot. |
 | `scripting` | For the "Area" screenshot, injects a temporary selection overlay into the current tab so the user can drag a rectangle; it is removed immediately. Only runs when the user clicks "Area". |
 | Host permission `<all_urls>` | Needed by chrome.tabs.captureVisibleTab to screenshot whatever page the user is on when they click "Tab" or "Area", and by chrome.scripting for the area-selection overlay. Pages are only captured on explicit user click. Also used to read the current tab's URL to detect an open ClickUp task. |
 | Host permission `https://api.clickup.com/*` | All task creation, attachment uploads, comments and workspace lookups go to the ClickUp API. |

@@ -133,10 +133,7 @@ async function render(browser, job) {
     await sleep(150);
   }
   await sleep(300);
-  const { data } = await s('Page.captureScreenshot', {
-    format: 'png',
-    clip: { x: 0, y: 0, width: job.w, height: job.h, scale: 1 },
-  });
+  const { data } = await s('Page.captureScreenshot', { format: 'png' });
   const out = path.join(ROOT, job.out);
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, Buffer.from(data, 'base64'));

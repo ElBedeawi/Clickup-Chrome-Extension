@@ -59,7 +59,13 @@ async function handle(msg) {
       if (recording) return { ok: false, error: 'Already recording.' };
       await ensureOffscreen();
       // Resolves once the user has picked what to share (or cancelled).
-      const res = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'rec:start', mic: msg.mic });
+      const res = await chrome.runtime.sendMessage({
+        target: 'offscreen',
+        type: 'rec:start',
+        source: msg.source,
+        resolution: msg.resolution,
+        micDeviceId: msg.micDeviceId,
+      });
       if (res?.ok) await setRecording({ startedAt: Date.now() });
       else await closeOffscreen();
       return res ?? { ok: false, error: 'The recorder did not respond.' };
