@@ -44,6 +44,7 @@ function createMenu(root, opts) {
   button.setAttribute('aria-haspopup', 'listbox');
   button.setAttribute('aria-expanded', 'false');
   button.setAttribute('aria-label', opts.label);
+  if (opts.buttonClass) button.title = opts.label; // toolbar buttons can collapse to icon-only
   const list = document.createElement('ul');
   list.className = `ms-menu ${opts.align === 'right' ? 'right' : ''}`;
   list.setAttribute('role', 'listbox');

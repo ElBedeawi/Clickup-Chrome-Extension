@@ -199,6 +199,8 @@ button.danger:hover:not(:disabled) { background: var(--danger); filter: brightne
 
 /* ---- Branding ---- */
 .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.brand > div { min-width: 0; } /* lets the title ellipsize instead of running under ⚙ */
+.app-header { gap: 8px; }
 .brand img { flex: none; }
 .brand h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .byline { margin: 0; font-size: 11px; color: var(--muted); }
@@ -273,13 +275,16 @@ details.more[open] > summary::before { transform: rotate(90deg); }
 .chip button:hover:not(:disabled) { background: none; color: var(--danger); }
 
 /* ---- Attachment toolbar ---- */
-.att-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.att-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 8px; }
 .att-head h2 { margin: 0; }
 
 .icon { display: block; flex: none; }
 
-.toolbar { display: flex; gap: 6px; margin-top: 10px; }
-.toolbar > * { flex: 1; min-width: 0; }
+/* The toolbar adapts to its own width (the side panel can be ~320px down to narrower). */
+.toolbar-wrap { container-type: inline-size; margin-top: 10px; }
+/* Columns size to their labels, share leftover space, and can shrink below it (labels ellipsize). */
+.toolbar { display: grid; grid-template-columns: repeat(3, minmax(0, auto)); justify-content: stretch; gap: 6px; }
+.toolbar > * { min-width: 0; }
 .tool-btn {
   width: 100%;
   display: inline-flex;
@@ -292,10 +297,23 @@ details.more[open] > summary::before { transform: rotate(90deg); }
   border: 1px solid var(--border);
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
 }
+.tool-btn .mi { flex: none; max-width: 100%; gap: 6px; }
+.tool-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tool-btn:hover:not(:disabled) { background: var(--surface); }
 .tool-btn[aria-expanded="true"] { border-color: var(--accent); background: var(--info-bg); color: var(--info-text); }
-.tool-btn .ms-chevron { margin-left: -2px; opacity: 0.7; }
+.tool-btn .ms-chevron { display: none; }
+
+@container (max-width: 330px) {
+  .toolbar { gap: 4px; }
+  .tool-btn { padding: 7px 5px; gap: 4px; font-size: 12px; }
+  .tool-btn .mi { gap: 4px; }
+}
+/* Very narrow: icons only (each button has a title/aria-label). */
+@container (max-width: 250px) {
+  .tool-label { display: none; }
+}
 
 #record-hint { margin: 8px 0 0; }
 #record-hint:empty { display: none; }
@@ -323,9 +341,10 @@ body.dragging::after {
   background: var(--bg);
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.08);
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* let long device names ellipsize instead of overflowing */
   gap: 8px;
 }
-.rc-row { display: flex; align-items: flex-start; gap: 8px; }
+.rc-row { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .rc-icon {
   flex: none;
   width: 34px;
@@ -444,6 +463,7 @@ body.dragging::after {
   margin: 10px 0 0;
   padding: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* long file names ellipsize instead of overflowing */
   gap: 8px;
 }
 

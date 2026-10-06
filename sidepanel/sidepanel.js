@@ -697,7 +697,7 @@ const shotMenu = createActionMenu($('tool-shot'), {
   trigger: () => {
     const span = document.createElement('span');
     span.className = 'mi';
-    span.innerHTML = `${icon('camera')}<span>Screenshot</span>`;
+    span.innerHTML = `${icon('camera')}<span class="tool-label">Screenshot</span>`;
     return span;
   },
   onPick: (item) => onScreenshot(item.value),

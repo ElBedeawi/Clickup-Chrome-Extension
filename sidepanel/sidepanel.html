@@ -134,13 +134,17 @@
           <span class="muted small">Drop or paste files anywhere</span>
         </div>
 
-        <div class="toolbar" role="toolbar" aria-label="Add attachments">
-          <button id="tool-record" class="tool-btn" aria-expanded="false" aria-controls="record-card">
-            <span data-icon="video"></span>Record clip
-          </button>
-          <div id="tool-shot"></div>
-          <button id="btn-add-files" class="tool-btn"><span data-icon="paperclip"></span>Attach</button>
-          <input id="file-input" type="file" multiple hidden />
+        <div class="toolbar-wrap">
+          <div class="toolbar" role="toolbar" aria-label="Add attachments">
+            <button id="tool-record" class="tool-btn" title="Record clip" aria-expanded="false" aria-controls="record-card">
+              <span data-icon="video"></span><span class="tool-label">Record clip</span>
+            </button>
+            <div id="tool-shot"></div>
+            <button id="btn-add-files" class="tool-btn" title="Attach files">
+              <span data-icon="paperclip"></span><span class="tool-label">Attach</span>
+            </button>
+            <input id="file-input" type="file" multiple hidden />
+          </div>
         </div>
 
         <!-- Record clip options (ClickUp-style card) -->
