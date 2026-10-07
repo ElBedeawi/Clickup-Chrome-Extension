@@ -86,8 +86,8 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 | `sidePanel` | The extension's whole UI (task form, recording controls, attachments) lives in Chrome's side panel so it stays open while the user switches tabs and records. |
 | `storage` | Stores the user's ClickUp API token and last-used Workspace/Space/Folder/List locally, and the current recording state so the side panel can show it after being reopened. |
 | `offscreen` | Screen recording ("Record clip") runs in an offscreen document (reasons DISPLAY_MEDIA and USER_MEDIA) so it keeps going when the user closes the side panel. Also used for the "Entire screen" screenshot. |
-| `scripting` | For the "Area" screenshot, injects a temporary selection overlay into the current tab so the user can drag a rectangle; it is removed immediately. Only runs when the user clicks "Area". |
-| Host permission `<all_urls>` | Needed by chrome.tabs.captureVisibleTab to screenshot whatever page the user is on when they click "Tab" or "Area", and by chrome.scripting for the area-selection overlay. Pages are only captured on explicit user click. Also used to read the current tab's URL to detect an open ClickUp task. |
+| `scripting` | For the "Screenshot → Select area" feature: injects a temporary selection overlay into the current tab so the user can drag a rectangle to capture; the overlay is removed as soon as the selection is made. It only runs when the user chooses "Select area". |
+| Host permission `<all_urls>` | The user can take a screenshot of whatever page they are on, so the extension needs access to any site: chrome.tabs.captureVisibleTab requires it for "Screenshot → Visible tab" and "Select area", and chrome.scripting requires it for the area-selection overlay. Pages are only captured when the user explicitly chooses a screenshot option. It is also used to read the active tab's URL locally to detect when the user is viewing a ClickUp task, so it can be prefilled. No page content is read or sent anywhere otherwise. |
 | Host permission `https://api.clickup.com/*` | All task creation, attachment uploads, comments and workspace lookups go to the ClickUp API. |
 
 **Remote code:** No, I am not using remote code. (All scripts are packaged; no eval or remotely hosted code.)
@@ -120,13 +120,14 @@ Reviewers need a ClickUp account to test. Create a free ClickUp workspace for re
 token there (ClickUp → Settings → Apps), and paste this into the **Test instructions** field (fill in the token):
 
 ```
-1. Click the extension's toolbar icon to open the side panel, click ⚙ (Settings), paste this test API token and press Save:
+1. Click the extension's toolbar icon to open the side panel, then click ⚙ (Settings), paste this test API token and press Save:
    <TEST TOKEN FOR A REVIEW-ONLY CLICKUP WORKSPACE>
-2. Back in the side panel, Workspace/Space/List are preselected. Enter a title.
-3. Click "Tab" (screenshot) — an editor tab opens; draw or blur something, then "Attach".
-4. Click "Record screen", pick a tab, wait a few seconds, then "Stop".
-5. Click "Create task & upload". The success card links to the created task.
-Optional: "More details" for assignees/due date/tags/custom fields; the "Existing task" tab to attach to a task by link.
+   "Test connection" should show "Connected as …".
+2. Back in the side panel, choose the Workspace, Space and List (only one exists in the test workspace, so they fill in automatically), then enter a title.
+3. Click "Screenshot" → "Visible tab". An editor tab opens; draw or blur something, then click "Attach".
+4. Click "Record clip", keep the defaults (Entire screen, 1080p) and click the red "Record Clip" button. Pick what to share in Chrome's dialog, wait a few seconds, then click "Stop" in the side panel.
+5. Click "Create task & upload". The success card links to the created task, which has both attachments.
+Optional: "More details" for assignees, due date, tags and custom fields; the "Existing task" tab to attach to a task by link and post a comment.
 ```
 
 Revoke/regenerate that token after review.
