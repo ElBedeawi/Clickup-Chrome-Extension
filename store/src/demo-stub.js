@@ -86,6 +86,9 @@
       fields: [
         { id: 'f-browser', name: 'Browser', type: 'drop_down', type_config: { options: [{ id: 'o1', name: 'Chrome' }, { id: 'o2', name: 'Edge' }, { id: 'o3', name: 'Safari' }] } },
         { id: 'f-sev', name: 'Severity', type: 'emoji', type_config: { count: 5 } },
+        { id: 'f-email', name: 'Customer email', type: 'email' },
+        { id: 'f-amount', name: 'Order total', type: 'currency' },
+        { id: 'f-found', name: 'Found on', type: 'date' },
         { id: 'f-env', name: 'Environment', type: 'labels', type_config: { options: [{ id: 'l1', label: 'Production', color: '#e5484d' }, { id: 'l2', label: 'Staging', color: '#0090ff' }] } },
       ],
     },

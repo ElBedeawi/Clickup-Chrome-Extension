@@ -90,8 +90,8 @@ label {
   margin: 10px 0 4px;
 }
 
-input[type="text"],
-input[type="password"],
+/* Every text-like input (incl. date, time, email, url, tel, number used by "More details"). */
+input:where(:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"])),
 select,
 textarea {
   width: 100%;
@@ -103,6 +103,23 @@ textarea {
   font: inherit;
 }
 textarea { resize: vertical; }
+
+/* Date/time: same height as the other fields, muted picker icon. */
+input[type="date"],
+input[type="time"] {
+  min-height: 34px;
+  line-height: 1.2;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.9;
+}
+.row > input { min-width: 0; }
 input:focus, select:focus, textarea:focus {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
