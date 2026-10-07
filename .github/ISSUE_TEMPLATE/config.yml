@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ElBedeawi/Clickup-Chrome-Extension/security/advisories/new
+    about: Please report security issues privately, not as a public issue.
+  - name: Problem with ClickUp itself
+    url: https://help.clickup.com/
+    about: This extension isn't affiliated with ClickUp. For account or workspace problems, contact ClickUp support.

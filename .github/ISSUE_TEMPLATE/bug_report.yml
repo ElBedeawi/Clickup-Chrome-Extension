@@ -1,0 +1,61 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please **don't** include your ClickUp API token or private task content.
+        Security issues go to [SECURITY.md](https://github.com/ElBedeawi/Clickup-Chrome-Extension/blob/main/SECURITY.md), not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the side panel
+        2. Click "Record clip" and choose "Window"
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Creating a task / More details
+        - Existing task / comment
+        - Record clip
+        - Screenshots / editor
+        - Uploading attachments
+        - Settings / API token
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension version
+      description: Shown on chrome://extensions
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: "Chrome 141 on Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console errors (optional)
+      description: Right-click inside the side panel → Inspect → Console. Paste any errors here.
+      render: text

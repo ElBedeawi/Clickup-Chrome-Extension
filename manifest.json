@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Video & Screenshot Uploader for ClickUp",
   "short_name": "Uploader for ClickUp",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task. By Wagih Elbedeawi.",
   "author": "Wagih Elbedeawi",
   "minimum_chrome_version": "123",

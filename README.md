@@ -1,16 +1,42 @@
-# Video & Screenshot Uploader for ClickUp
+<p align="center"><img src="icons/icon-128.png" width="96" height="96" alt="" /></p>
 
-A Chrome extension by **Wagih Elbedeawi**. Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task, all from Chrome's side panel. The official ClickUp extension can't attach videos.
+<h1 align="center">Video &amp; Screenshot Uploader for ClickUp</h1>
+
+<p align="center">
+  Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task — all from Chrome's side panel.
+</p>
+
+<p align="center">
+  <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/ElBedeawi/Clickup-Chrome-Extension?label=release"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/ElBedeawi/Clickup-Chrome-Extension"></a>
+  <a href="https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html"><img alt="Privacy: no tracking" src="https://img.shields.io/badge/privacy-no%20tracking-2e6bff"></a>
+  <a href="https://buymeacoffee.com/wagih.elbedeawi"><img alt="Buy me a coffee" src="https://img.shields.io/badge/buy%20me%20a%20coffee-%E2%98%95-ffdd00"></a>
+</p>
+
+![The side panel next to a web page, with a screen recording and an annotated screenshot attached to a new task](store/images/screenshot-1-record.png)
+
+The official ClickUp Chrome extension can't attach videos to tasks. This one can, and it adds an annotation editor for screenshots too.
 
 *Not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used only to describe compatibility.*
 
-## Install for development (unpacked)
+## Features
 
-1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and select this folder.
-3. Pin the extension and click its icon. The side panel opens.
+- **Record clip:** your entire screen, a window or a tab, at 720p–4K or native resolution, with your choice of microphone and system audio. Keeps recording with the side panel closed.
+- **Screenshots:** visible tab, a selected area or the entire screen, then draw, add text, blur sensitive details or crop.
+- **Create a task** with title, Markdown description, status, priority, plus optional assignees, due date, tags and custom fields.
+- **Add to an existing task:** paste a link or open the task and it's detected automatically, with an optional comment.
+- **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html)).
 
-Requires Chrome 123 or later. After changing the manifest, click the reload icon on the extension's card.
+## Install
+
+The Chrome Web Store listing is on its way. Until then:
+
+1. Download `video-and-screenshot-uploader-for-clickup-<version>.zip` from the [latest release](https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest) and unzip it.
+2. Open `chrome://extensions` and turn on **Developer mode** (top right).
+3. Click **Load unpacked** and select the unzipped folder.
+4. Pin the extension and click its icon. The side panel opens.
+
+Requires Chrome 123 or later.
 
 ## Set up your token
 
@@ -54,7 +80,13 @@ Chrome usually can't show the microphone prompt inside a side panel. When that h
 
 ## Buy Me a Coffee link
 
-The link is `BUY_ME_A_COFFEE_URL` in [lib/links.js](lib/links.js) (https://buymeacoffee.com/wagih.elbedeawi). It drives the compact button in the side panel footer and the "Support this extension" box in Settings; clearing it hides both. The button recreates Buy Me a Coffee's official style locally, because MV3 doesn't allow their remote widget script. The Cookie font is bundled in `fonts/` under the SIL Open Font License.
+If the extension saves you time, you can [buy me a coffee](https://buymeacoffee.com/wagih.elbedeawi) ☕.
+
+For maintainers: the link is `BUY_ME_A_COFFEE_URL` in [lib/links.js](lib/links.js) (https://buymeacoffee.com/wagih.elbedeawi). It drives the compact button in the side panel footer and the "Support this extension" box in Settings; clearing it hides both. The button recreates Buy Me a Coffee's official style locally, because MV3 doesn't allow their remote widget script. The Cookie font is bundled in `fonts/` under the SIL Open Font License.
+
+## Contributing
+
+Contributions are welcome! Start with [CONTRIBUTING.md](CONTRIBUTING.md). It covers setup (no build step: load the folder unpacked), coding guidelines and how to test. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md). For help, see [SUPPORT.md](SUPPORT.md).
 
 ## Releasing
 
@@ -63,9 +95,13 @@ node scripts/render-assets.mjs   # regenerate icons/ and store/images/ (needs Ch
 node scripts/package.mjs         # → dist/video-and-screenshot-uploader-for-clickup-<version>.zip
 ```
 
-Then follow [store/listing.md](store/listing.md). It holds every field the Chrome Web Store dashboard asks for: description, permission justifications, data-usage answers and reviewer test steps. The privacy policy is in [store/privacy-policy.html](store/privacy-policy.html). Host it somewhere public first.
+Then:
 
-Bump `version` in `manifest.json` for each upload.
+1. Bump `version` in `manifest.json` and add the release to [CHANGELOG.md](CHANGELOG.md).
+2. Tag it and attach the zip to a GitHub release.
+3. Upload the same zip to the Chrome Web Store, using [store/listing.md](store/listing.md) for every dashboard field (description, permission justifications, data-usage answers and reviewer test steps).
+
+The privacy policy lives in [docs/privacy-policy.html](docs/privacy-policy.html). It's served by GitHub Pages at <https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html>.
 
 ## Project layout
 
@@ -85,7 +121,9 @@ lib/recorder.js         getDisplayMedia + mic → MediaRecorder (WebM), pluggabl
 lib/attachments-db.js   IndexedDB: pending attachments, screenshot drafts, recording chunks
 lib/screenshot.js       tab / area capture (injected area-selection overlay)
 lib/storage.js          chrome.storage helpers
-store/                  Web Store listing, privacy policy, images and their HTML sources
+store/                  Web Store listing, images and their HTML sources
+docs/                   GitHub Pages site: landing page + privacy policy
+fonts/                  Cookie font for the Buy Me a Coffee button (SIL OFL)
 scripts/                asset renderer and zip packager (Node 22+, no dependencies)
 ```
 
@@ -95,3 +133,7 @@ No build step: edit a file, then click the reload icon on `chrome://extensions`.
 
 `GET /team`, `/team/{id}/space`, `/space/{id}/folder`, `/space/{id}/list`, `/folder/{id}/list`, `/list/{id}`, `/list/{id}/member`, `/list/{id}/field`, `/space/{id}/tag`, `/task/{id}`, `/user`.
 `POST /list/{id}/task`, `/task/{id}/attachment`, `/task/{id}/comment`.
+
+## License
+
+[MIT](LICENSE) © Wagih Elbedeawi. The bundled Cookie font (`fonts/`) is licensed under the [SIL Open Font License 1.1](fonts/OFL.txt).

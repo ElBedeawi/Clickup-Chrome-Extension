@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video &amp; Screenshot Uploader for ClickUp</title>
+  <meta name="description" content="A free Chrome extension: record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task." />
+  <link rel="icon" href="icon.png" />
+  <style>
+    :root { color-scheme: light dark; --text: #1f1f29; --muted: #5b5b6b; --bg: #fff; --accent: #2e6bff; --line: #e4e4ea; }
+    @media (prefers-color-scheme: dark) { :root { --text: #ececf1; --muted: #a3a3b3; --bg: #16161c; --accent: #7aa2ff; --line: #2e2e38; } }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 880px; margin: 0 auto; padding: 48px 20px 64px; }
+    header { display: flex; align-items: center; gap: 16px; }
+    header img { width: 64px; height: 64px; }
+    h1 { font-size: 30px; line-height: 1.2; margin: 0; }
+    .by { color: var(--muted); margin: 2px 0 0; }
+    .lead { font-size: 18px; margin: 24px 0; }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 32px; }
+    .links a { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); text-decoration: none; font-weight: 600; }
+    .links a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .links a.coffee { background: #ffdd00; border-color: #000; color: #000; }
+    img.shot { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
+    ul { padding-left: 20px; }
+    footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icon.png" alt="" />
+    <div>
+      <h1>Video &amp; Screenshot Uploader for ClickUp</h1>
+      <p class="by">A free Chrome extension by Wagih Elbedeawi</p>
+    </div>
+  </header>
+
+  <p class="lead">
+    Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task —
+    straight from Chrome’s side panel.
+  </p>
+
+  <div class="links">
+    <a class="primary" href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest">Download</a>
+    <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension">Source on GitHub</a>
+    <a href="privacy-policy.html">Privacy policy</a>
+    <a class="coffee" href="https://buymeacoffee.com/wagih.elbedeawi">☕ Buy me a coffee</a>
+  </div>
+
+  <img class="shot" src="screenshot.png" alt="The extension’s side panel next to a web page, with a screen recording attached to a new task" />
+
+  <ul>
+    <li>Record a clip of your screen, a window or a tab — pick the resolution and microphone. Keeps recording with the panel closed.</li>
+    <li>Screenshots of the visible tab, a selected area or the whole screen, with draw, text, blur and crop.</li>
+    <li>Create a task (with assignees, due date, tags and custom fields) or add to an existing one, with an optional comment.</li>
+    <li>Uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking.</li>
+  </ul>
+
+  <footer>
+    Not affiliated with, endorsed by or sponsored by ClickUp. “ClickUp” is a trademark of its owner, used only to describe compatibility.
+  </footer>
+</main>
+</body>
+</html>

@@ -3,8 +3,8 @@
 Everything the Developer Dashboard asks for, in dashboard order. Images are in `store/images/`
 (regenerate with `node scripts/render-assets.mjs`). Build the upload zip with `node scripts/package.mjs`.
 
-**Before submitting:** host `store/privacy-policy.html` publicly and put its URL in
-*Privacy practices → Privacy policy URL*.
+The privacy policy is hosted on GitHub Pages from `docs/privacy-policy.html`:
+https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html
 
 ---
 
@@ -66,7 +66,7 @@ Made by Wagih Elbedeawi. This extension is not affiliated with, endorsed by or s
 | Small promo tile (440×280) | `store/images/promo-small-440x280.png` |
 | Marquee promo tile (1400×560, optional) | `store/images/promo-marquee-1400x560.png` |
 
-**Official URL / Homepage:** your website or GitHub page (optional)
+**Official URL / Homepage:** https://github.com/ElBedeawi/Clickup-Chrome-Extension
 **Support URL:** mailto:wagih.elbedeawi+clickupvideo-chrome-ext@gmail.com
 
 ---
@@ -102,7 +102,7 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 - ☑ I do not use or transfer user data for purposes that are unrelated to my item's single purpose
 - ☑ I do not use or transfer user data to determine creditworthiness or for lending purposes
 
-**Privacy policy URL:** *(where you host `store/privacy-policy.html`)*
+**Privacy policy URL:** https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html
 
 ---
 
