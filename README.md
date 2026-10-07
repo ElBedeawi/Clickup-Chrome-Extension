@@ -54,7 +54,7 @@ Chrome usually can't show the microphone prompt inside a side panel. When that h
 
 ## Buy Me a Coffee link
 
-Set `BUY_ME_A_COFFEE_URL` in [lib/links.js](lib/links.js). Until it's set, the "☕ Buy me a coffee" link in the side panel footer and the "Support this extension" box in Settings stay hidden.
+The link is `BUY_ME_A_COFFEE_URL` in [lib/links.js](lib/links.js) (https://buymeacoffee.com/wagih.elbedeawi). It drives the compact button in the side panel footer and the "Support this extension" box in Settings; clearing it hides both. The button recreates Buy Me a Coffee's official style locally, because MV3 doesn't allow their remote widget script. The Cookie font is bundled in `fonts/` under the SIL Open Font License.
 
 ## Releasing
 
@@ -63,7 +63,7 @@ node scripts/render-assets.mjs   # regenerate icons/ and store/images/ (needs Ch
 node scripts/package.mjs         # → dist/video-and-screenshot-uploader-for-clickup-<version>.zip
 ```
 
-Then follow [store/listing.md](store/listing.md). It holds every field the Chrome Web Store dashboard asks for: description, permission justifications, data-usage answers and reviewer test steps. The privacy policy is in [store/privacy-policy.html](store/privacy-policy.html). Fill in its contact email and host it somewhere public first.
+Then follow [store/listing.md](store/listing.md). It holds every field the Chrome Web Store dashboard asks for: description, permission justifications, data-usage answers and reviewer test steps. The privacy policy is in [store/privacy-policy.html](store/privacy-policy.html). Host it somewhere public first.
 
 Bump `version` in `manifest.json` for each upload.
 

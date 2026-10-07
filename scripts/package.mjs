@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const INCLUDE = ['manifest.json', 'background.js', 'icons', 'sidepanel', 'options', 'offscreen', 'editor', 'permissions', 'lib'];
+const INCLUDE = ['manifest.json', 'background.js', 'icons', 'sidepanel', 'options', 'offscreen', 'editor', 'permissions', 'lib', 'fonts'];
 
 function walk(rel) {
   const abs = path.join(ROOT, rel);

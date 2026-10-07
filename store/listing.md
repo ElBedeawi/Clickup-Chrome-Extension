@@ -3,7 +3,7 @@
 Everything the Developer Dashboard asks for, in dashboard order. Images are in `store/images/`
 (regenerate with `node scripts/render-assets.mjs`). Build the upload zip with `node scripts/package.mjs`.
 
-**Before submitting:** set `BUY_ME_A_COFFEE_URL` in `lib/links.js` (and in the description below, or delete that line), replace `CONTACT_EMAIL` in `store/privacy-policy.html`, host that page, and put its URL in
+**Before submitting:** host `store/privacy-policy.html` publicly and put its URL in
 *Privacy practices → Privacy policy URL*.
 
 ---
@@ -50,7 +50,7 @@ GETTING STARTED
 2. Click the extension icon, open Settings (⚙) and paste it
 3. Record or capture, fill in the task, and press Create
 
-Enjoying it? You can support development with a coffee: BUY_ME_A_COFFEE_URL
+Enjoying it? You can support development with a coffee: https://buymeacoffee.com/wagih.elbedeawi
 
 Made by Wagih Elbedeawi. This extension is not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used here only to describe compatibility.
 ```
@@ -67,7 +67,7 @@ Made by Wagih Elbedeawi. This extension is not affiliated with, endorsed by or s
 | Marquee promo tile (1400×560, optional) | `store/images/promo-marquee-1400x560.png` |
 
 **Official URL / Homepage:** your website or GitHub page (optional)
-**Support URL:** a support page or `mailto:` link (optional but recommended)
+**Support URL:** mailto:wagih.elbedeawi+clickupvideo-chrome-ext@gmail.com
 
 ---
 
