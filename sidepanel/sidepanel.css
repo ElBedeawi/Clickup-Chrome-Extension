@@ -349,13 +349,19 @@ details.more[open] > summary::before { transform: rotate(90deg); }
 .tool-btn[aria-expanded="true"] { border-color: var(--accent); background: var(--info-bg); color: var(--info-text); }
 .tool-btn .ms-chevron { display: none; }
 
-@container (max-width: 330px) {
+/* Step down as the toolbar narrows. Thresholds leave room for wide system fonts (Linux/macOS UI fonts
+   are wider than Windows' Segoe UI); tests/smoke checks every width with a deliberately wide font. */
+@container (max-width: 380px) {
   .toolbar { gap: 4px; }
   .tool-btn { padding: 7px 5px; gap: 4px; font-size: 12px; }
   .tool-btn .mi { gap: 4px; }
 }
-/* Very narrow: icons only (each button has a title/aria-label). */
-@container (max-width: 250px) {
+/* Short labels: "Record clip" → "Record". */
+@container (max-width: 320px) {
+  .tool-label-extra { display: none; }
+}
+/* Icons only (each button has a title/aria-label). */
+@container (max-width: 280px) {
   .tool-label { display: none; }
 }
 

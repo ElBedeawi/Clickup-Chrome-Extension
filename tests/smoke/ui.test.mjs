@@ -53,36 +53,48 @@ await withBrowser(async ({ openPage }) => {
       }));
   }
 
-  // Regression guard: the toolbar once spilled "Screenshot" out of its button at ~340px.
-  await test('side panel: nothing overflows or gets clipped at narrow widths', async () => {
-    for (const width of [360, 340, 320, 260]) {
-      await scene(
-        openPage,
-        '/sidepanel/sidepanel.html?demo=new',
-        async (page) => {
-          const problems = JSON.parse(
-            await page.evaluate(`JSON.stringify([
-              // Sticks out past the panel's edge
-              ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .attachment, .app-header')]
-                .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
-                .map((el) => 'past edge: ' + (el.id || el.className)),
-              // Content wider than its own button (spills out, or gets cut off)
-              ...[...document.querySelectorAll('.tool-btn')]
-                .filter((el) => el.scrollWidth > el.clientWidth + 1)
-                .map((el) => 'clipped: ' + el.textContent.trim()),
-              // Visible labels must be shown in full, not truncated to "Screensh…"
-              // (icon-only mode hides them entirely, which is fine)
-              ...[...document.querySelectorAll('.tool-label')]
-                .filter((el) => el.offsetParent !== null && el.scrollWidth > el.clientWidth + 1)
-                .map((el) => 'truncated label: ' + el.textContent.trim()),
-            ])`),
-          );
-          assert.deepEqual(problems, [], `layout problems at ${width}px`);
-        },
-        { width },
-      );
-    }
-  });
+  // Regression guard: the toolbar once spilled "Screenshot" out of its button at ~340px, and
+  // labels got truncated on Linux, whose UI fonts are wider than Windows' Segoe UI. Verdana is
+  // a deliberately wide font, so it stands in for the widest system font on any OS.
+  for (const font of ['system', 'wide (Verdana)']) {
+    await test(`side panel: nothing overflows or gets clipped at narrow widths — ${font} font`, async () => {
+      for (const width of [420, 400, 380, 360, 340, 320, 300, 280, 260]) {
+        await scene(
+          openPage,
+          '/sidepanel/sidepanel.html?demo=new',
+          async (page) => {
+            if (font !== 'system') {
+              await page.evaluate(`document.head.insertAdjacentHTML('beforeend',
+                '<style>body, button, input, select, textarea { font-family: Verdana, sans-serif !important; }</style>')`);
+            }
+            await assertNoLayoutProblems(page, width);
+          },
+          { width },
+        );
+      }
+    });
+  }
+
+  async function assertNoLayoutProblems(page, width) {
+    const problems = JSON.parse(
+      await page.evaluate(`JSON.stringify([
+        // Sticks out past the panel's edge
+        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .attachment, .app-header')]
+          .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
+          .map((el) => 'past edge: ' + (el.id || el.className)),
+        // Content wider than its own button (spills out, or gets cut off)
+        ...[...document.querySelectorAll('.tool-btn')]
+          .filter((el) => el.scrollWidth > el.clientWidth + 1)
+          .map((el) => 'clipped: ' + el.textContent.trim()),
+        // Visible labels must be shown in full, not truncated to "Screensh…"
+        // (icon-only mode hides them entirely, which is fine)
+        ...[...document.querySelectorAll('.tool-label')]
+          .filter((el) => el.offsetParent !== null && el.scrollWidth > el.clientWidth + 1)
+          .map((el) => 'truncated label: ' + el.textContent.trim()),
+      ])`),
+    );
+    assert.deepEqual(problems, [], `layout problems at ${width}px`);
+  }
 
   await test('editor: annotations, blur and crop render without errors', () =>
     scene(

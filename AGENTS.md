@@ -20,7 +20,9 @@ existing ClickUp task via the ClickUp API v2, using their own personal API token
 - **Permissions are minimal and justified.** Every permission in `manifest.json` must have a justification in
   `store/listing.md` (a unit test enforces this). Adding one slows store review.
 - **Check UI changes at narrow side-panel widths** (320px and 260px), not just ~400px. Long text in grid/flex
-  items needs `min-width: 0` / `minmax(0, …)` + ellipsis. The smoke test checks for overflow and truncated labels.
+  items needs `min-width: 0` / `minmax(0, …)` + ellipsis. Leave room for **wider system fonts**: Linux/macOS UI
+  fonts are wider than Windows' Segoe UI (CI on Linux caught labels truncating at 360px). The smoke test checks
+  9 widths with both the system font and Verdana for overflow and truncated labels.
 
 ## Architecture
 
