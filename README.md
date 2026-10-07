@@ -1,6 +1,6 @@
 # Video & Screenshot Uploader for ClickUp
 
-A Chrome extension by **MacawsHub**. Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task, all from Chrome's side panel. The official ClickUp extension can't attach videos.
+A Chrome extension by **Wagih Elbedeawi**. Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task, all from Chrome's side panel. The official ClickUp extension can't attach videos.
 
 *Not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used only to describe compatibility.*
 
@@ -51,6 +51,10 @@ If the task is created but an upload or the comment fails, the task link stays o
 ### Microphone permission
 
 Chrome usually can't show the microphone prompt inside a side panel. When that happens, the panel shows **Grant microphone access**. Click it, allow the mic in the tab that opens, then record again. You only need to do this once.
+
+## Buy Me a Coffee link
+
+Set `BUY_ME_A_COFFEE_URL` in [lib/links.js](lib/links.js). Until it's set, the "☕ Buy me a coffee" link in the side panel footer and the "Support this extension" box in Settings stay hidden.
 
 ## Releasing
 

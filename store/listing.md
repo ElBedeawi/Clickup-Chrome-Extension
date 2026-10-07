@@ -3,7 +3,7 @@
 Everything the Developer Dashboard asks for, in dashboard order. Images are in `store/images/`
 (regenerate with `node scripts/render-assets.mjs`). Build the upload zip with `node scripts/package.mjs`.
 
-**Before submitting:** replace `CONTACT_EMAIL` in `store/privacy-policy.html`, host that page, and put its URL in
+**Before submitting:** set `BUY_ME_A_COFFEE_URL` in `lib/links.js` (and in the description below, or delete that line), replace `CONTACT_EMAIL` in `store/privacy-policy.html`, host that page, and put its URL in
 *Privacy practices → Privacy policy URL*.
 
 ---
@@ -13,7 +13,7 @@ Everything the Developer Dashboard asks for, in dashboard order. Images are in `
 **Name** (from manifest): Video & Screenshot Uploader for ClickUp
 
 **Summary** (from manifest, max 132 chars):
-Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task. By MacawsHub.
+Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task. By Wagih Elbedeawi.
 
 **Category:** Productivity → Workflow & Planning
 **Language:** English
@@ -42,7 +42,7 @@ CREATE OR UPDATE TASKS
 
 PRIVATE BY DESIGN
 • Uses your own ClickUp API token, stored only in your browser
-• Talks only to ClickUp's API — no MacawsHub servers, no analytics, no tracking
+• Talks only to ClickUp's API — no developer servers, no analytics, no tracking
 • Recordings and screenshots stay on your computer until you upload them
 
 GETTING STARTED
@@ -50,7 +50,9 @@ GETTING STARTED
 2. Click the extension icon, open Settings (⚙) and paste it
 3. Record or capture, fill in the task, and press Create
 
-Made by MacawsHub. This extension is not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used here only to describe compatibility.
+Enjoying it? You can support development with a coffee: BUY_ME_A_COFFEE_URL
+
+Made by Wagih Elbedeawi. This extension is not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used here only to describe compatibility.
 ```
 
 **Graphic assets**
@@ -64,8 +66,8 @@ Made by MacawsHub. This extension is not affiliated with, endorsed by or sponsor
 | Small promo tile (440×280) | `store/images/promo-small-440x280.png` |
 | Marquee promo tile (1400×560, optional) | `store/images/promo-marquee-1400x560.png` |
 
-**Official URL / Homepage:** MacawsHub website (optional)
-**Support URL:** MacawsHub support page or `mailto:` (optional but recommended)
+**Official URL / Homepage:** your website or GitHub page (optional)
+**Support URL:** a support page or `mailto:` link (optional but recommended)
 
 ---
 

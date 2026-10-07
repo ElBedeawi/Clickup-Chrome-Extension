@@ -1,5 +1,8 @@
 import { getToken, setToken, clearToken } from '../lib/storage.js';
 import { getUser } from '../lib/clickup-api.js';
+import { hydrateLinks } from '../lib/links.js';
+
+hydrateLinks();
 
 const form = document.getElementById('token-form');
 const input = document.getElementById('token');

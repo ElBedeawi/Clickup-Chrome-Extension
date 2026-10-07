@@ -13,6 +13,19 @@
     .token-row input { flex: 1; }
     #saved { margin-top: 16px; }
     #saved p { margin: 6px 0 10px; }
+    .coffee-box { margin-top: 16px; }
+    .coffee-box p { margin: 6px 0 12px; }
+    /* Buy Me a Coffee's own button colors */
+    .coffee-button {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: #ffdd00;
+      color: #000;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .coffee-button:hover { filter: brightness(0.96); }
   </style>
 </head>
 <body>
@@ -20,7 +33,7 @@
     <img src="../icons/icon-48.png" width="40" height="40" alt="" />
     <div>
       <h1>Video &amp; Screenshot Uploader for ClickUp</h1>
-      <p class="byline">by MacawsHub</p>
+      <p class="byline">by Wagih Elbedeawi</p>
     </div>
   </header>
   <p class="muted">
@@ -55,8 +68,15 @@
     </p>
   </section>
 
+  <!-- Shown once BUY_ME_A_COFFEE_URL is set in lib/links.js -->
+  <section class="card coffee-box" hidden>
+    <h2>Support this extension</h2>
+    <p class="muted small">It’s free and built in my spare time. If it saves you time, a coffee keeps it going.</p>
+    <a class="coffee-button" data-link="coffee" target="_blank" rel="noopener" hidden>☕ Buy me a coffee</a>
+  </section>
+
   <footer class="app-footer">
-    Made by <strong>MacawsHub</strong> · Not affiliated with or endorsed by ClickUp.
+    Made by <strong>Wagih Elbedeawi</strong> · Not affiliated with or endorsed by ClickUp.
     “ClickUp” is a trademark of its owner, used only to describe compatibility.
   </footer>
 

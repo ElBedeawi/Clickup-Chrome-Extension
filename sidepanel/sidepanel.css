@@ -222,6 +222,9 @@ button.danger:hover:not(:disabled) { background: var(--danger); filter: brightne
 .brand h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .byline { margin: 0; font-size: 11px; color: var(--muted); }
 
+.coffee-link { color: inherit; font-weight: 600; text-decoration: none; }
+.coffee-link:hover { color: var(--text); text-decoration: underline; }
+
 .app-footer {
   margin-top: 20px;
   padding-top: 10px;

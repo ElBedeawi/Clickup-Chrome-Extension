@@ -6,6 +6,7 @@ import { createDetails } from './details.js';
 import { createRecorderCard } from './recorder-card.js';
 import { createActionMenu } from './menu.js';
 import { icon, hydrateIcons } from '../lib/icons.js';
+import { hydrateLinks } from '../lib/links.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -85,6 +86,7 @@ let recTimer = null;
 const details = createDetails({ getListId: () => el.list.value, getSpaceId: () => el.space.value });
 
 hydrateIcons();
+hydrateLinks();
 
 // Side panels can't show the mic permission prompt; a normal extension tab can,
 // and the grant then applies to the whole extension origin (incl. the offscreen recorder).

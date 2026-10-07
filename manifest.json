@@ -3,8 +3,8 @@
   "name": "Video & Screenshot Uploader for ClickUp",
   "short_name": "Uploader for ClickUp",
   "version": "1.0.0",
-  "description": "Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task. By MacawsHub.",
-  "author": "MacawsHub",
+  "description": "Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task. By Wagih Elbedeawi.",
+  "author": "Wagih Elbedeawi",
   "minimum_chrome_version": "123",
   "icons": {
     "16": "icons/icon-16.png",
