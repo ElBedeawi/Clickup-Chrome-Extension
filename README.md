@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/ElBedeawi/Clickup-Chrome-Extension?label=release"></a>
+  <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/ElBedeawi/Clickup-Chrome-Extension/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/ElBedeawi/Clickup-Chrome-Extension"></a>
   <a href="https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html"><img alt="Privacy: no tracking" src="https://img.shields.io/badge/privacy-no%20tracking-2e6bff"></a>
   <a href="https://buymeacoffee.com/wagih.elbedeawi"><img alt="Buy me a coffee" src="https://img.shields.io/badge/buy%20me%20a%20coffee-%E2%98%95-ffdd00"></a>
@@ -91,8 +92,9 @@ Contributions are welcome! Start with [CONTRIBUTING.md](CONTRIBUTING.md). It cov
 ## Releasing
 
 ```
-node scripts/render-assets.mjs   # regenerate icons/ and store/images/ (needs Chrome or Edge)
-node scripts/package.mjs         # → dist/video-and-screenshot-uploader-for-clickup-<version>.zip
+npm test && npm run test:smoke   # unit + headless UI tests (also run in CI)
+npm run render                   # regenerate icons/ and store/images/ (needs Chrome or Edge)
+npm run package                  # → dist/video-and-screenshot-uploader-for-clickup-<version>.zip
 ```
 
 Then:
@@ -121,10 +123,13 @@ lib/recorder.js         getDisplayMedia + mic → MediaRecorder (WebM), pluggabl
 lib/attachments-db.js   IndexedDB: pending attachments, screenshot drafts, recording chunks
 lib/screenshot.js       tab / area capture (injected area-selection overlay)
 lib/storage.js          chrome.storage helpers
+lib/geometry.js         pure helpers (selection rects, due dates)
 store/                  Web Store listing, images and their HTML sources
 docs/                   GitHub Pages site: landing page + privacy policy
 fonts/                  Cookie font for the Buy Me a Coffee button (SIL OFL)
-scripts/                asset renderer and zip packager (Node 22+, no dependencies)
+scripts/                asset renderer, zip packager, shared headless-Chrome helper (Node 22+, no deps)
+tests/                  unit/ (node:test) and smoke/ (headless Chrome against demo data)
+AGENTS.md               architecture notes for contributors and AI agents (CLAUDE.md imports it)
 ```
 
 No build step: edit a file, then click the reload icon on `chrome://extensions`.

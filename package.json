@@ -1,0 +1,17 @@
+{
+  "name": "video-and-screenshot-uploader-for-clickup",
+  "private": true,
+  "description": "Chrome extension: record your screen or annotate screenshots, then attach them to a ClickUp task. Dev scripts only; the extension itself has no dependencies or build step.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"tests/unit/*.test.mjs\"",
+    "test:smoke": "node --test --test-concurrency=1 \"tests/smoke/*.test.mjs\"",
+    "test:all": "npm test && npm run test:smoke",
+    "render": "node scripts/render-assets.mjs",
+    "package": "node scripts/package.mjs"
+  }
+}

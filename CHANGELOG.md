@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- Automated tests: unit tests (`npm test`) and headless-Chrome smoke tests of the real UI (`npm run test:smoke`), run by GitHub Actions CI on every push and pull request.
+- `AGENTS.md` (imported by `CLAUDE.md`) documenting the architecture, state, messages and platform constraints.
+
 ## [0.1.0] - 2026-10-07
 
 First public release.

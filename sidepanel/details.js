@@ -1,6 +1,7 @@
 // "More details" for new tasks: assignees, due date, tags and custom fields.
 // Collapsed by default; data is only fetched once the section is opened.
 import * as api from '../lib/clickup-api.js';
+import { localDateToMs } from '../lib/geometry.js';
 
 // Custom field types we can edit here; anything else is left for ClickUp itself.
 const SUPPORTED = new Set([
@@ -165,7 +166,7 @@ export function createDetails({ getListId, getSpaceId }) {
         input.type = 'date';
         input.id = id;
         wrap.append(input);
-        read = () => (input.value ? dateToMs(input.value) : undefined);
+        read = () => (input.value ? localDateToMs(input.value) : undefined);
         clear = () => (input.value = '');
         break;
       }
@@ -286,14 +287,6 @@ export function createDetails({ getListId, getSpaceId }) {
 
   // ---- Values ----
 
-  function dateToMs(value, time) {
-    // Date-only values use local noon, so timezone differences can't shift the day.
-    const [y, m, d] = value.split('-').map(Number);
-    if (!time) return new Date(y, m - 1, d, 12, 0).getTime();
-    const [hh, mm] = time.split(':').map(Number);
-    return new Date(y, m - 1, d, hh, mm).getTime();
-  }
-
   function collect() {
     const custom_fields = [];
     const missing = [];
@@ -309,7 +302,7 @@ export function createDetails({ getListId, getSpaceId }) {
     return {
       assignees: assignees.values().map(Number),
       tags: tags.values(),
-      due_date: dueDate.value ? dateToMs(dueDate.value, dueTime.value) : undefined,
+      due_date: dueDate.value ? localDateToMs(dueDate.value, dueTime.value) : undefined,
       due_date_time: !!(dueDate.value && dueTime.value),
       custom_fields,
       missing,

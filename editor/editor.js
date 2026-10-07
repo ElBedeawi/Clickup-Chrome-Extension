@@ -4,6 +4,7 @@
 // of the original screenshot on every render. Undo/redo is just moving ops between stacks,
 // and the exported image is always full resolution. The current crop is the last crop op.
 import { getAttachment, updateAttachment, deleteAttachment, notifyAttachmentsChanged } from '../lib/attachments-db.js';
+import { normRect } from '../lib/geometry.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('canvas');
@@ -62,19 +63,6 @@ let finished = false;
 function currentCrop() {
   for (let i = state.ops.length - 1; i >= 0; i--) if (state.ops[i].type === 'crop') return state.ops[i].rect;
   return { x: 0, y: 0, w: base.width, h: base.height };
-}
-
-/** Normalizes a dragged rect (may have negative w/h), clamps it to `bounds`, rounds to pixels. */
-function normRect(r, bounds) {
-  let x1 = Math.min(r.x, r.x + r.w);
-  let y1 = Math.min(r.y, r.y + r.h);
-  let x2 = Math.max(r.x, r.x + r.w);
-  let y2 = Math.max(r.y, r.y + r.h);
-  x1 = Math.max(bounds.x, Math.round(x1));
-  y1 = Math.max(bounds.y, Math.round(y1));
-  x2 = Math.min(bounds.x + bounds.w, Math.round(x2));
-  y2 = Math.min(bounds.y + bounds.h, Math.round(y2));
-  return { x: x1, y: y1, w: Math.max(0, x2 - x1), h: Math.max(0, y2 - y1) };
 }
 
 /** Pointer event → image pixel coordinates. */

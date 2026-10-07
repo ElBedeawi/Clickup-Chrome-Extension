@@ -23,7 +23,7 @@ There's no build step and no dependencies to install. The extension is plain Jav
 
 You need Chrome 123 or later. Node.js 22+ is only needed for the helper scripts in `scripts/`.
 
-See the [README](README.md#project-layout) for how the code is organised.
+See the [README](README.md#project-layout) for how the code is organised, and [AGENTS.md](AGENTS.md) for the architecture (messages, storage, platform constraints).
 
 ## Coding guidelines
 
@@ -35,7 +35,17 @@ See the [README](README.md#project-layout) for how the code is organised.
 
 ## Testing your change
 
-There is no automated test suite yet, so please check your change by hand:
+Run the automated tests (Node 22+, no install needed):
+
+```
+npm test             # unit tests: API client, storage, editor geometry, release consistency
+npm run test:smoke   # headless Chrome: loads the real side panel, editor and settings with demo data
+```
+
+The smoke tests need Chrome or Edge (set `CHROME=/path/to/chrome` if it isn't found). CI runs both on every push and
+pull request. Add a unit test in `tests/unit/` for new logic, or a scene in `tests/smoke/ui.test.mjs` for new UI.
+
+Some things can't be automated (real ClickUp, Chrome's share picker, the microphone), so also check by hand:
 
 - [ ] Create a new task with and without attachments. Check the result in ClickUp.
 - [ ] Attach to an existing task by URL, by ID, and by opening the task (auto-detect).

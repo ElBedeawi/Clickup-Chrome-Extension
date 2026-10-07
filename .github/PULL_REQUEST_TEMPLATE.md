@@ -8,6 +8,7 @@
 
 ## Checklist
 
+- [ ] `npm test` and `npm run test:smoke` pass
 - [ ] Tested by loading the extension unpacked, with a real ClickUp token
 - [ ] Side panel UI checked at a narrow width (~320 px) and in dark mode, if the UI changed
 - [ ] No new permissions, network destinations or remote code (or they're justified below and in `store/listing.md`)
