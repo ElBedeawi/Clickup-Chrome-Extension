@@ -116,18 +116,15 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 
 ## Test instructions (for the reviewer)
 
-Reviewers need a ClickUp account to test. Create a free ClickUp workspace for review, generate a personal API
-token there (ClickUp → Settings → Apps), and paste this into the **Test instructions** field (fill in the token):
+Leave **Username** and **Password** empty: the reviewer uses their own free ClickUp account.
+Paste this into **Additional instructions** (489 of 500 characters):
 
 ```
-1. Click the extension's toolbar icon to open the side panel, then click ⚙ (Settings), paste this test API token and press Save:
-   <TEST TOKEN FOR A REVIEW-ONLY CLICKUP WORKSPACE>
-   "Test connection" should show "Connected as …".
-2. Back in the side panel, choose the Workspace, Space and List (only one exists in the test workspace, so they fill in automatically), then enter a title.
-3. Click "Screenshot" → "Visible tab". An editor tab opens; draw or blur something, then click "Attach".
-4. Click "Record clip", keep the defaults (Entire screen, 1080p) and click the red "Record Clip" button. Pick what to share in Chrome's dialog, wait a few seconds, then click "Stop" in the side panel.
-5. Click "Create task & upload". The success card links to the created task, which has both attachments.
-Optional: "More details" for assignees, due date, tags and custom fields; the "Existing task" tab to attach to a task by link and post a comment.
+No credentials needed: use your own free ClickUp account.
+1. Sign up free at https://clickup.com, then open https://app.clickup.com/settings/apps and click Generate to get a personal API token.
+2. Open the side panel (extension icon), click the gear (Settings), paste the token, Save.
+3. Pick Workspace, Space and List, then enter a title.
+4. Screenshot > Visible tab: draw or blur, then Attach.
+5. Record clip > Record Clip, pick what to share, then Stop.
+6. Click "Create task & upload".
 ```
-
-Revoke/regenerate that token after review.
