@@ -1,7 +1,8 @@
 // Minimal in-memory chrome.storage for unit tests (lib/storage.js and lib/clickup-api.js
 // only touch chrome.storage). Call installChrome() in a beforeEach to start clean.
+// `extras` are merged into the stub, e.g. { sidebarAction: {} } to look like Firefox.
 
-export function installChrome(initialLocal = {}) {
+export function installChrome(initialLocal = {}, extras = {}) {
   const listeners = [];
   const local = { ...initialLocal };
 
@@ -34,6 +35,7 @@ export function installChrome(initialLocal = {}) {
       },
       onChanged: { addListener: (fn) => listeners.push(fn) },
     },
+    ...extras,
   };
   return { local };
 }

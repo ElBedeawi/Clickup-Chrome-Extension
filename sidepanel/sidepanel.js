@@ -2,6 +2,8 @@ import * as api from '../lib/clickup-api.js';
 import { getToken, getPrefs, setPrefs, onTokenChanged } from '../lib/storage.js';
 import { listAttachments, deleteAttachment } from '../lib/attachments-db.js';
 import { captureScreenshot, openEditor } from '../lib/screenshot.js';
+import { createCaptureSession, recoverInterruptedRecording } from '../lib/capture-session.js';
+import { isSidebar, canRecordTab, browserName, keepPanelOpenHint } from '../lib/platform.js';
 import { createDetails } from './details.js';
 import { createRecorderCard } from './recorder-card.js';
 import { createActionMenu } from './menu.js';
@@ -38,6 +40,7 @@ const el = {
   recordCard: $('record-card'),
   btnRecord: $('btn-record'),
   recordHint: $('record-hint'),
+  recNote: $('rec-note'),
   commentDetails: $('comment-details'),
   commentText: $('comment-text'),
   recording: $('recording'),
@@ -89,7 +92,7 @@ hydrateIcons();
 hydrateLinks();
 
 // Side panels can't show the mic permission prompt; a normal extension tab can,
-// and the grant then applies to the whole extension origin (incl. the offscreen recorder).
+// and the grant then applies to the whole extension origin (incl. the recorder's page).
 function openMicGrant() {
   chrome.tabs.create({ url: chrome.runtime.getURL('permissions/microphone.html') });
 }
@@ -531,12 +534,108 @@ document.addEventListener('paste', (e) => {
 // Recording
 // ---------------------------------------------------------------------------
 
-// The recorder itself runs in an offscreen document (see background.js), so recording
-// continues while this panel is closed. This panel only mirrors its state and picks up
-// finished recordings from IndexedDB.
+// Where the recorder lives depends on the browser (lib/platform.js):
+//   Chrome  — in an offscreen document driven by background.js, so recording continues while
+//             this panel is closed. The panel only mirrors the state (chrome.storage.session)
+//             and picks up finished recordings from IndexedDB.
+//   Firefox — no offscreen documents, so this sidebar page hosts the recorder itself. The
+//             background still owns the state + REC badge; we report changes with `rec:state`.
+//             Closing the sidebar kills the recorder; its chunks are recovered on the next open.
+// Either way `host` answers { ok, micError? } / { ok, draftId } or { ok:false, name, error }.
 
 function sendToBackground(msg) {
   return chrome.runtime.sendMessage({ target: 'background', ...msg });
+}
+
+const backgroundHost = {
+  start: (options) => sendToBackground({ type: 'rec:start', ...options }),
+  stop: () => sendToBackground({ type: 'rec:stop' }),
+  screenshot: () => sendToBackground({ type: 'shot:screen' }),
+};
+
+function createLocalHost() {
+  const session = createCaptureSession({
+    // The user ended sharing from the browser's own indicator.
+    onFinished: ({ error }) => sendToBackground({ type: 'rec:state', recording: null, error }),
+  });
+  const failure = (err) => ({ ok: false, name: err?.name, error: err?.message ?? String(err ?? 'unknown error') });
+
+  // Sidebars in other windows ask "is anyone recording?" before recovering chunks from disk.
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.target !== 'host') return false;
+    const result = session.handle(msg);
+    if (!result) return false; // not recording: leave the channel to a sidebar that is
+    result.then(sendResponse, (err) => sendResponse(failure(err)));
+    return true;
+  });
+
+  // Closing the sidebar mid-recording kills the recorder. Best effort: clear the badge now;
+  // the chunks written so far are picked up by recoverInterruptedRecording on the next open.
+  window.addEventListener('pagehide', () => {
+    if (!session.isRecording()) return;
+    sendToBackground({
+      type: 'rec:state',
+      recording: null,
+      error: 'Recording stopped because the sidebar was closed. The part recorded so far was kept.',
+    }).catch(() => {});
+  });
+
+  return {
+    async start(options) {
+      // getDisplayMedia needs the click's transient activation, so nothing slow may run before
+      // it: read the state directly instead of asking the (possibly asleep) background.
+      const { recording } = await chrome.storage.session.get('recording');
+      if (recording) return { ok: false, error: 'Already recording.' };
+      let res;
+      try {
+        res = await session.start(options);
+      } catch (err) {
+        return failure(err);
+      }
+      await sendToBackground({ type: 'rec:state', recording: { startedAt: Date.now() } });
+      return res;
+    },
+    async stop() {
+      if (!session.isRecording()) {
+        // The recorder lives in another window's sidebar (or died with one): ask it to stop,
+        // then clear the shared state either way.
+        const res = await chrome.runtime.sendMessage({ target: 'host', type: 'rec:stop' }).catch(() => null);
+        await sendToBackground({ type: 'rec:state', recording: null });
+        return res ?? { ok: true };
+      }
+      try {
+        return await session.stop();
+      } catch (err) {
+        return failure(err);
+      } finally {
+        await sendToBackground({ type: 'rec:state', recording: null });
+      }
+    },
+    screenshot: () => session.screenshot().catch(failure),
+  };
+}
+
+const host = isSidebar() ? createLocalHost() : backgroundHost;
+if (isSidebar()) el.recNote.textContent = keepPanelOpenHint();
+
+/** Firefox: a sidebar closed mid-recording leaves its chunks on disk — turn them into an attachment. */
+async function recoverAfterSidebarClosed() {
+  try {
+    const file = await recoverInterruptedRecording({
+      hostAlive: async () => {
+        try {
+          return !!(await chrome.runtime.sendMessage({ target: 'host', type: 'rec:ping' }))?.recording;
+        } catch {
+          return false;
+        }
+      },
+    });
+    if (!file) return;
+    await sendToBackground({ type: 'rec:state', recording: null });
+    el.recordHint.textContent = 'The recording was cut short when the sidebar closed; the part recorded so far was kept.';
+  } catch (err) {
+    console.error('Recovering the interrupted recording failed', err);
+  }
 }
 
 const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -600,10 +699,10 @@ el.btnRecord.addEventListener('click', async () => {
   showError('');
   el.micNotice.hidden = true;
   el.btnRecord.disabled = true;
-  el.recordHint.textContent = 'Choose what to share in Chrome’s picker…';
+  el.recordHint.textContent = `Choose what to share in ${browserName()}’s picker…`;
   recorderCard.releaseMic(); // the level meter holds the mic; the recorder needs it
   try {
-    const res = await sendToBackground({ type: 'rec:start', ...recorderCard.options() });
+    const res = await host.start(recorderCard.options());
     el.recordHint.textContent = '';
     if (res?.ok) {
       if (res.micError) el.micNotice.hidden = false;
@@ -625,7 +724,7 @@ el.btnRecord.addEventListener('click', async () => {
 el.btnStop.addEventListener('click', async () => {
   el.btnStop.disabled = true;
   try {
-    const res = await sendToBackground({ type: 'rec:stop' });
+    const res = await host.stop();
     if (!res?.ok) showError(`Recording stopped with an error: ${res?.error || 'unknown error'}`);
   } catch (err) {
     showError(err.message);
@@ -650,9 +749,9 @@ function withTimeout(promise, ms, message) {
   ]).finally(() => clearTimeout(timer));
 }
 
-/** "Entire screen": Chrome's share picker runs in the offscreen document (see background.js). */
+/** "Entire screen": the browser's share picker, shown by whichever page hosts the recorder. */
 async function captureEntireScreen() {
-  const res = await sendToBackground({ type: 'shot:screen' });
+  const res = await host.screenshot();
   if (!res?.ok) {
     if (res?.name === 'NotAllowedError') return null; // picker cancelled
     throw new Error(res?.error || 'unknown error');
@@ -661,10 +760,11 @@ async function captureEntireScreen() {
   return { draftId: res.draftId, tab };
 }
 
+const SURFACES = canRecordTab() ? 'a screen, window or tab' : 'a screen or window';
 const HINTS = {
   visible: 'Capturing…',
   area: 'Drag over the page to select an area…',
-  screen: 'Choose a screen, window or tab in Chrome’s picker…',
+  screen: `Choose ${SURFACES} in ${browserName()}’s picker…`,
 };
 
 async function onScreenshot(mode) {
@@ -694,7 +794,7 @@ const shotMenu = createActionMenu($('tool-shot'), {
   items: [
     { value: 'visible', label: 'Visible tab', icon: 'tab' },
     { value: 'area', label: 'Select area', icon: 'crop' },
-    { value: 'screen', label: 'Entire screen', icon: 'monitor', hint: 'A screen, window or tab — Chrome asks which' },
+    { value: 'screen', label: 'Entire screen', icon: 'monitor', hint: `${SURFACES[0].toUpperCase()}${SURFACES.slice(1)} — ${browserName()} asks which` },
   ],
   trigger: () => {
     const span = document.createElement('span');
@@ -921,6 +1021,7 @@ $('no-token-options').addEventListener('click', () => chrome.runtime.openOptions
 onTokenChanged(applyToken);
 // Pick up a recording that's still running, or ones finished while the panel was closed.
 applyRecordingState((await chrome.storage.session.get('recording')).recording);
+if (isSidebar()) await recoverAfterSidebarClosed();
 await syncPending();
 await applyToken(await getToken());
 await detectTaskFromActiveTab();

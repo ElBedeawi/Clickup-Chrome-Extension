@@ -3,7 +3,7 @@
 <h1 align="center">Video &amp; Screenshot Uploader for ClickUp</h1>
 
 <p align="center">
-  Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task — all from Chrome's side panel.
+  Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task — all from the browser's side panel. For Chrome and Firefox.
 </p>
 
 <p align="center">
@@ -22,29 +22,51 @@ The official ClickUp Chrome extension can't attach videos to tasks. This one can
 
 ## Features
 
-- **Record clip:** your entire screen, a window or a tab, at 720p–4K or native resolution, with your choice of microphone and system audio. Keeps recording with the side panel closed.
+- **Record clip:** your entire screen, a window or a tab, at 720p–4K or native resolution, with your choice of microphone and system audio. Keeps recording with the side panel closed (Chrome).
 - **Screenshots:** visible tab, a selected area or the entire screen, then draw, add text, blur sensitive details or crop.
 - **Create a task** with title, Markdown description, status, priority, plus optional assignees, due date, tags and custom fields.
 - **Add to an existing task:** paste a link or open the task and it's detected automatically, with an optional comment.
 - **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html)).
 
+## Supported browsers
+
+| Browser | Status | Notes |
+|---|---|---|
+| Chrome 123+ | Supported | Also Edge, Brave, Opera, Vivaldi and other Chromium browsers (install from the Chrome Web Store). |
+| Firefox 128+ | Supported | Same UI in Firefox's sidebar. Differences: no "Current tab" source (Firefox's picker shares screens and windows), no system audio, the sidebar must stay open while recording, stop recordings from the panel (Firefox's own "Stop Sharing" button in the sharing indicator does nothing for sidebar pages), and Settings opens in a tab. |
+| Safari | Not supported | Safari has no sidebar API and needs an Xcode wrapper app. |
+
 ## Install
 
-The Chrome Web Store listing is on its way. Until then:
+The store listings are on their way. Until then:
+
+**Chrome**
 
 1. Download `video-and-screenshot-uploader-for-clickup-<version>.zip` from the [latest release](https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest) and unzip it.
 2. Open `chrome://extensions` and turn on **Developer mode** (top right).
 3. Click **Load unpacked** and select the unzipped folder.
 4. Pin the extension and click its icon. The side panel opens.
 
-Requires Chrome 123 or later.
+**Firefox**
+
+Firefox only installs add-ons signed by addons.mozilla.org. The `-firefox.zip` from a release is not signed, so
+**Install Add-on From File** on it fails with "could not be verified". Until the listing is live, either:
+
+- **Try it out (temporary):** unzip `video-and-screenshot-uploader-for-clickup-<version>-firefox.zip`, open
+  `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and pick the unzipped `manifest.json`.
+  The add-on is removed when Firefox quits.
+- **Install it for good:** have AMO sign it. In the [Developer Hub](https://addons.mozilla.org/developers/) choose
+  *Submit a New Add-on → On your own*, upload the zip, and download the signed `.xpi` it produces (usually within
+  minutes). That `.xpi` installs in any Firefox, and a public listing can be added later under the same add-on ID.
+
+Then click the extension's toolbar icon. The sidebar opens.
 
 ## Set up your token
 
 1. In ClickUp go to **Settings → Apps** (<https://app.clickup.com/settings/apps>) and copy your personal API token (`pk_...`).
 2. Click ⚙ in the side panel (or open the extension's **Options**), paste the token, then **Save**. You should see "Connected as <your name>".
 
-The token is kept in `chrome.storage.local` on this machine only. **Revoke** on the settings page removes it from the browser. To invalidate the token itself, regenerate it in ClickUp.
+The token is kept in the extension's local storage on this machine only. **Revoke** on the settings page removes it from the browser. To invalidate the token itself, regenerate it in ClickUp.
 
 ## Usage
 
@@ -58,26 +80,30 @@ The token is kept in `chrome.storage.local` on this machine only. **Revoke** on 
 
 **Attachments**: a toolbar with three tools.
 - **🎥 Record clip** opens the recording card:
-  - **Source:** Entire screen, Window or Current tab. Chrome's share picker opens on the matching pane. Tick "Share audio" there to include system or tab audio.
+  - **Source:** Entire screen, Window or Current tab. Chrome's share picker opens on the matching pane. Tick "Share audio" there to include system or tab audio. (Firefox: Entire screen or Window; its picker has no tab sharing or system audio.)
   - **Resolution:** 720p (HD), 1080p (Full HD), 1440p (2K), 2160p (4K) or Native (Auto). The capture is scaled down to fit; bitrate follows the real size.
   - **Microphone:** "No microphone" or any of your devices, with a live level meter. Until the extension has mic permission, the list shows "Default microphone" and an option to allow access.
 
-  Choices are remembered. Press **Record Clip** to start. You can **close the side panel while recording**: a red **REC** badge shows it's running. Stop with Chrome's "Stop sharing" bar, or reopen the panel and press **Stop**. Recordings are written to disk as they go, so long ones don't fill memory.
+  Choices are remembered. Press **Record Clip** to start. In Chrome you can **close the side panel while recording**: a red **REC** badge shows it's running. Stop with the browser's "Stop sharing" bar, or reopen the panel and press **Stop**. Recordings are written to disk as they go, so long ones don't fill memory.
+
+  In Firefox the recorder lives in the sidebar itself, so **keep the sidebar open while recording** (switching tabs is fine) and stop it with the panel's **Stop** button: the "Stop Sharing" button in Firefox's sharing indicator has no effect on sidebar pages. If the sidebar does get closed, the part recorded so far is kept and shows up as an attachment the next time the sidebar opens.
 - **📷 Screenshot ▾** has three modes:
   - **Visible tab** captures the visible part of the current tab.
   - **Select area** lets you drag a rectangle on the page. Esc or a plain click cancels.
-  - **Entire screen** captures a screen, window or tab via Chrome's picker.
+  - **Entire screen** captures a screen, window or tab via the browser's picker.
 
   Each screenshot opens in an editor tab with **Draw**, **Text**, **Blur** (pixelates, safe for passwords and emails) and **Crop**. There are 8 colors, 3 sizes and undo/redo (Ctrl+Z / Ctrl+Shift+Z), with shortcuts P, T, B and C. An area selection opens already cropped; undo brings back the full screenshot.
 - **📎 Attach** picks files. You can also drop or paste files (Ctrl+V) anywhere in the panel.
 - Attachments you haven't uploaded are kept, even if you close the panel, until you upload or remove them.
-- Recordings are WebM (VP9/Opus), which plays in ClickUp's viewer. ClickUp's limit is 1 GB per file.
+- Recordings are WebM (VP9/Opus in Chrome, VP8 or VP9/Opus in Firefox), which plays in ClickUp's viewer. ClickUp's limit is 1 GB per file.
 
 If the task is created but an upload or the comment fails, the task link stays on screen and the button turns into **Retry**, so nothing is duplicated. Rate-limit responses (HTTP 429) are retried automatically.
 
 ### Microphone permission
 
-Chrome usually can't show the microphone prompt inside a side panel. When that happens, the panel shows **Grant microphone access**. Click it, allow the mic in the tab that opens, then record again. You only need to do this once.
+Browsers usually can't show the microphone prompt inside a side panel. When that happens, the panel shows **Grant microphone access**. Click it, allow the mic in the tab that opens, then record again. You only need to do this once. In Firefox, tick **Remember this decision** in the prompt, otherwise it asks every time.
+
+If site access was turned off for the extension (Chrome: *Details → Site access*; Firefox: *about:addons → Permissions*), screenshots and task auto-detection stop working until it is turned back on.
 
 ## Buy Me a Coffee link
 
@@ -92,28 +118,32 @@ Contributions are welcome! Start with [CONTRIBUTING.md](CONTRIBUTING.md). It cov
 ## Releasing
 
 ```
-npm test && npm run test:smoke   # unit + headless UI tests (also run in CI)
+npm test && npm run test:smoke   # unit + headless UI tests in Chrome (also run in CI)
+npm run test:smoke:firefox       # the same UI tests in headless Firefox
 npm run render                   # regenerate icons/ and store/images/ (needs Chrome or Edge)
-npm run package                  # → dist/video-and-screenshot-uploader-for-clickup-<version>.zip
+npm run package                  # → dist/<name>-<version>.zip (Chrome), dist/<name>-<version>-firefox.zip and dist/firefox/
 ```
 
 Then:
 
 1. Bump `version` in `manifest.json` and add the release to [CHANGELOG.md](CHANGELOG.md).
-2. Tag it and attach the zip to a GitHub release.
-3. Upload the same zip to the Chrome Web Store, using [store/listing.md](store/listing.md) for every dashboard field (description, permission justifications, data-usage answers and reviewer test steps).
+2. Tag it and attach both zips to a GitHub release.
+3. Upload the Chrome zip to the Chrome Web Store, using [store/listing.md](store/listing.md) for every dashboard field (description, permission justifications, data-usage answers and reviewer test steps).
+4. Upload the Firefox zip to [addons.mozilla.org](https://addons.mozilla.org/developers/), using [store/firefox-listing.md](store/firefox-listing.md). The Firefox manifest is generated from `manifest.json` by `scripts/lib/firefox-manifest.mjs`; the add-on ID in there must never change.
 
 The privacy policy lives in [docs/privacy-policy.html](docs/privacy-policy.html). It's served by GitHub Pages at <https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html>.
 
 ## Project layout
 
 ```
-manifest.json           MV3 manifest
-background.js           opens the side panel; starts/stops the offscreen recorder, REC badge
-sidepanel/              main UI: sidepanel.js (form, uploads), recorder-card.js (Record clip),
+manifest.json           MV3 manifest (Chrome; the Firefox one is derived at package time)
+background.js           opens the side panel / sidebar; coordinates the recorder, REC badge
+sidepanel/              main UI: sidepanel.js (form, uploads, recorder host), recorder-card.js (Record clip),
                         details.js ("More details"), menu.js (dropdowns)
 lib/icons.js            inline SVG icon set
-offscreen/              hidden document that owns recordings and "Screen" screenshots
+lib/platform.js         Chrome vs Firefox feature detection and wording
+lib/capture-session.js  one recording / screen grab → IndexedDB; hosted by offscreen/ (Chrome) or the sidebar (Firefox)
+offscreen/              Chrome: hidden document that owns recordings and "Screen" screenshots
 editor/                 screenshot annotation editor (draw, text, blur, crop)
 options/                API token settings + revoke
 permissions/            one-time microphone permission page
@@ -124,15 +154,15 @@ lib/attachments-db.js   IndexedDB: pending attachments, screenshot drafts, recor
 lib/screenshot.js       tab / area capture (injected area-selection overlay)
 lib/storage.js          chrome.storage helpers
 lib/geometry.js         pure helpers (selection rects, due dates)
-store/                  Web Store listing, images and their HTML sources
+store/                  Web Store + AMO listings, images and their HTML sources
 docs/                   GitHub Pages site: landing page + privacy policy
 fonts/                  Cookie font for the Buy Me a Coffee button (SIL OFL)
-scripts/                asset renderer, zip packager, shared headless-Chrome helper (Node 22+, no deps)
-tests/                  unit/ (node:test) and smoke/ (headless Chrome against demo data)
+scripts/                asset renderer, zip packager (+ Firefox manifest), headless Chrome/Firefox helper (Node 22+, no deps)
+tests/                  unit/ (node:test) and smoke/ (headless Chrome and Firefox against demo data)
 AGENTS.md               architecture notes for contributors and AI agents (CLAUDE.md imports it)
 ```
 
-No build step: edit a file, then click the reload icon on `chrome://extensions`.
+No build step: edit a file, then click the reload icon on `chrome://extensions`. For Firefox, run `npm run package` and reload `dist/firefox/` from `about:debugging`.
 
 ## ClickUp API used
 

@@ -6,10 +6,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { recordingFileName } from '../../lib/recorder.js';
 import { screenshotFileName } from '../../lib/screenshot.js';
+import { toFirefoxManifest } from '../../scripts/lib/firefox-manifest.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const manifest = JSON.parse(read('manifest.json'));
+const firefoxManifest = toFirefoxManifest(manifest);
 
 test('manifest is MV3 with a semver version', () => {
   assert.equal(manifest.manifest_version, 3);
@@ -42,6 +44,9 @@ test('the zip packager includes every top-level runtime path', () => {
       manifest.side_panel.default_path,
       manifest.options_page,
       ...Object.values(manifest.icons),
+      ...firefoxManifest.background.scripts,
+      firefoxManifest.sidebar_action.default_panel,
+      firefoxManifest.options_ui.page,
       'offscreen/offscreen.html',
       'editor/editor.html',
       'permissions/microphone.html',
@@ -52,9 +57,11 @@ test('the zip packager includes every top-level runtime path', () => {
   for (const dir of topLevel) assert.ok(include.includes(dir), `package.mjs INCLUDE is missing ${dir}`);
 });
 
-test('the privacy policy is where the listing says it is', () => {
+test('the privacy policy is where both listings say it is', () => {
   assert.ok(fs.existsSync(path.join(ROOT, 'docs/privacy-policy.html')));
-  assert.ok(read('store/listing.md').includes('elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html'));
+  const url = 'elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html';
+  assert.ok(read('store/listing.md').includes(url));
+  assert.ok(read('store/firefox-listing.md').includes(url));
 });
 
 test('CHANGELOG mentions the manifest version', () => {

@@ -1,21 +1,33 @@
-// Clicking the toolbar icon opens the side panel instead of a popup.
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
-});
+// Runs as a service worker in Chrome and as an event page in Firefox (manifest derived by
+// scripts/lib/firefox-manifest.mjs). Classic script: no imports, nothing kept in memory.
 
-// setPanelBehavior is persisted by Chrome, but re-apply on startup to be safe.
-chrome.runtime.onStartup.addListener(() => {
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
-});
+// Clicking the toolbar icon opens the side panel (Chrome) / toggles the sidebar (Firefox) instead of a popup.
+if (chrome.sidePanel) {
+  chrome.runtime.onInstalled.addListener(() => {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
+  });
+
+  // setPanelBehavior is persisted by Chrome, but re-apply on startup to be safe.
+  chrome.runtime.onStartup.addListener(() => {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
+  });
+} else if (chrome.sidebarAction) {
+  // Registered synchronously at top level so Firefox can wake the event page for it.
+  // toggle() only works inside a user-action handler, which the toolbar click is.
+  chrome.action.onClicked.addListener(() => chrome.sidebarAction.toggle());
+}
 
 // ---------------------------------------------------------------------------
 // Recording coordinator
 //
-// The recorder runs in an offscreen document so it keeps going when the side panel
-// is closed. Recording state lives in chrome.storage.session ({ recording: { startedAt } })
-// so the side panel can pick it up whenever it (re)opens, and this worker can be
-// suspended mid-recording without losing anything.
+// On Chrome the recorder runs in an offscreen document so it keeps going when the side panel
+// is closed. On Firefox (no offscreen documents) the sidebar hosts the recorder itself and
+// reports state changes here with `rec:state`. Either way the recording state lives in
+// chrome.storage.session ({ recording: { startedAt } }) so the panel can pick it up whenever
+// it (re)opens, and this worker can be suspended mid-recording without losing anything.
 // ---------------------------------------------------------------------------
+
+const NEEDS_OFFSCREEN = new Set(['rec:start', 'rec:stop', 'shot:screen']);
 
 const OFFSCREEN_URL = 'offscreen/offscreen.html';
 let creatingOffscreen = null;
@@ -53,6 +65,9 @@ async function setRecording(recording) {
 }
 
 async function handle(msg) {
+  if (NEEDS_OFFSCREEN.has(msg.type) && !chrome.offscreen) {
+    return { ok: false, error: 'This browser has no offscreen documents; the panel hosts the recorder itself.' };
+  }
   switch (msg.type) {
     case 'rec:start': {
       const { recording } = await chrome.storage.session.get('recording');
@@ -103,6 +118,14 @@ async function handle(msg) {
       await setRecording(null);
       if (msg.error) await chrome.storage.session.set({ recordingError: msg.error });
       await closeOffscreen();
+      return { ok: true };
+    }
+
+    // Firefox: the sidebar hosts the recorder and reports { recording: { startedAt } | null, error? }
+    // so this script stays the single owner of the session state and the REC badge.
+    case 'rec:state': {
+      await setRecording(msg.recording ?? null);
+      if (msg.error) await chrome.storage.session.set({ recordingError: msg.error });
       return { ok: true };
     }
 

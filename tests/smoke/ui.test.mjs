@@ -1,6 +1,7 @@
-// Smoke tests: load the real side panel, editor and settings page in headless Chrome with
+// Smoke tests: load the real side panel, editor and settings page in a headless browser with
 // fake chrome.* / ClickUp APIs (store/src/demo-stub.js) and fail on any page error.
 // Needs Chrome or Edge (set CHROME=/path if it isn't found). Run: npm run test:smoke
+// firefox.test.mjs runs the same scenes in headless Firefox (npm run test:smoke:firefox).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { withBrowser } from '../../scripts/lib/headless.mjs';
@@ -53,15 +54,36 @@ await withBrowser(async ({ openPage }) => {
       }));
   }
 
+  // Firefox variant (&browser=firefox fakes chrome.sidebarAction): the picker can't share a
+  // single tab, and the sidebar must stay open while recording.
+  await test('side panel (Firefox): the source menu has no "Current tab"', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=menu&menu=source&browser=firefox', async (page) => {
+      const labels = JSON.parse(
+        await page.evaluate(`JSON.stringify([...document.querySelectorAll('.ms-menu:not([hidden]) li')].map((li) => li.textContent.trim()))`),
+      );
+      assert.equal(labels.length, 2, `expected Entire screen + Window, got ${JSON.stringify(labels)}`);
+      assert.ok(!labels.some((l) => /Current tab/.test(l)), `Current tab offered on Firefox: ${JSON.stringify(labels)}`);
+    }));
+
+  await test('side panel (Firefox): the mid-recording note says to keep the sidebar open', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=existing&browser=firefox', async (page) => {
+      assert.equal(await page.evaluate(`document.getElementById('recording').hidden`), false);
+      assert.match(await page.evaluate(`document.getElementById('rec-note').textContent`), /Keep this sidebar open/);
+      assert.match(await page.evaluate(`document.getElementById('tool-shot').textContent`), /Screenshot/);
+    }));
+
   // Regression guard: the toolbar once spilled "Screenshot" out of its button at ~340px, and
   // labels got truncated on Linux, whose UI fonts are wider than Windows' Segoe UI. Verdana is
   // a deliberately wide font, so it stands in for the widest system font on any OS.
+  // The Firefox mid-recording scene adds the "keep this sidebar open" note and drops a source.
+  const LAYOUT_SCENES = ['new', 'existing&browser=firefox'];
   for (const font of ['system', 'wide (Verdana)']) {
-    await test(`side panel: nothing overflows or gets clipped at narrow widths — ${font} font`, async () => {
+    for (const demo of LAYOUT_SCENES) {
+    await test(`side panel: nothing overflows or gets clipped at narrow widths — ${font} font, ${demo}`, async () => {
       for (const width of [420, 400, 380, 360, 340, 320, 300, 280, 260]) {
         await scene(
           openPage,
-          '/sidepanel/sidepanel.html?demo=new',
+          `/sidepanel/sidepanel.html?demo=${demo}`,
           async (page) => {
             if (font !== 'system') {
               await page.evaluate(`document.head.insertAdjacentHTML('beforeend',
@@ -73,13 +95,14 @@ await withBrowser(async ({ openPage }) => {
         );
       }
     });
+    }
   }
 
   async function assertNoLayoutProblems(page, width) {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .attachment, .app-header')]
+        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .attachment, .app-header, .recording, #rec-note')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)

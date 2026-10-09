@@ -5,14 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-09
+
 ### Added
 
-- Automated tests: unit tests (`npm test`) and headless-Chrome smoke tests of the real UI (`npm run test:smoke`), run by GitHub Actions CI on every push and pull request.
+- Firefox support (128+). `npm run package` now also builds `…-firefox.zip` for addons.mozilla.org and an unpacked `dist/firefox/`. Same UI in Firefox's sidebar, with these differences: no "Current tab" source and no system audio (Firefox's picker has neither), the sidebar must stay open while recording (if it is closed, the part recorded so far is kept and attached on the next open), recordings are stopped from the panel (Firefox's own "Stop Sharing" button does not reach sidebar pages), and Settings opens in a tab. The mic helper page now tells the panel directly when access was granted.
+- Automated tests: unit tests (`npm test`) and headless smoke tests of the real UI in Chrome (`npm run test:smoke`) and Firefox (`npm run test:smoke:firefox`), run by GitHub Actions CI on every push and pull request.
 - `AGENTS.md` (imported by `CLAUDE.md`) documenting the architecture, state, messages and platform constraints.
 
 ### Fixed
 
 - Attachment toolbar labels were cut off on Linux and macOS (wider system fonts) at common side-panel widths. The toolbar now steps down to compact, then short labels ("Record"), then icons only.
+- Error messages about protected pages and site access no longer assume Chrome.
 
 ## [0.1.0] - 2026-10-07
 

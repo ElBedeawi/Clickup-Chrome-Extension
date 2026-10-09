@@ -6,7 +6,7 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Ways to help
 
-- **Report a bug:** [open an issue](https://github.com/ElBedeawi/Clickup-Chrome-Extension/issues/new/choose) with steps to reproduce, your Chrome version and what you expected.
+- **Report a bug:** [open an issue](https://github.com/ElBedeawi/Clickup-Chrome-Extension/issues/new/choose) with steps to reproduce, your browser and its version, and what you expected.
 - **Suggest a feature:** open a feature request and describe the problem it solves. Check existing issues first.
 - **Send a pull request:** for anything bigger than a small fix, open an issue first so we can agree on the approach.
 - **Security problems:** please **don't** open a public issue. See [SECURITY.md](SECURITY.md).
@@ -21,16 +21,21 @@ There's no build step and no dependencies to install. The extension is plain Jav
    Use a test workspace if you can.
 4. After editing files, click the reload icon on the extension's card. Reopen the side panel to pick up changes.
 
-You need Chrome 123 or later. Node.js 22+ is only needed for the helper scripts in `scripts/`.
+**Firefox:** `manifest.json` is Chrome's; the Firefox one is generated. Run `node scripts/package.mjs`, open
+`about:debugging#/runtime/this-firefox`, **Load Temporary Add-on…** and pick `dist/firefox/manifest.json`.
+After editing files, run the packager again and click **Reload** on the add-on's card.
+
+You need Chrome 123 or later, or Firefox 128 or later. Node.js 22+ is only needed for the helper scripts in `scripts/`.
 
 See the [README](README.md#project-layout) for how the code is organised, and [AGENTS.md](AGENTS.md) for the architecture (messages, storage, platform constraints).
 
 ## Coding guidelines
 
 - **Keep it dependency-free.** No frameworks, bundlers or packages in the extension itself.
-- **No remote code.** Manifest V3 and the Chrome Web Store forbid loading scripts from other sites. Bundle any assets locally.
+- **No remote code.** Manifest V3 and both stores forbid loading scripts from other sites. Bundle any assets locally.
 - **Privacy first.** The extension talks only to `api.clickup.com`. Don't add analytics, tracking or new network destinations. If a change affects what data is handled, update [docs/privacy-policy.html](docs/privacy-policy.html) in the same PR.
-- **Ask for as few permissions as possible.** A new permission needs a strong reason and a justification in [store/listing.md](store/listing.md).
+- **Ask for as few permissions as possible.** A new permission needs a strong reason and a justification in [store/listing.md](store/listing.md) (Chrome) and [store/firefox-listing.md](store/firefox-listing.md) (Firefox); unit tests check both.
+- **Both browsers.** Use `chrome.*` (Firefox returns promises for it too). Anything browser-specific goes through [lib/platform.js](lib/platform.js), and user-facing text shouldn't say "Chrome" unless it is about Chrome.
 - **Match the surrounding code:** 2-space indentation, single quotes, semicolons, small focused modules, short comments that explain *why*.
 
 ## Testing your change
@@ -38,18 +43,22 @@ See the [README](README.md#project-layout) for how the code is organised, and [A
 Run the automated tests (Node 22+, no install needed):
 
 ```
-npm test             # unit tests: API client, storage, editor geometry, release consistency
-npm run test:smoke   # headless Chrome: loads the real side panel, editor and settings with demo data
+npm test                     # unit tests: API client, storage, editor geometry, manifests, release consistency
+npm run test:smoke           # headless Chrome: loads the real side panel, editor and settings with demo data
+npm run test:smoke:firefox   # the same scenes in headless Firefox (plus the Firefox UI variant)
 ```
 
-The smoke tests need Chrome or Edge (set `CHROME=/path/to/chrome` if it isn't found). CI runs both on every push and
-pull request. Add a unit test in `tests/unit/` for new logic, or a scene in `tests/smoke/ui.test.mjs` for new UI.
+The smoke tests need Chrome or Edge (set `CHROME=/path/to/chrome` if it isn't found) and Firefox (`FIREFOX=/path`).
+CI runs all of them on every push and pull request. Add a unit test in `tests/unit/` for new logic, or a scene in
+`tests/smoke/ui.test.mjs` for new UI (`&browser=firefox` on a demo URL renders the Firefox variant in either browser).
 
-Some things can't be automated (real ClickUp, Chrome's share picker, the microphone), so also check by hand:
+Some things can't be automated (real ClickUp, the share picker, the microphone), so also check by hand:
 
 - [ ] Create a new task with and without attachments. Check the result in ClickUp.
 - [ ] Attach to an existing task by URL, by ID, and by opening the task (auto-detect).
-- [ ] If you touched recording: record a clip, close the side panel mid-recording, then stop it from Chrome's "Stop sharing" bar.
+- [ ] If you touched recording (Chrome): record a clip, close the side panel mid-recording, then stop it from Chrome's "Stop sharing" bar.
+- [ ] If you touched recording (Firefox): record a clip and stop it from the sidebar; close the sidebar mid-recording and reopen it — the partial clip must appear; with two windows open, start recording in one and check the other's sidebar shows it as recording and can stop it. (Firefox's own "Stop Sharing" button is known not to reach sidebar pages; if it ever starts working, the recorder already handles it.)
+- [ ] If you touched the microphone flow (Firefox): grant in the helper tab with and without "Remember this decision".
 - [ ] If you touched screenshots or the editor: try all three capture modes and the draw, text, blur and crop tools.
 - [ ] If you touched the side panel UI: check it at a **narrow width (about 320 px)** as well as the default, in light and dark mode.
 - [ ] The browser console (side panel: right-click → Inspect) shows no errors.
@@ -57,7 +66,7 @@ Some things can't be automated (real ClickUp, Chrome's share picker, the microph
 ## Store images and packaging
 
 - `node scripts/render-assets.mjs` regenerates `icons/` and `store/images/` from `store/src/` with headless Chrome or Edge. Re-run it when you change the UI that appears in the screenshots.
-- `node scripts/package.mjs` builds the upload zip in `dist/`. Bump `version` in `manifest.json` for releases.
+- `node scripts/package.mjs` builds the Chrome zip, the Firefox zip and the unpacked `dist/firefox/` folder. Bump `version` in `manifest.json` for releases; the Firefox manifest inherits it.
 
 ## Pull requests
 

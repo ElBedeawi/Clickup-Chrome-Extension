@@ -1,14 +1,16 @@
 // The "Record clip" card: source, resolution and microphone pickers with a live mic level
-// meter. Choices are remembered in prefs.recorder. Recording itself runs in the offscreen
-// document; this only collects the options.
+// meter. Choices are remembered in prefs.recorder. Recording itself runs elsewhere (see
+// sidepanel.js); this only collects the options.
 import { createMenuSelect } from './menu.js';
 import { icon } from '../lib/icons.js';
 import { getPrefs, setPrefs } from '../lib/storage.js';
+import { canRecordTab } from '../lib/platform.js';
 
 const SOURCES = [
   { value: 'screen', label: 'Entire screen', icon: 'monitor' },
   { value: 'window', label: 'Window', icon: 'window' },
-  { value: 'tab', label: 'Current tab', icon: 'tab', hint: 'Chrome’s picker opens on the tab list' },
+  // Chrome only: Firefox's picker can't share a single tab.
+  { value: 'tab', label: 'Current tab', icon: 'tab', hint: 'The picker opens on the tab list' },
 ];
 
 const RESOLUTIONS = [
@@ -41,8 +43,11 @@ export async function createRecorderCard({ onGrantMic }) {
     return setPrefs({ recorder: { ...settings } });
   };
 
+  const sources = SOURCES.filter((s) => s.value !== 'tab' || canRecordTab());
+  if (!sources.some((s) => s.value === settings.source)) settings.source = DEFAULTS.source;
+
   const source = createMenuSelect($('rc-source'), {
-    items: SOURCES,
+    items: sources,
     value: settings.source,
     label: 'What to record',
     onChange: (value) => {
@@ -85,7 +90,13 @@ export async function createRecorderCard({ onGrantMic }) {
     try {
       return (await navigator.permissions.query({ name: 'microphone' })).state;
     } catch {
-      return 'prompt';
+      // No microphone permission query here: device labels only appear once access was granted.
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        return devices.some((d) => d.kind === 'audioinput' && d.label) ? 'granted' : 'prompt';
+      } catch {
+        return 'prompt';
+      }
     }
   }
 
@@ -126,6 +137,13 @@ export async function createRecorderCard({ onGrantMic }) {
       };
     })
     .catch(() => {});
+  // …and the helper tab also says so explicitly, for browsers where the permission status doesn't fire.
+  chrome.storage.session?.onChanged.addListener((changes) => {
+    if ('micGrantedAt' in changes) {
+      refreshDevices();
+      restartMeter();
+    }
+  });
 
   // ---- Level meter (only while the card is open) ----
 
@@ -147,7 +165,7 @@ export async function createRecorderCard({ onGrantMic }) {
   async function restartMeter() {
     stopMeter();
     if (!active || settings.mic === NO_MIC) return;
-    if ((await micPermission()) !== 'granted') return; // a side panel can't show the prompt
+    if ((await micPermission()) !== 'granted') return; // a side panel / sidebar can't show the prompt
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -191,7 +209,7 @@ export async function createRecorderCard({ onGrantMic }) {
       if (on) refreshDevices().then(restartMeter);
       else stopMeter();
     },
-    /** Free the microphone before the offscreen recorder needs it. */
+    /** Free the microphone before the recorder needs it. */
     releaseMic: stopMeter,
     options: () => ({
       source: settings.source,

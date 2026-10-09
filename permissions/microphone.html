@@ -12,8 +12,11 @@
 <body>
   <h1>Microphone access</h1>
   <p class="muted">
-    Chrome can't show the microphone prompt inside the side panel. Allow it here once and
+    The browser can't show the microphone prompt inside the side panel. Allow it here once and
     recordings in the side panel will include your voice.
+  </p>
+  <p id="firefox-note" class="muted" hidden>
+    In Firefox, tick <strong>Remember this decision</strong> in the prompt — otherwise it asks again every time.
   </p>
   <button id="grant">Allow microphone</button>
   <div id="status" class="notice" hidden></div>

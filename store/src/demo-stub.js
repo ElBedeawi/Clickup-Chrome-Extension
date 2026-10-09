@@ -1,9 +1,12 @@
-// Injected (by scripts/render-assets.mjs) into the real side panel / editor when the URL
+// Injected (by scripts/lib/headless.mjs) into the real side panel / editor when the URL
 // has ?demo=<scene>. Fakes the chrome.* APIs and ClickUp API with sample data, then
 // drives the UI into the state each store screenshot shows. Sets window.__ready when done.
+// Add &browser=firefox to get the Firefox (sidebar) variant of the UI (see lib/platform.js).
 // All names, emails and tasks here are fictional.
 (() => {
-  const scene = new URLSearchParams(location.search).get('demo');
+  const params = new URLSearchParams(location.search);
+  const scene = params.get('demo');
+  const browser = params.get('browser') || 'chrome';
 
   // ---------------------------------------------------------------------------
   // chrome.* stub
@@ -51,8 +54,16 @@
       getCurrent: async () => null,
       remove() {},
     },
-    runtime: { id: 'demo', sendMessage: async () => ({ ok: false }), getURL: (p) => `/${p}`, openOptionsPage() {} },
+    runtime: {
+      id: 'demo',
+      sendMessage: async () => ({ ok: false }),
+      onMessage: noopEvent,
+      getURL: (p) => `/${p}`,
+      openOptionsPage() {},
+    },
     permissions: { contains: async () => true },
+    // What lib/platform.js sniffs: Chrome has a side panel + offscreen documents, Firefox a sidebar.
+    ...(browser === 'firefox' ? { sidebarAction: { toggle() {}, open() {} } } : { sidePanel: {}, offscreen: {} }),
   };
 
   // Microphones shown in the Record clip card (no real devices in headless Chrome).

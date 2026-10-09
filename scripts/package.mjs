@@ -1,11 +1,16 @@
-// Builds the Chrome Web Store upload: dist/<name>-<version>.zip with only the files the
-// extension needs at runtime (no store/, scripts/, README…). No dependencies.
+// Builds the store uploads with only the files the extension needs at runtime (no store/,
+// scripts/, README…). No dependencies.
+//
+//   dist/<name>-<version>.zip           Chrome Web Store (manifest.json as-is)
+//   dist/<name>-<version>-firefox.zip   addons.mozilla.org (manifest derived by lib/firefox-manifest.mjs)
+//   dist/firefox/                       the same, unpacked, for about:debugging → Load Temporary Add-on
 //
 //   node scripts/package.mjs
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+import { toFirefoxManifest } from './lib/firefox-manifest.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INCLUDE = ['manifest.json', 'background.js', 'icons', 'sidepanel', 'options', 'offscreen', 'editor', 'permissions', 'lib', 'fonts'];
@@ -40,14 +45,14 @@ function dosDateTime(d) {
   return { time, date };
 }
 
-function zip(files) {
+/** @param {{ rel: string, data: Buffer }[]} entries */
+function zip(entries) {
   const locals = [];
   const centrals = [];
   let offset = 0;
   const { time, date } = dosDateTime(new Date());
 
-  for (const rel of files) {
-    const data = fs.readFileSync(path.join(ROOT, rel));
+  for (const { rel, data } of entries) {
     const deflated = zlib.deflateRawSync(data, { level: 9 });
     const stored = deflated.length >= data.length; // don't grow already-compressed files (PNG)
     const body = stored ? data : deflated;
@@ -89,17 +94,50 @@ function zip(files) {
   const centralSize = centrals.reduce((n, b) => n + b.length, 0);
   const end = Buffer.alloc(22);
   end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(files.length, 8);
-  end.writeUInt16LE(files.length, 10);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
   end.writeUInt32LE(centralSize, 12);
   end.writeUInt32LE(offset, 16);
   return Buffer.concat([...locals, ...centrals, end]);
 }
 
+let failed = false;
+
+function writeZip(out, entries) {
+  try {
+    fs.writeFileSync(out, zip(entries));
+  } catch (err) {
+    // Typically the old zip is open in Explorer or a browser's "install from file" dialog.
+    // Keep going so the other outputs are still refreshed, but fail at the end.
+    console.error(`Could not write ${path.relative(ROOT, out)}: ${err.message}. Close whatever has it open and run again.`);
+    failed = true;
+    return;
+  }
+  console.log(`${path.relative(ROOT, out)}  (${entries.length} files, ${(fs.statSync(out).size / 1024).toFixed(0)} KB)`);
+}
+
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-const files = INCLUDE.flatMap(walk);
 const slug = manifest.name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const out = path.join(ROOT, 'dist', `${slug}-${manifest.version}.zip`);
-fs.mkdirSync(path.dirname(out), { recursive: true });
-fs.writeFileSync(out, zip(files));
-console.log(`${path.relative(ROOT, out)}  (${files.length} files, ${(fs.statSync(out).size / 1024).toFixed(0)} KB)`);
+const dist = path.join(ROOT, 'dist');
+fs.mkdirSync(dist, { recursive: true });
+
+// Chrome: the repo as-is.
+const chromeEntries = INCLUDE.flatMap(walk).map((rel) => ({ rel, data: fs.readFileSync(path.join(ROOT, rel)) }));
+writeZip(path.join(dist, `${slug}-${manifest.version}.zip`), chromeEntries);
+
+// Firefox: the same files with the derived manifest, unpacked (for about:debugging) and zipped.
+const firefoxManifest = Buffer.from(`${JSON.stringify(toFirefoxManifest(manifest), null, 2)}\n`);
+const firefoxEntries = chromeEntries.map((e) => (e.rel === 'manifest.json' ? { rel: e.rel, data: firefoxManifest } : e));
+
+const unpacked = path.join(dist, 'firefox');
+fs.rmSync(unpacked, { recursive: true, force: true });
+for (const { rel, data } of firefoxEntries) {
+  const abs = path.join(unpacked, rel);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, data);
+}
+console.log(`${path.relative(ROOT, unpacked)}/  (unpacked, for about:debugging)`);
+
+writeZip(path.join(dist, `${slug}-${manifest.version}-firefox.zip`), firefoxEntries);
+
+if (failed) process.exit(1);

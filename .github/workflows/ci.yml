@@ -23,8 +23,16 @@ jobs:
 
       # Loads the real side panel, editor and settings page in headless Chrome
       # (preinstalled on GitHub's Ubuntu runners) against demo data.
-      - name: Smoke tests
+      - name: Smoke tests (Chrome)
         run: npm run test:smoke
+
+      # The same scenes in headless Firefox (also preinstalled) over WebDriver BiDi, with the
+      # Firefox UI variant. Advisory until it has been green for a few runs; then drop continue-on-error.
+      - name: Smoke tests (Firefox)
+        continue-on-error: true
+        run: |
+          firefox --version
+          npm run test:smoke:firefox
 
       - name: Build the store zip
         run: npm run package
