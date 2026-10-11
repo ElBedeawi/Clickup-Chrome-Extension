@@ -14,7 +14,8 @@
 //    never includes analytics (see privacy-policy.html).
 const CLOUDFLARE_ANALYTICS_TOKEN = '7b6aef1d18f842f992c13d8b4f8185b2';
 
-if (CLOUDFLARE_ANALYTICS_TOKEN && location.hostname !== 'localhost' && location.protocol !== 'file:') {
+// Only on the published site: local previews and the smoke-test server never report.
+if (CLOUDFLARE_ANALYTICS_TOKEN && /(^|.)macawshub.com$|.github.io$/.test(location.hostname)) {
   const s = document.createElement('script');
   s.defer = true;
   s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
