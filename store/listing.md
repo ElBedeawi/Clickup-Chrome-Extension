@@ -4,7 +4,7 @@ Everything the Developer Dashboard asks for, in dashboard order. Images are in `
 (regenerate with `node scripts/render-assets.mjs`). Build the upload zip with `node scripts/package.mjs`.
 
 The privacy policy is hosted on GitHub Pages from `docs/privacy-policy.html`:
-https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html
+https://clickup-uploader.macawshub.com/privacy-policy.html
 
 ---
 
@@ -102,7 +102,7 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 - ☑ I do not use or transfer user data for purposes that are unrelated to my item's single purpose
 - ☑ I do not use or transfer user data to determine creditworthiness or for lending purposes
 
-**Privacy policy URL:** https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html
+**Privacy policy URL:** https://clickup-uploader.macawshub.com/privacy-policy.html
 
 ---
 

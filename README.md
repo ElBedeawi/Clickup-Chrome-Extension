@@ -10,7 +10,7 @@
   <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/ElBedeawi/Clickup-Chrome-Extension?label=release"></a>
   <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/ElBedeawi/Clickup-Chrome-Extension/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/ElBedeawi/Clickup-Chrome-Extension"></a>
-  <a href="https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html"><img alt="Privacy: no tracking" src="https://img.shields.io/badge/privacy-no%20tracking-2e6bff"></a>
+  <a href="https://clickup-uploader.macawshub.com/privacy-policy.html"><img alt="Privacy: no tracking" src="https://img.shields.io/badge/privacy-no%20tracking-2e6bff"></a>
   <a href="https://buymeacoffee.com/wagih.elbedeawi"><img alt="Buy me a coffee" src="https://img.shields.io/badge/buy%20me%20a%20coffee-%E2%98%95-ffdd00"></a>
 </p>
 
@@ -32,7 +32,7 @@ The official ClickUp Chrome extension can't attach videos to tasks. This one can
 - **Screenshots:** visible tab, a selected area or the entire screen, then draw, add text, blur sensitive details or crop.
 - **Create a task** with title, Markdown description, status, priority, plus optional assignees, due date, tags and custom fields.
 - **Add to an existing task:** paste a link or open the task and it's detected automatically, with an optional comment.
-- **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html)).
+- **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://clickup-uploader.macawshub.com/privacy-policy.html)).
 
 ## Supported browsers
 
@@ -142,7 +142,7 @@ Then:
 3. Upload the Chrome zip to the Chrome Web Store, using [store/listing.md](store/listing.md) for every dashboard field (description, permission justifications, data-usage answers and reviewer test steps).
 4. Upload the Firefox zip to [addons.mozilla.org](https://addons.mozilla.org/developers/), using [store/firefox-listing.md](store/firefox-listing.md). The Firefox manifest is generated from `manifest.json` by `scripts/lib/firefox-manifest.mjs`; the add-on ID in there must never change.
 
-The privacy policy lives in [docs/privacy-policy.html](docs/privacy-policy.html). It's served by GitHub Pages at <https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html>.
+The privacy policy lives in [docs/privacy-policy.html](docs/privacy-policy.html). It's served by GitHub Pages at <https://clickup-uploader.macawshub.com/privacy-policy.html>.
 
 ## Project layout
 

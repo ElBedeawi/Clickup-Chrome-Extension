@@ -137,6 +137,6 @@ add `&browser=firefox` to fake Firefox's `chrome.sidebarAction` and get the side
 ## Links
 
 - Repo: https://github.com/ElBedeawi/Clickup-Chrome-Extension · Privacy policy (GitHub Pages from `docs/`):
-  https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html
+  https://clickup-uploader.macawshub.com/privacy-policy.html
 - Chrome Web Store item ID: `oljdlfoinjjdjddnaedcppfhgflkgpoa`
 - Firefox add-on ID (`gecko.id`): `clickup-video-upload@elbedeawi.github.io` · AMO Developer Hub: https://addons.mozilla.org/developers/

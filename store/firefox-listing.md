@@ -9,7 +9,7 @@ test (`tests/unit/firefox-manifest.test.mjs`) checks that every permission below
 
 - **Add-on ID** (`browser_specific_settings.gecko.id`, frozen after the first upload): `clickup-video-upload@elbedeawi.github.io`
 - **Minimum Firefox version:** 128.0 (ESR)
-- **Privacy policy:** https://elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html
+- **Privacy policy:** https://clickup-uploader.macawshub.com/privacy-policy.html
 - **Homepage:** https://github.com/ElBedeawi/Clickup-Chrome-Extension
 - **Support email:** wagih.elbedeawi+clickupvideo-chrome-ext@gmail.com
 - **License:** MIT
@@ -36,7 +36,7 @@ Record your screen or capture and annotate screenshots, then attach them to a ne
 
 **Categories** (AMO has no Productivity category): Photos, Music & Videos · Web Development
 **Tags:** none — AMO only offers a fixed list (ad blocker, youtube, …) and nothing fits.
-**Homepage:** https://elbedeawi.github.io/Clickup-Chrome-Extension/ · **Contributions URL:** https://buymeacoffee.com/wagih.elbedeawi
+**Homepage:** https://clickup-uploader.macawshub.com/ · **Contributions URL:** https://buymeacoffee.com/wagih.elbedeawi
 **Support website:** https://github.com/ElBedeawi/Clickup-Chrome-Extension
 
 **Images:** `store/images/store-icon-128.png` as the add-on icon and `store/images/screenshot-{1..4}-*.png` as screenshots

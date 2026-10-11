@@ -59,7 +59,7 @@ test('the zip packager includes every top-level runtime path', () => {
 
 test('the privacy policy is where both listings say it is', () => {
   assert.ok(fs.existsSync(path.join(ROOT, 'docs/privacy-policy.html')));
-  const url = 'elbedeawi.github.io/Clickup-Chrome-Extension/privacy-policy.html';
+  const url = 'clickup-uploader.macawshub.com/privacy-policy.html';
   assert.ok(read('store/listing.md').includes(url));
   assert.ok(read('store/firefox-listing.md').includes(url));
 });
