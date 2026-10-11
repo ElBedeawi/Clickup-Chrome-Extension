@@ -15,7 +15,8 @@
 const CLOUDFLARE_ANALYTICS_TOKEN = '7b6aef1d18f842f992c13d8b4f8185b2';
 
 // Only on the published site: local previews and the smoke-test server never report.
-if (CLOUDFLARE_ANALYTICS_TOKEN && /(^|.)macawshub.com$|.github.io$/.test(location.hostname)) {
+const PUBLISHED_HOSTS = ['clickup-uploader.macawshub.com', 'elbedeawi.github.io'];
+if (CLOUDFLARE_ANALYTICS_TOKEN && PUBLISHED_HOSTS.includes(location.hostname)) {
   const s = document.createElement('script');
   s.defer = true;
   s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
