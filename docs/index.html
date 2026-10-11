@@ -55,19 +55,21 @@
           Record your screen or annotate a screenshot, then file it to a ClickUp task, new or existing,
           without leaving the page. Free and open source. It talks to ClickUp and nothing else.
         </p>
-        <div class="buttons">
-          <a class="btn primary" href="https://chromewebstore.google.com/detail/oljdlfoinjjdjddnaedcppfhgflkgpoa">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5h8.2M9 14l-4.1 7.1M15 14l4.1 7.1"/></svg>
-            Add to Chrome
+        <!-- Official store badges. site.js marks <html data-browser="firefox|chromium"> so visitors see
+             their own store first; without JavaScript both badges show. -->
+        <div class="store-badges">
+          <a class="badge badge-chrome" href="https://chromewebstore.google.com/detail/oljdlfoinjjdjddnaedcppfhgflkgpoa">
+            <img src="images/chrome-web-store-badge.png" width="206" height="58" alt="Available in the Chrome Web Store" />
           </a>
-          <a class="btn primary" href="https://addons.mozilla.org/firefox/addon/video-uploader-for-clickup/">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0-8.6-11.7c1.2-.9 2.3-1.2 3.4-.8-.5 1.4-.3 2.6.6 3.5.6-1.1 1.6-1.8 2.9-2 .6 1.6 2 2.5 3.7 2.5a4.6 4.6 0 0 1-2 8.5"/><path d="M12 21c-2.8 0-5-2.2-5-5"/></svg>
-            Add to Firefox
+          <a class="badge badge-firefox" href="https://addons.mozilla.org/firefox/addon/video-uploader-for-clickup/">
+            <img src="images/get-the-addon-firefox.svg" width="172" height="60" alt="Get the add-on for Firefox" />
           </a>
         </div>
         <p class="after muted small">
-          Also works in Edge, Brave, Opera and Vivaldi. Not in the stores yet?
-          <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest">Get the latest release on GitHub</a>.
+          <span class="only-chromium">Using Firefox? <a href="https://addons.mozilla.org/firefox/addon/video-uploader-for-clickup/">Get it for Firefox</a>. </span>
+          <span class="only-firefox">Using Chrome, Edge, Brave, Opera or Vivaldi? <a href="https://chromewebstore.google.com/detail/oljdlfoinjjdjddnaedcppfhgflkgpoa">Get it from the Chrome Web Store</a>. </span>
+          <span class="only-unknown">The Chrome Web Store version also works in Edge, Brave, Opera and Vivaldi. </span>
+          Prefer the file? <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest">Latest release on GitHub</a>.
         </p>
       </div>
       <div class="hero-media">

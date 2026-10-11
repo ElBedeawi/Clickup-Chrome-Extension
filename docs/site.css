@@ -105,6 +105,21 @@ p + p { margin-top: 0.9em; }
 .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-text); }
 .btn svg { width: 18px; height: 18px; flex: none; }
 
+/* ---- Store badges (official artwork, unmodified) ---- */
+
+.store-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.badge { display: inline-block; line-height: 0; border-radius: 6px; }
+.badge img { height: 58px; width: auto; }
+.badge:hover { opacity: 0.9; }
+/* Once site.js knows the browser, lead with its store and offer the other as a line of text. */
+.only-chromium, .only-firefox, .only-unknown { display: none; }
+html:not([data-browser]) .only-unknown { display: inline; }
+html[data-browser="chromium"] .badge-firefox { display: none; }
+html[data-browser="chromium"] .only-chromium { display: inline; }
+html[data-browser="firefox"] .badge-chrome { display: none; }
+html[data-browser="firefox"] .only-firefox { display: inline; }
+html[data-browser="unknown"] .only-unknown { display: inline; }
+
 /* ---- Hero ---- */
 
 .hero { padding: 64px 0 24px; }

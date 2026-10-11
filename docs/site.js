@@ -1,4 +1,12 @@
-// Two small things for the landing page and the privacy policy.
+// Three small things for the landing page and the privacy policy.
+
+// 0. Which store badge to lead with. Firefox is the only browser that can't use the Chrome Web
+//    Store build; everything Chromium-based (Chrome, Edge, Brave, Opera, Vivaldi) can.
+{
+  const ua = navigator.userAgent;
+  const browser = /Firefox\//.test(ua) ? 'firefox' : /Chrome\/|Chromium\//.test(ua) ? 'chromium' : 'unknown';
+  document.documentElement.dataset.browser = browser;
+}
 
 // 1. Website analytics: Cloudflare Web Analytics, cookieless, no personal data. The token comes
 //    from dash.cloudflare.com → Web Analytics → the site for clickup-uploader.macawshub.com.
