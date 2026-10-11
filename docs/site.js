@@ -4,7 +4,7 @@
 //    from dash.cloudflare.com → Web Analytics → the site for clickup-uploader.macawshub.com.
 //    Leave it empty to load nothing at all. This runs on the website only; the extension itself
 //    never includes analytics (see privacy-policy.html).
-const CLOUDFLARE_ANALYTICS_TOKEN = '';
+const CLOUDFLARE_ANALYTICS_TOKEN = '7b6aef1d18f842f992c13d8b4f8185b2';
 
 if (CLOUDFLARE_ANALYTICS_TOKEN && location.hostname !== 'localhost' && location.protocol !== 'file:') {
   const s = document.createElement('script');
