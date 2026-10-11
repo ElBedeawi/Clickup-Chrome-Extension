@@ -14,6 +14,12 @@
   <a href="https://buymeacoffee.com/wagih.elbedeawi"><img alt="Buy me a coffee" src="https://img.shields.io/badge/buy%20me%20a%20coffee-%E2%98%95-ffdd00"></a>
 </p>
 
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/oljdlfoinjjdjddnaedcppfhgflkgpoa"><img alt="Add to Chrome" src="https://img.shields.io/badge/Chrome%20Web%20Store-Add%20to%20Chrome-4285F4?logo=googlechrome&logoColor=white"></a>
+  <a href="https://addons.mozilla.org/firefox/addon/video-uploader-for-clickup/"><img alt="Add to Firefox" src="https://img.shields.io/badge/Firefox%20Add--ons-Add%20to%20Firefox-FF7139?logo=firefoxbrowser&logoColor=white"></a>
+  <a href="https://clickup-uploader.macawshub.com/"><img alt="Website" src="https://img.shields.io/badge/website-clickup--uploader.macawshub.com-7b68ee"></a>
+</p>
+
 ![The side panel next to a web page, with a screen recording and an annotated screenshot attached to a new task](store/images/screenshot-1-record.png)
 
 The official ClickUp Chrome extension can't attach videos to tasks. This one can, and it adds an annotation editor for screenshots too.
@@ -38,7 +44,12 @@ The official ClickUp Chrome extension can't attach videos to tasks. This one can
 
 ## Install
 
-The store listings are on their way. Until then:
+From the stores:
+
+- **Chrome, Edge, Brave, Opera, Vivaldi:** [Chrome Web Store](https://chromewebstore.google.com/detail/oljdlfoinjjdjddnaedcppfhgflkgpoa)
+- **Firefox:** [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/video-uploader-for-clickup/)
+
+Both listings are awaiting their first store review. Until they are approved, install by hand:
 
 **Chrome**
 

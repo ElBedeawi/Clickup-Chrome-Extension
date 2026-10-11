@@ -20,7 +20,8 @@ test (`tests/unit/firefox-manifest.test.mjs`) checks that every permission below
 
 ## Describe Add-on
 
-**Name:** Video & Screenshot Uploader for ClickUp
+**Name** (AMO caps it at 30 characters, so it differs from the manifest name): Video Uploader for ClickUp
+**Listing URL:** https://addons.mozilla.org/en-US/firefox/addon/video-uploader-for-clickup/ · edit: https://addons.mozilla.org/en-US/developers/addon/video-uploader-for-clickup/edit
 
 **Summary** (max 250 chars):
 Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task from the Firefox sidebar. Uses your own ClickUp API token; talks only to ClickUp.
@@ -33,11 +34,21 @@ Record your screen or capture and annotate screenshots, then attach them to a ne
   "Keep the sidebar open while recording — a REC badge shows it's running, and Stop in the sidebar ends
   the clip. If the sidebar is closed, what was recorded so far is kept."
 
-**Categories:** Productivity · Photos, Music & Videos
-**Tags:** clickup, screen recording, screenshot, bug report, feedback
+**Categories** (AMO has no Productivity category): Photos, Music & Videos · Web Development
+**Tags:** none — AMO only offers a fixed list (ad blocker, youtube, …) and nothing fits.
+**Homepage:** https://elbedeawi.github.io/Clickup-Chrome-Extension/ · **Contributions URL:** https://buymeacoffee.com/wagih.elbedeawi
+**Support website:** https://github.com/ElBedeawi/Clickup-Chrome-Extension
 
-**Images:** reuse `store/images/screenshot-*.png` (the UI is identical) and `store/images/store-icon-128.png`
-as the add-on icon. Note: the store screenshots are rendered in Chrome; the Firefox sidebar shows the same panel.
+**Images:** `store/images/store-icon-128.png` as the add-on icon and `store/images/screenshot-{1..4}-*.png` as screenshots
+(rendered in Chrome; the Firefox sidebar shows the same panel), with these captions:
+1. Record your screen from the sidebar and attach the clip to a new ClickUp task
+2. Annotate screenshots: draw, add text, blur sensitive details and crop
+3. Optional details: assignees, due date, tags and custom fields
+4. Add to an existing task, detected from the open tab, with a comment
+
+**Privacy policy field:** AMO wants the policy text, not just a URL. Paste a summary of `docs/privacy-policy.html`
+(what is handled, that it stays on-device until uploaded, api.clickup.com as the only destination, no analytics)
+followed by the link, and one sentence explaining the data-collection declaration.
 
 ---
 

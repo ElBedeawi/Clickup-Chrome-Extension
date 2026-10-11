@@ -3,63 +3,234 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Video &amp; Screenshot Uploader for ClickUp</title>
-  <meta name="description" content="A free Chrome extension: record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task." />
+  <title>Video &amp; Screenshot Uploader for ClickUp — record, annotate, attach</title>
+  <meta name="description" content="Free, open-source Chrome and Firefox extension: record your screen or annotate a screenshot, then attach it to a new or existing ClickUp task from the browser's side panel. Uses your own ClickUp token; talks to ClickUp and nothing else." />
+  <link rel="canonical" href="https://clickup-uploader.macawshub.com/" />
   <link rel="icon" href="icon.png" />
-  <style>
-    :root { color-scheme: light dark; --text: #1f1f29; --muted: #5b5b6b; --bg: #fff; --accent: #2e6bff; --line: #e4e4ea; }
-    @media (prefers-color-scheme: dark) { :root { --text: #ececf1; --muted: #a3a3b3; --bg: #16161c; --accent: #7aa2ff; --line: #2e2e38; } }
-    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    main { max-width: 880px; margin: 0 auto; padding: 48px 20px 64px; }
-    header { display: flex; align-items: center; gap: 16px; }
-    header img { width: 64px; height: 64px; }
-    h1 { font-size: 30px; line-height: 1.2; margin: 0; }
-    .by { color: var(--muted); margin: 2px 0 0; }
-    .lead { font-size: 18px; margin: 24px 0; }
-    .links { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 32px; }
-    .links a { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); text-decoration: none; font-weight: 600; }
-    .links a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .links a.coffee { background: #ffdd00; border-color: #000; color: #000; }
-    img.shot { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
-    ul { padding-left: 20px; }
-    footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
-    a { color: var(--accent); }
-  </style>
+  <link rel="stylesheet" href="site.css" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Video &amp; Screenshot Uploader for ClickUp" />
+  <meta property="og:description" content="Record your screen or annotate a screenshot, then attach it to a ClickUp task without leaving the page. Free for Chrome and Firefox." />
+  <meta property="og:url" content="https://clickup-uploader.macawshub.com/" />
+  <meta property="og:image" content="https://clickup-uploader.macawshub.com/images/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Video & Screenshot Uploader for ClickUp",
+    "applicationCategory": "BrowserApplication",
+    "operatingSystem": "Chrome, Firefox",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "Wagih Elbedeawi" },
+    "url": "https://clickup-uploader.macawshub.com/",
+    "downloadUrl": "https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest",
+    "license": "https://opensource.org/licenses/MIT"
+  }
+  </script>
 </head>
 <body>
-<main>
-  <header>
-    <img src="icon.png" alt="" />
-    <div>
-      <h1>Video &amp; Screenshot Uploader for ClickUp</h1>
-      <p class="by">A free Chrome extension by Wagih Elbedeawi</p>
-    </div>
-  </header>
 
-  <p class="lead">
-    Record your screen or capture and annotate screenshots, then attach them to a new or existing ClickUp task —
-    straight from Chrome’s side panel.
-  </p>
-
-  <div class="links">
-    <a class="primary" href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest">Download</a>
-    <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension">Source on GitHub</a>
-    <a href="privacy-policy.html">Privacy policy</a>
-    <a class="coffee" href="https://buymeacoffee.com/wagih.elbedeawi">☕ Buy me a coffee</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <img src="icon.png" alt="" width="28" height="28" />
+      <span>Video &amp; Screenshot Uploader for ClickUp</span>
+    </a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension">GitHub</a>
+    </nav>
   </div>
+</header>
 
-  <img class="shot" src="screenshot.png" alt="The extension’s side panel next to a web page, with a screen recording attached to a new task" />
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1>Bug reports, with the video attached.</h1>
+        <p class="lead">
+          Record your screen or annotate a screenshot, then file it to a ClickUp task, new or existing,
+          without leaving the page. Free and open source. It talks to ClickUp and nothing else.
+        </p>
+        <div class="buttons">
+          <a class="btn primary" href="https://chromewebstore.google.com/detail/oljdlfoinjjdjddnaedcppfhgflkgpoa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5h8.2M9 14l-4.1 7.1M15 14l4.1 7.1"/></svg>
+            Add to Chrome
+          </a>
+          <a class="btn primary" href="https://addons.mozilla.org/firefox/addon/video-uploader-for-clickup/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0-8.6-11.7c1.2-.9 2.3-1.2 3.4-.8-.5 1.4-.3 2.6.6 3.5.6-1.1 1.6-1.8 2.9-2 .6 1.6 2 2.5 3.7 2.5a4.6 4.6 0 0 1-2 8.5"/><path d="M12 21c-2.8 0-5-2.2-5-5"/></svg>
+            Add to Firefox
+          </a>
+        </div>
+        <p class="after muted small">
+          Also works in Edge, Brave, Opera and Vivaldi. Not in the stores yet?
+          <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest">Get the latest release on GitHub</a>.
+        </p>
+      </div>
+      <div class="hero-media">
+        <img src="images/screenshot-1-record.png" width="1280" height="800"
+             alt="A web page with the extension's side panel docked on the right: a new ClickUp task with a screen recording and an annotated screenshot attached" />
+        <span class="rec" aria-hidden="true"><i></i>REC <time>00:00</time></span>
+      </div>
+    </div>
+  </section>
 
-  <ul>
-    <li>Record a clip of your screen, a window or a tab — pick the resolution and microphone. Keeps recording with the panel closed.</li>
-    <li>Screenshots of the visible tab, a selected area or the whole screen, with draw, text, blur and crop.</li>
-    <li>Create a task (with assignees, due date, tags and custom fields) or add to an existing one, with an optional comment.</li>
-    <li>Uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking.</li>
-  </ul>
+  <section class="section" id="how">
+    <div class="wrap">
+      <h2>Three steps, one panel</h2>
+      <p class="muted">Everything happens in the browser's side panel, next to the page you're looking at.</p>
+      <ol class="steps">
+        <li>
+          <div class="step-text">
+            <h3>Capture</h3>
+            <p>Record a clip of your screen, a window or a tab. Or take a screenshot of the visible tab, a dragged-out area or the whole screen, then draw, write, blur and crop before anyone sees it.</p>
+          </div>
+          <img src="images/screenshot-2-annotate.png" width="1280" height="800" loading="lazy"
+               alt="The screenshot editor with a blurred email address, a red circle around an overlapping button and a text label" />
+        </li>
+        <li>
+          <div class="step-text">
+            <h3>Describe</h3>
+            <p>Pick the list, give the task a title and a Markdown description, set status and priority. Open More details when you need assignees, a due date, tags or custom fields.</p>
+          </div>
+          <img src="images/screenshot-3-details.png" width="1280" height="800" loading="lazy"
+               alt="The side panel's More details section with assignees, due date, tags and custom fields filled in" />
+        </li>
+        <li>
+          <div class="step-text">
+            <h3>Send</h3>
+            <p>Create the task and upload in one click. Or add to an existing task: open it in ClickUp and the panel picks it up, or paste a link. Leave a comment while you're at it.</p>
+          </div>
+          <img src="images/screenshot-4-existing.png" width="1280" height="800" loading="lazy"
+               alt="The side panel attaching a screenshot and a comment to an existing task while a recording is in progress" />
+        </li>
+      </ol>
+    </div>
+  </section>
 
-  <footer>
-    Not affiliated with, endorsed by or sponsored by ClickUp. “ClickUp” is a trademark of its owner, used only to describe compatibility.
-  </footer>
+  <section class="section" id="features">
+    <div class="wrap">
+      <h2>Everything it does</h2>
+      <p class="muted">Built for people who file bugs and feedback all day: QA, support, designers, product folks.</p>
+      <dl class="features">
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"/></svg>
+          <dt><h3>Screen recording</h3></dt>
+          <dd>Your entire screen, a window or a tab, at 720p up to 4K or native size, with any microphone and system audio. Clips are written to disk as they record, so long ones don't fill memory. In Chrome you can close the panel while it records.</dd>
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <dt><h3>Screenshots you can edit</h3></dt>
+          <dd>Visible tab, a selected area or the whole screen. Draw, add text, blur sensitive details and crop, with undo, redo and keyboard shortcuts. Edits are applied to the original pixels, so the export is full resolution.</dd>
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          <dt><h3>Tasks the way your team files them</h3></dt>
+          <dd>Workspace, Space, Folder and List, each remembered. Title, Markdown description, status and priority. Assignees, due date with a time, tags and custom fields, with required ones checked before you submit.</dd>
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/></svg>
+          <dt><h3>Add to an existing task</h3></dt>
+          <dd>Open a task in ClickUp and the panel detects it. Or paste a task link, an ID or a custom ID like DEV-123. Attach files and post a comment, or just the comment.</dd>
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5 12.6 20a5 5 0 0 1-7.1-7.1l8-8a3.3 3.3 0 0 1 4.7 4.7l-8 8a1.7 1.7 0 0 1-2.4-2.4l7.3-7.3"/></svg>
+          <dt><h3>Any other files</h3></dt>
+          <dd>Pick, drag or paste files into the panel. Uploads retry on failure and wait out ClickUp's rate limits, and a created task is never duplicated on retry.</dd>
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <dt><h3>Private by design</h3></dt>
+          <dd>Your own personal API token, stored in your browser. The extension talks to api.clickup.com and nowhere else: no servers of ours, no analytics, no tracking. The code is open, under the MIT license.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="browsers">
+    <div class="wrap">
+      <h2>Chrome and Firefox</h2>
+      <p class="muted">The same panel in both. A few things differ because the browsers do.</p>
+      <table class="compare">
+        <thead>
+          <tr><th scope="col"></th><th scope="col">Chrome, Edge, Brave, Opera, Vivaldi</th><th scope="col">Firefox</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Where the panel lives</th><td>Side panel</td><td>Sidebar</td></tr>
+          <tr><th scope="row">Record a single tab</th><td>Yes</td><td>Screens and windows only</td></tr>
+          <tr><th scope="row">System audio in recordings</th><td>Yes, tick "Share audio" in the picker</td><td>Microphone only</td></tr>
+          <tr><th scope="row">Recording while the panel is closed</th><td>Yes, a REC badge shows it's running</td><td>Keep the sidebar open and stop from it. If it's closed, what was recorded is kept</td></tr>
+          <tr><th scope="row">Minimum version</th><td>Chrome 123</td><td>Firefox 128</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" id="privacy">
+    <div class="wrap">
+      <div class="privacy-box">
+        <div>
+          <h2>What it does with your data</h2>
+          <ul>
+            <li>Everything stays in your browser until you press Create or Upload.</li>
+            <li>Data goes to one place: ClickUp's API, with your own token.</li>
+            <li>The developer runs no servers for this extension and receives none of your data.</li>
+            <li>No analytics or tracking in the extension. Nothing is sold.</li>
+          </ul>
+        </div>
+        <div>
+          <p>The full <a href="privacy-policy.html">privacy policy</a> lists every piece of data the extension touches and why.</p>
+          <p class="muted small" style="margin-top:14px">This website, as opposed to the extension, counts visits with Cloudflare Web Analytics, which sets no cookies and stores no personal data.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="questions">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <div class="faq">
+        <details>
+          <summary>Is it free?</summary>
+          <p>Yes. The extension is free and open source under the MIT license. If it saves you time, there's a coffee button, but nothing is locked behind it.</p>
+        </details>
+        <details>
+          <summary>Does it work with ClickUp's free plan?</summary>
+          <p>Yes. It uses your personal API token, which every ClickUp plan provides under Settings, then Apps. Attachments are limited by ClickUp's own per-file limit.</p>
+        </details>
+        <details>
+          <summary>Why does it ask for access to all websites?</summary>
+          <p>So you can screenshot whatever page you're on, draw an area to capture on it, and have the panel notice when the current tab is a ClickUp task. Pages are only read when you click a capture button; nothing is collected in the background.</p>
+        </details>
+        <details>
+          <summary>Where do recordings go before I upload them?</summary>
+          <p>They're kept in your browser's storage, on your computer, until you upload or remove them. Unused screenshot drafts are deleted after 24 hours. Uninstalling the extension removes everything it stored.</p>
+        </details>
+        <details>
+          <summary>Is this made by ClickUp?</summary>
+          <p>No. It's an independent project by Wagih Elbedeawi, not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used here only to describe compatibility.</p>
+        </details>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension">Source on GitHub</a>
+      <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/issues">Report a problem</a>
+      <a href="privacy-policy.html">Privacy policy</a>
+      <a class="coffee" href="https://buymeacoffee.com/wagih.elbedeawi">☕ Buy me a coffee</a>
+    </nav>
+    <p>Made by Wagih Elbedeawi. Not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used only to describe compatibility.</p>
+  </div>
+</footer>
+
+<script src="site.js"></script>
 </body>
 </html>
