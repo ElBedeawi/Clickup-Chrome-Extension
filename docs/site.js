@@ -1,4 +1,4 @@
-// Three small things for the landing page and the privacy policy.
+// A few small things for the landing page and the privacy policy.
 
 // 0. Which store badge to lead with. Firefox is the only browser that can't use the Chrome Web
 //    Store build; everything Chromium-based (Chrome, Edge, Brave, Opera, Vivaldi) can.
@@ -22,6 +22,22 @@ if (CLOUDFLARE_ANALYTICS_TOKEN && PUBLISHED_HOSTS.includes(location.hostname)) {
   s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
   s.dataset.cfBeacon = JSON.stringify({ token: CLOUDFLARE_ANALYTICS_TOKEN });
   document.head.appendChild(s);
+}
+
+// 1b. Google Analytics 4 (gtag.js). Sets cookies; disclosed on the landing page and in the privacy
+//     policy's "This website" section. Leave the ID empty to load nothing.
+const GOOGLE_ANALYTICS_ID = 'G-9T6H2X1C34';
+if (GOOGLE_ANALYTICS_ID && PUBLISHED_HOSTS.includes(location.hostname)) {
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`;
+  document.head.appendChild(s);
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function gtag() {
+    window.dataLayer.push(arguments);
+  };
+  window.gtag('js', new Date());
+  window.gtag('config', GOOGLE_ANALYTICS_ID);
 }
 
 // 2. The recording indicator in the hero counts up like the real one, unless motion is reduced.
