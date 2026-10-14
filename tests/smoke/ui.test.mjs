@@ -32,6 +32,27 @@ await withBrowser(async ({ openPage }) => {
       assert.deepEqual(state, { list: '1000', attachments: 2, cardOpen: true, submit: 'Create task & upload' });
     }));
 
+  await test('side panel: the description editor has a formatting toolbar and gives Markdown', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=new', async (page) => {
+      const state = JSON.parse(
+        await page.evaluate(`(async () => {
+          const body = document.querySelector('#task-desc .rte-body');
+          const { toMarkdown } = await import('/lib/markdown.js');
+          return JSON.stringify({
+            buttons: document.querySelectorAll('#task-desc .rte-btn').length,
+            editable: body.isContentEditable,
+            markdown: toMarkdown(body),
+          });
+        })()`),
+      );
+      assert.ok(state.buttons >= 14, `expected the formatting buttons, got ${state.buttons}`);
+      assert.equal(state.editable, true);
+      assert.equal(
+        state.markdown,
+        'Steps:\n\n1. Add any item to the cart\n2. Open checkout in a 1280px-wide window\n\nThe **Pay** button slides over the summary card.',
+      );
+    }));
+
   await test('side panel: More details loads assignees, tags and custom fields', () =>
     scene(openPage, '/sidepanel/sidepanel.html?demo=details', async (page) => {
       assert.equal(await page.evaluate(`document.getElementById('more-count').textContent`), '6 set');
@@ -102,7 +123,7 @@ await withBrowser(async ({ openPage }) => {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .attachment, .app-header, .recording, #rec-note')]
+        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .attachment, .app-header, .recording, #rec-note, .rte, .rte-btn, .rte-block')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)

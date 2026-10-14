@@ -62,8 +62,9 @@
         <label for="task-title">Title <span class="req">*</span></label>
         <input id="task-title" type="text" placeholder="Task name" />
 
-        <label for="task-desc">Description <span class="muted">(Markdown)</span></label>
-        <textarea id="task-desc" rows="4" placeholder="What happened? Steps to reproduce…"></textarea>
+        <label id="task-desc-label">Description</label>
+        <!-- Rich-text editor (rich-editor.js), sent to ClickUp as Markdown -->
+        <div id="task-desc"></div>
 
         <div class="row">
           <div class="col">

@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-14
+
+### Added
+
+- Rich-text task description, like ClickUp's editor: a toolbar for headings, bold, italic, strikethrough, inline code, links, bulleted, numbered and check lists, quotes, code blocks and dividers, plus clear formatting and undo/redo. Markdown shortcuts work as you type (`- `, `1. `, `[] `, `# `, `> `, ```` ``` ````, `---`, `**bold**`, `` `code` ``), and text pasted from web pages keeps its formatting. The description is sent to ClickUp as Markdown.
+
 ## [0.2.0] - 2026-10-09
 
 ### Added
@@ -34,5 +40,7 @@ First public release.
 - Automatic retry when ClickUp rate-limits requests (HTTP 429).
 - Settings page with token test and revoke, and a Buy Me a Coffee link.
 
-[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.1...HEAD
+[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.1...v0.2.0
 [0.1.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/tag/v0.1

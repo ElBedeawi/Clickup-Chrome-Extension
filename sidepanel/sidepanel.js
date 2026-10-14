@@ -7,6 +7,7 @@ import { isSidebar, canRecordTab, browserName, keepPanelOpenHint } from '../lib/
 import { createDetails } from './details.js';
 import { createRecorderCard } from './recorder-card.js';
 import { createActionMenu } from './menu.js';
+import { createRichEditor } from './rich-editor.js';
 import { icon, hydrateIcons } from '../lib/icons.js';
 import { hydrateLinks } from '../lib/links.js';
 
@@ -86,6 +87,10 @@ const state = {
 let nextAttachmentId = 1;
 let recTimer = null;
 
+const descEditor = createRichEditor(el.desc, {
+  placeholder: 'What happened? Steps to reproduce…',
+  labelledBy: 'task-desc-label',
+});
 const details = createDetails({ getListId: () => el.list.value, getSpaceId: () => el.space.value });
 
 hydrateIcons();
@@ -889,7 +894,7 @@ async function submit() {
       if (state.mode === 'new') {
         const task = await api.createTask(el.list.value, {
           name: el.title.value.trim(),
-          markdown_description: el.desc.value.trim(),
+          markdown_description: descEditor.getMarkdown(),
           status: el.status.value || undefined,
           priority: el.priority.value ? Number(el.priority.value) : undefined,
           assignees: extra.assignees,
@@ -973,7 +978,7 @@ function resetForm() {
   state.commentError = false;
   clearAttachments();
   el.title.value = '';
-  el.desc.value = '';
+  descEditor.clear();
   el.priority.value = '';
   if (el.status.options.length) el.status.selectedIndex = 0;
   details.reset();
@@ -1002,6 +1007,7 @@ function render() {
   el.formArea.disabled = state.busy;
   // Once the target task is known, lock the tabs and task fields — edits wouldn't apply anymore.
   el.taskFields.disabled = !!state.target;
+  descEditor.setDisabled(state.busy || !!state.target); // a disabled fieldset doesn't stop contenteditable
   el.submit.disabled = recording;
 
   if (state.busy) el.submit.textContent = 'Working…';

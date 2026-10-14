@@ -35,7 +35,7 @@ CAPTURE & ANNOTATE SCREENSHOTS
 
 CREATE OR UPDATE TASKS
 • Pick Workspace → Space → Folder → List; your last choices are remembered
-• Title, Markdown description, status and priority
+• Title, rich-text description (headings, bold, lists, checklists, links, code), status and priority
 • Optional details when you need them: assignees, due date, tags and custom fields
 • Or add to an existing task: paste a link, or open the task and it's detected automatically — with an optional comment
 • Add any other files by picking, dragging or pasting them

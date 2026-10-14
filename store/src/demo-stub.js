@@ -144,10 +144,11 @@
   async function fillNewTask() {
     await until(() => $('sel-list').value === '1000' && !$('sel-status').disabled);
     setValue('task-title', 'Pay button overlaps the order summary on checkout');
-    setValue(
-      'task-desc',
-      'Steps:\n1. Add any item to the cart\n2. Open checkout in a 1280px-wide window\n\nThe **Pay** button slides over the summary card.',
-    );
+    const desc = document.querySelector('#task-desc .rte-body');
+    desc.innerHTML =
+      '<p>Steps:</p><ol><li>Add any item to the cart</li><li>Open checkout in a 1280px-wide window</li></ol>' +
+      '<p>The <b>Pay</b> button slides over the summary card.</p>';
+    desc.dispatchEvent(new Event('input', { bubbles: true }));
     setValue('sel-priority', '2');
   }
 

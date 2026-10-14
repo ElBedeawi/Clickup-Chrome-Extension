@@ -30,7 +30,7 @@ The official ClickUp Chrome extension can't attach videos to tasks. This one can
 
 - **Record clip:** your entire screen, a window or a tab, at 720p–4K or native resolution, with your choice of microphone and system audio. Keeps recording with the side panel closed (Chrome).
 - **Screenshots:** visible tab, a selected area or the entire screen, then draw, add text, blur sensitive details or crop.
-- **Create a task** with title, Markdown description, status, priority, plus optional assignees, due date, tags and custom fields.
+- **Create a task** with title, a rich-text description (headings, bold, lists, checklists, links, code), status, priority, plus optional assignees, due date, tags and custom fields.
 - **Add to an existing task:** paste a link or open the task and it's detected automatically, with an optional comment.
 - **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://clickup-uploader.macawshub.com/privacy-policy.html)).
 
@@ -81,7 +81,7 @@ The token is kept in the extension's local storage on this machine only. **Revok
 
 ## Usage
 
-**New task:** pick Workspace → Space → Folder (or "No folder") → List, enter a title and an optional Markdown description, status and priority. Then press **Create task & upload**.
+**New task:** pick Workspace → Space → Folder (or "No folder") → List, enter a title and an optional description (format it with the toolbar or Markdown shortcuts like `- ` and `**bold**`), status and priority. Then press **Create task & upload**.
 - The panel opens on the list you used last.
 - Each dropdown remembers your last pick inside each parent, and picks the only option automatically when there is just one.
 - **More details** (collapsed by default) adds assignees, due date (optionally with a time), tags and custom fields. A badge shows how many are set.
