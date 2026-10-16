@@ -43,7 +43,7 @@ Record your screen or capture and annotate screenshots, then attach them to a ne
 (rendered in Chrome; the Firefox sidebar shows the same panel), with these captions:
 1. Record your screen from the sidebar and attach the clip to a new ClickUp task
 2. Annotate screenshots: draw, add text, blur sensitive details and crop
-3. Optional details: assignees, due date, tags and custom fields
+3. Format the description like in ClickUp, plus optional assignees, due date, tags and custom fields
 4. Add to an existing task, detected from the open tab, with a comment
 
 **Privacy policy field:** AMO wants the policy text, not just a URL. Paste a summary of `docs/privacy-policy.html`
