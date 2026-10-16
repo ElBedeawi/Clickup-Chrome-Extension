@@ -59,6 +59,8 @@ Some things can't be automated (real ClickUp, the share picker, the microphone),
 - [ ] If you touched recording (Chrome): record a clip, close the side panel mid-recording, then stop it from Chrome's "Stop sharing" bar.
 - [ ] If you touched recording (Firefox): record a clip and stop it from the sidebar; close the sidebar mid-recording and reopen it — the partial clip must appear; with two windows open, start recording in one and check the other's sidebar shows it as recording and can stop it. (Firefox's own "Stop Sharing" button is known not to reach sidebar pages; if it ever starts working, the recorder already handles it.)
 - [ ] If you touched the microphone flow (Firefox): grant in the helper tab with and without "Remember this decision".
+- [ ] If you touched the camera bubble (Chrome): pick a camera, check the preview, record the entire screen, close the panel mid-recording, reopen it and move/resize the bubble, then stop from the "Stop sharing" bar. The clip must stay smooth with the bubble mirrored and where the stage showed it. Also deny the camera once: the clip records without it and the panel offers to grant access.
+- [ ] If you touched the camera bubble (Firefox): grant the camera in the helper tab, record with the bubble, move it from the sidebar and from a second window's sidebar, and close the sidebar mid-recording (the partial clip must appear).
 - [ ] If you touched screenshots or the editor: try all three capture modes and the draw, text, blur and crop tools.
 - [ ] If you touched the side panel UI: check it at a **narrow width (about 320 px)** as well as the default, in light and dark mode.
 - [ ] The browser console (side panel: right-click → Inspect) shows no errors.

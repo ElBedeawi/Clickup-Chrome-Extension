@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>compositor smoke</title>
+</head>
+<body>
+  <!-- Runs lib/compositor.js on two canvas streams standing in for the screen (blue) and the
+       camera (orange), records the result with MediaRecorder and reports pixel samples.
+       Driven by tests/smoke/ui.test.mjs. -->
+  <script type="module">
+    import { createCompositor } from '/lib/compositor.js';
+
+    function fakeSource(w, h, color) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const x = c.getContext('2d');
+      const paint = () => {
+        x.fillStyle = color;
+        x.fillRect(0, 0, w, h);
+      };
+      paint();
+      setInterval(paint, 50); // keep frames flowing
+      return c.captureStream(20);
+    }
+
+    try {
+      const displayStream = fakeSource(640, 360, '#2040c0');
+      const cameraStream = fakeSource(320, 240, '#e0a020');
+      const comp = createCompositor({ displayStream, cameraStream, layout: { x: 1, y: 1, size: 'md' }, fps: 30 });
+      await comp.ready;
+
+      // Prove frames really reach the output track (not just the canvas): play it in a <video>.
+      const sink = document.createElement('video');
+      sink.muted = true;
+      sink.srcObject = comp.stream;
+      await sink.play();
+      let framesSeen = 0;
+      if (sink.requestVideoFrameCallback) {
+        const count = () => {
+          framesSeen++;
+          sink.requestVideoFrameCallback(count);
+        };
+        sink.requestVideoFrameCallback(count);
+      } else framesSeen = -1; // not measurable here
+
+      const chunks = [];
+      const rec = new MediaRecorder(comp.stream, { mimeType: 'video/webm' });
+      rec.ondataavailable = (e) => chunks.push(e.data);
+      rec.start(100);
+      await new Promise((r) => setTimeout(r, 1200));
+      comp.setLayout({ x: 0, y: 0 }); // move the bubble to the top-left
+      await new Promise((r) => setTimeout(r, 300));
+      rec.stop();
+      await new Promise((r) => (rec.onstop = r));
+
+      const ctx = comp.canvas.getContext('2d');
+      const px = (x, y) => [...ctx.getImageData(x, y, 1, 1).data].slice(0, 3);
+      const { width: w, height: h } = comp.canvas;
+      window.__result = {
+        w,
+        h,
+        sinkWidth: sink.videoWidth,
+        framesSeen,
+        bytes: chunks.reduce((n, b) => n + b.size, 0),
+        centre: px(Math.round(w / 2), Math.round(h / 2)), // screen
+        topLeftBubble: px(Math.round(0.02 * h + 0.1 * h), Math.round(0.02 * h + 0.1 * h)), // bubble centre after the move
+        bottomRight: px(w - 5, h - 5), // screen again (the bubble moved away)
+      };
+      comp.stop();
+    } catch (err) {
+      console.error(err);
+    }
+    window.__ready = true;
+  </script>
+</body>
+</html>

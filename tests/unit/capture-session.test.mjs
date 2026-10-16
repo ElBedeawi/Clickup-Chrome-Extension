@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCaptureSession, recoverInterruptedRecording } from '../../lib/capture-session.js';
 
-function fakeRecorder({ micError } = {}) {
+function fakeRecorder({ micError, cameraError } = {}) {
   let recording = false;
   const recorder = {
     calls: [],
@@ -13,7 +13,11 @@ function fakeRecorder({ micError } = {}) {
     async start(opts) {
       recorder.calls.push(['start', opts]);
       recording = true;
-      return { micError };
+      return { micError, cameraError };
+    },
+    setBubble(bubble) {
+      recorder.calls.push(['setBubble', bubble]);
+      return recording;
     },
     async stop() {
       recorder.calls.push(['stop']);
@@ -50,11 +54,38 @@ test('start passes only the recorder options through and reports a mic failure b
   const save = fakeSave();
   const session = createCaptureSession({ recorder, save, sink: fakeSink(save) });
 
-  const res = await session.start({ type: 'rec:start', target: 'host', source: 'window', resolution: '720', micDeviceId: 'mic-1' });
+  const bubble = { x: 1, y: 1, size: 'sm' };
+  const res = await session.start({
+    type: 'rec:start',
+    target: 'host',
+    source: 'window',
+    resolution: '720',
+    micDeviceId: 'mic-1',
+    cameraDeviceId: 'cam-1',
+    bubble,
+  });
 
-  assert.deepEqual(res, { ok: true, micError: 'NotAllowedError' });
-  assert.deepEqual(recorder.calls, [['start', { source: 'window', resolution: '720', micDeviceId: 'mic-1' }]]);
+  assert.deepEqual(res, { ok: true, micError: 'NotAllowedError', cameraError: undefined, camera: true });
+  assert.deepEqual(recorder.calls, [
+    ['start', { source: 'window', resolution: '720', micDeviceId: 'mic-1', cameraDeviceId: 'cam-1', bubble }],
+  ]);
   assert.equal(session.isRecording(), true);
+});
+
+test('start reports a camera failure by name and that the clip has no bubble', async () => {
+  const recorder = fakeRecorder({ cameraError: Object.assign(new Error('busy'), { name: 'NotReadableError' }) });
+  const save = fakeSave();
+  const session = createCaptureSession({ recorder, save, sink: fakeSink(save) });
+
+  const res = await session.start({ source: 'screen', cameraDeviceId: 'cam-1' });
+
+  assert.deepEqual(res, { ok: true, micError: undefined, cameraError: 'NotReadableError', camera: false });
+});
+
+test('without a camera the result says so', async () => {
+  const save = fakeSave();
+  const session = createCaptureSession({ recorder: fakeRecorder(), save, sink: fakeSink(save) });
+  assert.equal((await session.start({ source: 'screen', cameraDeviceId: null })).camera, false);
 });
 
 test('stop saves the recording as a pending attachment, then releases the chunks', async () => {
@@ -130,8 +161,15 @@ test('handle routes messages and answers rec:ping only while recording', async (
   const session = createCaptureSession({ recorder: fakeRecorder(), save, sink: fakeSink(save) });
 
   assert.equal(session.handle({ type: 'rec:ping' }), null, 'an idle host must leave the channel to a recording one');
-  assert.deepEqual(await session.handle({ type: 'rec:start', source: 'screen' }), { ok: true, micError: undefined });
+  assert.equal(session.handle({ type: 'rec:bubble', bubble: { x: 0 } }), null, 'same for moving a bubble it does not own');
+  assert.deepEqual(await session.handle({ type: 'rec:start', source: 'screen' }), {
+    ok: true,
+    micError: undefined,
+    cameraError: undefined,
+    camera: false,
+  });
   assert.deepEqual(await session.handle({ type: 'rec:ping' }), { ok: true, recording: true });
+  assert.deepEqual(await session.handle({ type: 'rec:bubble', bubble: { x: 0.5, y: 0.5 } }), { ok: true });
   assert.deepEqual(await session.handle({ type: 'rec:stop' }), { ok: true });
   assert.deepEqual(await session.handle({ type: 'nope' }), { ok: false, error: 'Unknown message nope' });
 });

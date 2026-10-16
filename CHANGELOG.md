@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-16
+
+### Added
+
+- **Open in a new tab** button on recordings and screenshots, for a full-size look (and a Download button) before uploading. The side panel can't go fullscreen, so the fullscreen control on a clip preview now opens that tab instead of doing nothing.
+- Optional **camera bubble** in recordings: pick a camera in the Record clip card and you appear in the clip as a round, mirrored bubble. Drag it around a small preview of the recording (it snaps to the corners), choose S / M / L, and move or resize it while the recording runs. Like the microphone, a camera that can't be used doesn't stop the recording. Camera access is granted once in a helper tab, as the microphone is.
+
 ## [0.3.0] - 2026-10-14
 
 ### Added
@@ -40,7 +47,8 @@ First public release.
 - Automatic retry when ClickUp rate-limits requests (HTTP 429).
 - Settings page with token test and revoke, and a Buy Me a Coffee link.
 
-[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.1...v0.2.0
 [0.1.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/tag/v0.1

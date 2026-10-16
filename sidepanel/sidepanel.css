@@ -726,3 +726,69 @@ body.dragging::after {
 .success-card h2 { font-size: 15px; }
 .success-card a { color: inherit; font-weight: 600; }
 .success-card .muted { color: inherit; opacity: 0.8; }
+
+/* ---- Camera bubble control (bubble-stage.js) ---- */
+.bubble-ctl { display: grid; gap: 6px; min-width: 0; }
+.bubble-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 100% 33.4%,
+    linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 25% 100%,
+    var(--surface);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+.bubble-dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  background: var(--accent);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: grab;
+}
+.bubble-dot.dragging { cursor: grabbing; }
+.bubble-dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bubble-dot video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.bubble-dot-icon { display: grid; }
+.bubble-dot video:not([hidden]) + .bubble-dot-icon { display: none; }
+.bubble-size { display: flex; gap: 4px; }
+.bubble-size button {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.bubble-size button:hover:not(:disabled) { background: var(--surface); }
+.bubble-size button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--surface); }
+.bubble-ctl.disabled { opacity: 0.6; }
+.rec-bubble { flex-basis: 100%; min-width: 0; display: grid; gap: 4px; }
+.rec-bubble > span { font-size: 12px; color: var(--muted); }
+/* In the recording strip the control is secondary: a small stage with the sizes beside it. */
+.rec-bubble .bubble-ctl { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.rec-bubble .bubble-stage { max-width: 200px; }
+.rec-bubble .bubble-size { flex-direction: column; }
+.rec-bubble .bubble-size button { width: 32px; flex: none; }
+.attachment .open {
+  display: grid;
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 0 4px;
+  line-height: 1;
+}
+.attachment .open:hover:not(:disabled) { background: none; color: var(--accent); }

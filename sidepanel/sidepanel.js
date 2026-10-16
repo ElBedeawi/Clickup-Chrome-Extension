@@ -6,6 +6,7 @@ import { createCaptureSession, recoverInterruptedRecording } from '../lib/captur
 import { isSidebar, canRecordTab, browserName, keepPanelOpenHint } from '../lib/platform.js';
 import { createDetails } from './details.js';
 import { createRecorderCard } from './recorder-card.js';
+import { createBubbleStage } from './bubble-stage.js';
 import { createActionMenu } from './menu.js';
 import { createRichEditor } from './rich-editor.js';
 import { icon, hydrateIcons } from '../lib/icons.js';
@@ -47,8 +48,11 @@ const el = {
   recording: $('recording'),
   recTime: $('rec-time'),
   btnStop: $('btn-stop'),
+  recBubble: $('rec-bubble'),
   micNotice: $('mic-notice'),
   btnGrantMic: $('btn-grant-mic'),
+  cameraNotice: $('camera-notice'),
+  btnGrantCamera: $('btn-grant-camera'),
   btnAddFiles: $('btn-add-files'),
   fileInput: $('file-input'),
   attachmentList: $('attachment-list'),
@@ -77,7 +81,7 @@ const state = {
    * @type {{ id: number, file: File, url: string, dbId?: number, status: 'pending'|'uploading'|'done'|'failed', progress: number, error?: string }[]}
    */
   attachments: [],
-  /** Mirrors chrome.storage.session `recording`: { startedAt } while the offscreen recorder runs. */
+  /** Mirrors chrome.storage.session `recording`: { startedAt, camera } while the recorder runs. */
   recording: null,
   /** Existing-task comment: posted once per submit, even across retries. */
   commentPosted: false,
@@ -96,13 +100,16 @@ const details = createDetails({ getListId: () => el.list.value, getSpaceId: () =
 hydrateIcons();
 hydrateLinks();
 
-// Side panels can't show the mic permission prompt; a normal extension tab can,
+// Side panels can't show the mic/camera permission prompt; a normal extension tab can,
 // and the grant then applies to the whole extension origin (incl. the recorder's page).
-function openMicGrant() {
-  chrome.tabs.create({ url: chrome.runtime.getURL('permissions/microphone.html') });
+function openGrant(device) {
+  chrome.tabs.create({ url: chrome.runtime.getURL(`permissions/microphone.html?device=${device}`) });
 }
 
-const recorderCard = await createRecorderCard({ onGrantMic: openMicGrant });
+const recorderCard = await createRecorderCard({
+  onGrantMic: () => openGrant('microphone'),
+  onGrantCamera: () => openGrant('camera'),
+});
 
 // ---------------------------------------------------------------------------
 // Generic UI helpers
@@ -407,6 +414,17 @@ function addFiles(files) {
   render();
 }
 
+/**
+ * Shows an attachment full size in a normal tab: the side panel can't go fullscreen (the
+ * browser refuses the Fullscreen API there), picture-in-picture is all it gets. Recordings and
+ * screenshots are read back from IndexedDB; a file added from disk is opened by its blob URL,
+ * which only lives as long as this panel does.
+ */
+function openInTab(a) {
+  const url = a.dbId ? chrome.runtime.getURL(`viewer/viewer.html?id=${a.dbId}`) : a.url;
+  chrome.tabs.create({ url }).catch((err) => showError(`Could not open the attachment: ${err.message}`));
+}
+
 function forgetPending(a) {
   if (a.dbId) deleteAttachment(a.dbId).catch(console.error);
 }
@@ -450,7 +468,16 @@ function renderAttachments() {
       remove.title = 'Remove';
       remove.disabled = state.busy || a.status === 'done';
       remove.addEventListener('click', () => removeAttachment(a.id));
-      meta.append(name, size, remove);
+      const preview = a.file.type.startsWith('video/') || a.file.type.startsWith('image/');
+      if (preview) {
+        const open = document.createElement('button');
+        open.className = 'open';
+        open.innerHTML = icon('external', 14);
+        open.title = 'Open in a new tab';
+        open.setAttribute('aria-label', 'Open in a new tab');
+        open.addEventListener('click', () => openInTab(a));
+        meta.append(name, size, open, remove);
+      } else meta.append(name, size, remove);
       li.append(meta);
 
       if (a.file.type.startsWith('video/')) {
@@ -458,6 +485,8 @@ function renderAttachments() {
         video.src = a.url;
         video.controls = true;
         video.preload = 'metadata';
+        // The controls' fullscreen button can't work in a side panel: open a tab instead.
+        video.addEventListener('fullscreenerror', () => openInTab(a));
         li.append(video);
       } else if (a.file.type.startsWith('image/')) {
         const img = document.createElement('img');
@@ -555,6 +584,7 @@ function sendToBackground(msg) {
 const backgroundHost = {
   start: (options) => sendToBackground({ type: 'rec:start', ...options }),
   stop: () => sendToBackground({ type: 'rec:stop' }),
+  setBubble: (bubble) => sendToBackground({ type: 'rec:bubble', bubble }),
   screenshot: () => sendToBackground({ type: 'shot:screen' }),
 };
 
@@ -597,8 +627,13 @@ function createLocalHost() {
       } catch (err) {
         return failure(err);
       }
-      await sendToBackground({ type: 'rec:state', recording: { startedAt: Date.now() } });
+      await sendToBackground({ type: 'rec:state', recording: { startedAt: Date.now(), camera: !!res.camera } });
       return res;
+    },
+    setBubble(bubble) {
+      // Ours, or the recording sidebar in another window.
+      if (session.isRecording()) return session.setBubble(bubble);
+      return chrome.runtime.sendMessage({ target: 'host', type: 'rec:bubble', bubble }).catch(() => ({ ok: false }));
     },
     async stop() {
       if (!session.isRecording()) {
@@ -680,6 +715,8 @@ function applyRecordingState(recording) {
   el.toolRecord.disabled = !!state.recording;
   if (state.recording) setRecordCardOpen(false);
   el.recording.hidden = !state.recording;
+  el.recBubble.hidden = !state.recording?.camera;
+  if (state.recording?.camera) recBubbleStage.setValue(recorderCard.options().bubble);
   if (state.recording) {
     const tick = () => {
       el.recTime.textContent = formatDuration(Date.now() - state.recording.startedAt);
@@ -700,17 +737,38 @@ chrome.storage.session.onChanged.addListener((changes) => {
   if ('attachmentsChangedAt' in changes) syncPending();
 });
 
+// Moving the bubble mid-recording: the stage fires on every drag move, so coalesce the
+// messages to the recorder (prefs are only written once the drag ends).
+let bubbleSendTimer = 0;
+let bubblePending = null;
+function sendBubble(bubble, { final }) {
+  bubblePending = bubble;
+  if (final) recorderCard.setBubble(bubble);
+  if (bubbleSendTimer) return;
+  bubbleSendTimer = setTimeout(() => {
+    bubbleSendTimer = 0;
+    Promise.resolve(host.setBubble(bubblePending)).catch((err) => console.error('Moving the camera bubble failed', err));
+  }, final ? 0 : 50);
+}
+const recBubbleStage = createBubbleStage($('rec-bubble-stage'), {
+  value: recorderCard.options().bubble,
+  onChange: sendBubble,
+  label: 'Camera bubble in the recording',
+});
+
 el.btnRecord.addEventListener('click', async () => {
   showError('');
   el.micNotice.hidden = true;
+  el.cameraNotice.hidden = true;
   el.btnRecord.disabled = true;
   el.recordHint.textContent = `Choose what to share in ${browserName()}’s picker…`;
-  recorderCard.releaseMic(); // the level meter holds the mic; the recorder needs it
+  recorderCard.releaseDevices(); // the level meter and the preview hold the mic/camera; the recorder needs them
   try {
     const res = await host.start(recorderCard.options());
     el.recordHint.textContent = '';
     if (res?.ok) {
       if (res.micError) el.micNotice.hidden = false;
+      if (res.cameraError) el.cameraNotice.hidden = false;
     } else if (res?.name === 'NotAllowedError') {
       // The user cancelled the screen picker.
       el.recordHint.textContent = 'Recording cancelled.';
@@ -738,7 +796,8 @@ el.btnStop.addEventListener('click', async () => {
   }
 });
 
-el.btnGrantMic.addEventListener('click', openMicGrant);
+el.btnGrantMic.addEventListener('click', () => openGrant('microphone'));
+el.btnGrantCamera.addEventListener('click', () => openGrant('camera'));
 
 // ---------------------------------------------------------------------------
 // Screenshots — captured here, annotated in the editor tab, attached via IndexedDB

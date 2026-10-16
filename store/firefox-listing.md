@@ -73,7 +73,7 @@ Declared as **required**, matching the Chrome Web Store "data usage" answers and
 | Category | What it covers here |
 |---|---|
 | `authenticationInfo` | The user's ClickUp personal API token. Stored in the browser only and sent exclusively to `api.clickup.com` with each request. |
-| `websiteContent` | Screen recordings and screenshots the user explicitly captures, uploaded to the user's own ClickUp task when they press Create/Upload. |
+| `websiteContent` | Screen recordings and screenshots the user explicitly captures (a recording may include the user's own camera picture as a bubble, if they chose a camera), uploaded to the user's own ClickUp task when they press Create/Upload. |
 
 Nothing is sent to the developer or to any third party; there is no analytics, telemetry or remote code.
 `has_previous_consent` is not set (new listing).

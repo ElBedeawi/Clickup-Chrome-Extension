@@ -33,19 +33,23 @@ attaches them to a new or existing ClickUp task via the ClickUp API v2, using th
 
 ```
 sidepanel/  UI. sidepanel.js (form, uploads, wiring, recorder host selection), recorder-card.js ("Record clip"
-            card), details.js ("More details"), menu.js (custom dropdowns)
+            card), bubble-stage.js (camera bubble position/size control, used in the card and the recording
+            strip), details.js ("More details"), menu.js (custom dropdowns)
 background.js   classic script (Chrome: service worker; Firefox: event page). Opens the panel / toggles the
                 sidebar on icon click; owns the recording state + REC badge; on Chrome drives the offscreen recorder
 offscreen/      Chrome only: hidden document hosting the capture session (survives the panel closing)
 editor/         screenshot annotation tab (draw/text/blur/crop); edits are an op list in image pixels,
                 replayed on the original image, so undo is cheap and export is full resolution
+viewer/         full-size view of a pending attachment in a tab (side panels can't go fullscreen)
 options/        settings page: token save/test/revoke, Buy Me a Coffee box
-permissions/    one-time microphone permission page (side panels can't show the prompt)
+permissions/    one-time microphone/camera permission page (`?device=`; side panels can't show the prompt)
 lib/            clickup-api.js (API client, 429 retry, XHR uploads for progress), recorder.js,
-                capture-session.js (recorder + IndexedDB glue shared by the offscreen doc and the Firefox sidebar,
-                plus recovery of a recording whose sidebar was closed), platform.js (Chrome/Firefox detection and
-                wording), screenshot.js (tab/area capture + injected area overlay), attachments-db.js (IndexedDB),
-                storage.js, geometry.js (pure helpers), icons.js, links.js
+                compositor.js (draws the screen + the camera bubble on a canvas whose captureStream() is what
+                gets recorded; clocked by tick-worker.js), capture-session.js (recorder + IndexedDB glue shared by
+                the offscreen doc and the Firefox sidebar, plus recovery of a recording whose sidebar was closed),
+                platform.js (Chrome/Firefox detection and wording), screenshot.js (tab/area capture + injected
+                area overlay), attachments-db.js (IndexedDB), storage.js, geometry.js (pure helpers, incl. the
+                bubble placement), icons.js, links.js
 scripts/lib/    firefox-manifest.mjs (Chrome manifest → Firefox manifest), headless.mjs (Chrome via CDP, Firefox via
                 WebDriver BiDi, same openPage() contract)
 ```
@@ -61,18 +65,21 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
 
 | type | from → to | purpose |
 |---|---|---|
-| `rec:start` `{source, resolution, micDeviceId}` | panel → background → offscreen | Chrome: start recording (offscreen shows the picker) |
+| `rec:start` `{source, resolution, micDeviceId, cameraDeviceId, bubble}` | panel → background → offscreen | Chrome: start recording (offscreen shows the picker); answers `{ok, micError?, cameraError?, camera}` |
 | `rec:stop` | panel → background → offscreen | Chrome: stop; offscreen saves the file to IndexedDB first |
+| `rec:bubble` `{bubble}` | panel → background → offscreen (Chrome); sidebar → own session, or `target: 'host'` to the recording sidebar (Firefox) | move/resize the camera bubble of the running recording |
 | `rec:finished` `{error?}` | offscreen → background | Chrome: user ended sharing from the browser's own bar |
 | `shot:screen` | panel → background → offscreen | Chrome: "Entire screen" screenshot → returns `draftId` |
 | `rec:state` `{recording, error?}` | sidebar → background | Firefox: the sidebar started/stopped recording; background updates session state + badge |
 | `rec:ping` / `rec:stop` (`target: 'host'`) | sidebar → recording sidebar | Firefox: "is anyone recording?" (answered only while recording) / stop it from another window |
 
 **State**
-- `chrome.storage.local`: `clickupToken`; `prefs` = `{ last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic} }`.
-- `chrome.storage.session`: `recording` (`{startedAt}` while recording; the panel mirrors it), `recordingError`,
-  `attachmentsChangedAt` (bumped to make an open panel re-read IndexedDB), `micGrantedAt` (bumped by the mic helper
-  page so an open panel re-reads the device list).
+- `chrome.storage.local`: `clickupToken`; `prefs` = `{ last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}} }`
+  (`camera` is `'none'` or a device id; `bubble.x/y` are 0–1 fractions of the area the bubble may occupy, so the
+  corners are exactly 0/1 pairs; `size` is `sm|md|lg`).
+- `chrome.storage.session`: `recording` (`{startedAt, camera}` while recording; the panel mirrors it), `recordingError`,
+  `attachmentsChangedAt` (bumped to make an open panel re-read IndexedDB), `micGrantedAt` / `cameraGrantedAt` (bumped by
+  the permission helper page so an open panel re-reads the device list).
 - IndexedDB `clickup-video-upload` v2: store `recordings` (any pending attachment: `{id, file, createdAt, draft?, crop?}`;
   `draft: true` = screenshot still open in the editor, ignored by the panel, purged after 24h) and store `chunks`
   (the in-progress recording, written as it goes and assembled on stop).
@@ -85,6 +92,10 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
   "Current tab" recording therefore uses `getDisplayMedia` with `displaySurface: 'browser'` (picker preselected).
 - **On Chrome the recorder must live in the offscreen document** (reasons `DISPLAY_MEDIA`, `USER_MEDIA`); a side
   panel is destroyed when closed.
+- **The offscreen document is never rendered**: `requestAnimationFrame` doesn't fire there and main-thread timers
+  can be throttled, so the camera-bubble compositor is clocked by a dedicated worker (`lib/tick-worker.js`) and
+  pushes frames with `canvas.captureStream(0)` + `requestFrame()`. The worker must be a real file: the fixed MV3
+  CSP (`script-src 'self'`) blocks `blob:` workers.
 - **Firefox has no `sidePanel`, no `offscreen`, and its MV3 background is an event page** that is unloaded after a
   few idle seconds (timers, ports and DOM work don't keep it alive). Its `sidebar_action` sidebar is per window,
   survives tab switches, and is destroyed when closed. Its share picker ignores `displaySurface`, cannot share a

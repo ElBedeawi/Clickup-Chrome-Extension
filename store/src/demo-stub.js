@@ -15,9 +15,13 @@
   const data = {
     local: {
       clickupToken: 'pk_demo',
-      prefs: { last: { workspace: '1', 'space:1': '10', 'folder:10': '100', 'list:10/100': '1000' } },
+      prefs: {
+        last: { workspace: '1', 'space:1': '10', 'folder:10': '100', 'list:10/100': '1000' },
+        // A camera picked, so the Record clip card shows the bubble control.
+        recorder: { camera: 'cam-webcam', bubble: { x: 0, y: 1, size: 'md' } },
+      },
     },
-    session: scene === 'existing' ? { recording: { startedAt: Date.now() - 83_000 } } : {},
+    session: scene === 'existing' ? { recording: { startedAt: Date.now() - 83_000, camera: true } } : {},
   };
   const pick = (obj, keys) => {
     if (keys == null) return { ...obj };
@@ -66,13 +70,15 @@
     ...(browser === 'firefox' ? { sidebarAction: { toggle() {}, open() {} } } : { sidePanel: {}, offscreen: {} }),
   };
 
-  // Microphones shown in the Record clip card (no real devices in headless Chrome).
-  const fakeMics = [
+  // Microphones and cameras shown in the Record clip card (no real devices in headless Chrome).
+  const fakeDevices = [
     { kind: 'audioinput', deviceId: 'default', label: 'Default - Microphone (HD Webcam)' },
     { kind: 'audioinput', deviceId: 'mic-webcam', label: 'Microphone (HD Webcam)' },
     { kind: 'audioinput', deviceId: 'mic-headset', label: 'Headset Microphone (USB Audio)' },
+    { kind: 'videoinput', deviceId: 'cam-webcam', label: 'HD Webcam' },
+    { kind: 'videoinput', deviceId: 'cam-usb', label: 'USB Camera (046d:0825)' },
   ];
-  if (navigator.mediaDevices) navigator.mediaDevices.enumerateDevices = async () => fakeMics;
+  if (navigator.mediaDevices) navigator.mediaDevices.enumerateDevices = async () => fakeDevices;
   navigator.permissions.query = async () => ({ state: 'prompt', onchange: null });
 
   // ---------------------------------------------------------------------------

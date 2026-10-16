@@ -23,11 +23,11 @@ if (chrome.sidePanel) {
 // On Chrome the recorder runs in an offscreen document so it keeps going when the side panel
 // is closed. On Firefox (no offscreen documents) the sidebar hosts the recorder itself and
 // reports state changes here with `rec:state`. Either way the recording state lives in
-// chrome.storage.session ({ recording: { startedAt } }) so the panel can pick it up whenever
+// chrome.storage.session ({ recording: { startedAt, camera } }) so the panel can pick it up whenever
 // it (re)opens, and this worker can be suspended mid-recording without losing anything.
 // ---------------------------------------------------------------------------
 
-const NEEDS_OFFSCREEN = new Set(['rec:start', 'rec:stop', 'shot:screen']);
+const NEEDS_OFFSCREEN = new Set(['rec:start', 'rec:stop', 'rec:bubble', 'shot:screen']);
 
 const OFFSCREEN_URL = 'offscreen/offscreen.html';
 let creatingOffscreen = null;
@@ -42,7 +42,8 @@ async function ensureOffscreen() {
     .createDocument({
       url: OFFSCREEN_URL,
       reasons: ['DISPLAY_MEDIA', 'USER_MEDIA'],
-      justification: 'Record the screen and microphone, or take a screen screenshot, while the side panel may be closed.',
+      justification:
+        'Record the screen, the microphone and, optionally, the camera as a small bubble, or take a screen screenshot, while the side panel may be closed.',
     })
     .finally(() => {
       creatingOffscreen = null;
@@ -80,8 +81,10 @@ async function handle(msg) {
         source: msg.source,
         resolution: msg.resolution,
         micDeviceId: msg.micDeviceId,
+        cameraDeviceId: msg.cameraDeviceId,
+        bubble: msg.bubble,
       });
-      if (res?.ok) await setRecording({ startedAt: Date.now() });
+      if (res?.ok) await setRecording({ startedAt: Date.now(), camera: !!res.camera });
       else await closeOffscreen();
       return res ?? { ok: false, error: 'The recorder did not respond.' };
     }
@@ -97,6 +100,15 @@ async function handle(msg) {
       await setRecording(null);
       await closeOffscreen();
       return res;
+    }
+
+    // Move/resize the camera bubble of the running recording.
+    case 'rec:bubble': {
+      try {
+        return (await chrome.runtime.sendMessage({ target: 'offscreen', type: 'rec:bubble', bubble: msg.bubble })) ?? { ok: false };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
     }
 
     // "Entire screen" screenshot: the offscreen document shows Chrome's share picker and

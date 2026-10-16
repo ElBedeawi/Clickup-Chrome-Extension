@@ -51,6 +51,7 @@ class FakeMediaRecorder {
   }
   constructor(stream, options) {
     this.stream = stream;
+    this.options = options;
     this.mimeType = options.mimeType;
     this.state = 'inactive';
     recorders.push(this);
@@ -72,11 +73,17 @@ class FakeMediaRecorder {
 }
 
 let videoTrack;
+let cameraTrack;
+let cameraAvailable; // getUserMedia({ video }) succeeds (true) or is denied (false)
+let userMediaCalls;
 // Node ships a read-only `navigator` global, so swap it with a property definition.
 const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
 beforeEach(() => {
   recorders = [];
   videoTrack = new FakeTrack('video');
+  cameraTrack = new FakeTrack('video');
+  cameraAvailable = true;
+  userMediaCalls = [];
   globalThis.MediaRecorder = FakeMediaRecorder;
   globalThis.MediaStream = FakeStream;
   Object.defineProperty(globalThis, 'navigator', {
@@ -84,7 +91,12 @@ beforeEach(() => {
     value: {
       mediaDevices: {
         getDisplayMedia: async () => new FakeStream([videoTrack]),
-        getUserMedia: async () => {
+        getUserMedia: async (constraints) => {
+          userMediaCalls.push(constraints);
+          if (constraints.video) {
+            if (cameraAvailable) return new FakeStream([cameraTrack]);
+            throw Object.assign(new Error('camera denied'), { name: 'NotAllowedError' });
+          }
           throw Object.assign(new Error('no mic in tests'), { name: 'NotFoundError' });
         },
       },
@@ -97,6 +109,27 @@ afterEach(() => {
   if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator);
   else delete globalThis.navigator;
 });
+
+/** Stands in for lib/compositor.js (Node has no canvas): records its inputs, returns its own track. */
+function fakeCompositor() {
+  const track = new FakeTrack('video');
+  const spy = {
+    calls: [],
+    layouts: [],
+    stops: 0,
+    track,
+    factory: (opts) => {
+      spy.calls.push(opts);
+      return {
+        stream: new FakeStream([track]),
+        ready: Promise.resolve(),
+        setLayout: (l) => spy.layouts.push(l),
+        stop: () => spy.stops++,
+      };
+    },
+  };
+  return spy;
+}
 
 function sinkSpy() {
   const chunks = [];
@@ -194,4 +227,75 @@ test('a second recording after an automatic stop starts clean', async () => {
   assert.equal(recorder.isRecording(), true);
   const { file } = await recorder.stop();
   assert.ok(file instanceof File);
+});
+
+// ---- Camera bubble ----
+
+test('without a camera the display track is recorded and the compositor is never used', async () => {
+  const comp = fakeCompositor();
+  const recorder = createRecorder({ sink: sinkSpy(), compositor: comp.factory });
+  const res = await recorder.start({ micDeviceId: null });
+
+  assert.equal(res.cameraError, undefined);
+  assert.deepEqual(comp.calls, []);
+  assert.equal(recorders[0].stream.getVideoTracks()[0], videoTrack);
+  assert.deepEqual(userMediaCalls, []);
+  assert.equal(recorder.setBubble({ x: 1, y: 1 }), false, 'nothing to move');
+  await recorder.stop();
+});
+
+test('with a camera the composited track is recorded; stop releases the camera and the compositor', async () => {
+  const comp = fakeCompositor();
+  const recorder = createRecorder({ sink: sinkSpy(), compositor: comp.factory });
+  const res = await recorder.start({ micDeviceId: null, cameraDeviceId: 'cam-1', bubble: { x: 1, y: 0, size: 'lg' } });
+
+  assert.equal(res.cameraError, undefined);
+  assert.equal(userMediaCalls.length, 1);
+  assert.deepEqual(userMediaCalls[0].video.deviceId, { exact: 'cam-1' });
+  assert.equal(userMediaCalls[0].audio, false);
+  assert.equal(comp.calls.length, 1);
+  assert.equal(comp.calls[0].displayStream.getVideoTracks()[0], videoTrack);
+  assert.equal(comp.calls[0].cameraStream.getVideoTracks()[0], cameraTrack);
+  assert.deepEqual(comp.calls[0].layout, { x: 1, y: 0, size: 'lg' });
+  assert.equal(recorders[0].stream.getVideoTracks()[0], comp.track, 'the canvas track goes to MediaRecorder');
+  assert.equal(recorders[0].options.videoBitsPerSecond, Math.round(1280 * 720 * 30 * 0.1), 'bitrate still follows the display track');
+
+  assert.equal(recorder.setBubble({ x: 0.5, y: 0.5 }), true);
+  assert.deepEqual(comp.layouts, [{ x: 0.5, y: 0.5 }]);
+
+  await recorder.stop();
+  assert.equal(comp.stops, 1);
+  assert.equal(cameraTrack.readyState, 'ended');
+  assert.equal(videoTrack.readyState, 'ended');
+});
+
+test('a denied camera is reported and the recording goes on without a bubble', async () => {
+  cameraAvailable = false;
+  const comp = fakeCompositor();
+  const recorder = createRecorder({ sink: sinkSpy(), compositor: comp.factory });
+  const res = await recorder.start({ micDeviceId: null, cameraDeviceId: 'cam-1' });
+
+  assert.equal(res.cameraError.name, 'NotAllowedError');
+  assert.equal(recorder.isRecording(), true);
+  assert.deepEqual(comp.calls, []);
+  assert.equal(recorders[0].stream.getVideoTracks()[0], videoTrack);
+  await recorder.stop();
+});
+
+test('"Stop sharing" while compositing still ends the recording once and stops the compositor', async () => {
+  const comp = fakeCompositor();
+  const recorder = createRecorder({ sink: sinkSpy(), compositor: comp.factory });
+  const auto = [];
+  recorder.onAutoStop = (r) => auto.push(r);
+  await recorder.start({ micDeviceId: null, cameraDeviceId: 'default' });
+  assert.equal(userMediaCalls[0].video.deviceId, undefined, '"default" leaves the device choice to the browser');
+
+  videoTrack.end(); // the display track, not the canvas track, is what the browser ends
+  await tick();
+
+  assert.equal(auto.length, 1);
+  assert.ok(auto[0].file instanceof File);
+  assert.equal(comp.stops, 1);
+  assert.equal(cameraTrack.readyState, 'ended');
+  assert.equal(recorder.setBubble({ x: 0 }), false);
 });

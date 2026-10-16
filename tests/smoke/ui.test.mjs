@@ -26,10 +26,11 @@ await withBrowser(async ({ openPage }) => {
           list: document.getElementById('sel-list').value,
           attachments: document.querySelectorAll('.attachment').length,
           cardOpen: !document.getElementById('record-card').hidden,
+          bubble: !document.getElementById('rc-bubble-row').hidden,
           submit: document.getElementById('btn-submit').textContent,
         })`),
       );
-      assert.deepEqual(state, { list: '1000', attachments: 2, cardOpen: true, submit: 'Create task & upload' });
+      assert.deepEqual(state, { list: '1000', attachments: 2, cardOpen: true, bubble: true, submit: 'Create task & upload' });
     }));
 
   await test('side panel: the description editor has a formatting toolbar and gives Markdown', () =>
@@ -65,9 +66,40 @@ await withBrowser(async ({ openPage }) => {
       assert.match(await page.evaluate(`document.getElementById('task-found').textContent`), /Pay button overlaps/);
       assert.equal(await page.evaluate(`document.getElementById('recording').hidden`), false);
       assert.equal(await page.evaluate(`document.getElementById('tool-record').disabled`), true);
+      // The running clip has a camera bubble, so the strip offers to move it.
+      assert.equal(await page.evaluate(`document.getElementById('rec-bubble').hidden`), false);
     }));
 
-  for (const menu of ['source', 'resolution', 'mic', 'shot']) {
+  await test('side panel: the bubble stage drags and snaps, and the size buttons work', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=new', async (page) => {
+      const state = JSON.parse(
+        await page.evaluate(`(async () => {
+          const dot = document.querySelector('#rc-bubble .bubble-dot');
+          const stage = dot.parentElement;
+          const r = stage.getBoundingClientRect();
+          const d0 = dot.getBoundingClientRect();
+          const start = { x: d0.left + d0.width / 2, y: d0.top + d0.height / 2 };
+          const ev = (type, x, y) => dot.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, button: 0, pointerId: 1, bubbles: true }));
+          ev('pointerdown', start.x, start.y);
+          ev('pointermove', r.right - d0.width / 2 - 1, r.top + d0.height / 2 + 1); // near the top-right corner
+          ev('pointerup', r.right - d0.width / 2 - 1, r.top + d0.height / 2 + 1);
+          document.querySelector('#rc-bubble .bubble-size button[data-size="lg"]').click();
+          await new Promise((res) => setTimeout(res, 50));
+          const { prefs } = await chrome.storage.local.get('prefs');
+          const d1 = dot.getBoundingClientRect();
+          return JSON.stringify({
+            saved: prefs.recorder.bubble,
+            insideStage: d1.left >= r.left - 0.5 && d1.right <= r.right + 0.5 && d1.top >= r.top - 0.5 && d1.bottom <= r.bottom + 0.5,
+            grew: d1.width > d0.width,
+          });
+        })()`),
+      );
+      assert.deepEqual(state.saved, { x: 1, y: 0, size: 'lg' }, 'snapped to the top-right corner, size L');
+      assert.equal(state.insideStage, true);
+      assert.equal(state.grew, true);
+    }));
+
+  for (const menu of ['source', 'resolution', 'mic', 'camera', 'shot']) {
     await test(`side panel: "${menu}" dropdown opens with options`, () =>
       scene(openPage, `/sidepanel/sidepanel.html?demo=menu&menu=${menu}`, async (page) => {
         const items = await page.evaluate(`document.querySelectorAll('.ms-menu:not([hidden]) li').length`);
@@ -123,7 +155,7 @@ await withBrowser(async ({ openPage }) => {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .attachment, .app-header, .recording, #rec-note, .rte, .rte-btn, .rte-block')]
+        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, .rte, .rte-btn, .rte-block')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)
@@ -139,6 +171,88 @@ await withBrowser(async ({ openPage }) => {
     );
     assert.deepEqual(problems, [], `layout problems at ${width}px`);
   }
+
+  // The camera-bubble compositor on two canvas streams: it must draw the screen, the bubble where
+  // the layout says, follow a setLayout() mid-recording, and feed MediaRecorder real frames.
+  await test('compositor: draws the bubble over the screen and records', () =>
+    scene(
+      openPage,
+      '/tests/smoke/compositor.html',
+      async (page) => {
+        const r = JSON.parse(await page.evaluate(`JSON.stringify(window.__result)`));
+        assert.ok(r, 'the page produced no result');
+        assert.deepEqual([r.w, r.h], [640, 360], 'the canvas follows the screen size');
+        assert.ok(r.bytes > 0, 'MediaRecorder got no data');
+        assert.equal(r.sinkWidth, 640, 'the output track delivered no frames (requestFrame not wired?)');
+        if (r.framesSeen >= 0) assert.ok(r.framesSeen >= 10, `expected a steady frame flow, saw ${r.framesSeen} frames in ~1.5 s`);
+        const isBlue = ([red, g, b]) => b > 150 && red < 80 && g < 100;
+        const isOrange = ([red, g, b]) => red > 180 && g > 120 && b < 80;
+        assert.ok(isBlue(r.centre), `screen expected in the middle, got ${r.centre}`);
+        assert.ok(isOrange(r.topLeftBubble), `camera expected in the bubble after the move, got ${r.topLeftBubble}`);
+        assert.ok(isBlue(r.bottomRight), `screen expected where the bubble used to be, got ${r.bottomRight}`);
+      },
+      { width: 800, height: 600 },
+    ));
+
+  // The full-size attachment tab: reads IndexedDB and shows the file, or says it is gone.
+  // Each openPage() gets its own browser context (own IndexedDB), so the happy path loads the
+  // viewer in an iframe of the same page after saving a record there.
+  await test('viewer: a clear message for a missing attachment, the file itself for a saved one', () =>
+    scene(
+      openPage,
+      '/viewer/viewer.html?id=424242',
+      async (page) => {
+        assert.match(await page.evaluate(`document.querySelector('#main .notice')?.textContent || ''`), /no longer available/);
+        // Branded like the rest of the extension: coffee button, landing page, privacy policy.
+        const links = JSON.parse(
+          await page.evaluate(`JSON.stringify({
+            coffee: document.querySelector('.bmc-button[data-link="coffee"]').href,
+            site: document.querySelector('a.brand').href,
+            privacy: document.querySelector('[data-link="privacy"]').href,
+            hidden: [...document.querySelectorAll('[data-link]')].filter((a) => a.hidden).length,
+          })`),
+        );
+        assert.match(links.coffee, /buymeacoffee\.com/);
+        assert.match(links.site, /clickup-uploader\.macawshub\.com/);
+        assert.match(links.privacy, /privacy-policy\.html$/);
+        assert.equal(links.hidden, 0);
+        const state = JSON.parse(
+          await page.evaluate(`(async () => {
+            const db = await import('/lib/attachments-db.js');
+            const canvas = document.createElement('canvas');
+            canvas.width = 40; canvas.height = 30;
+            const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+            const id = await db.saveAttachment(new File([blob], 'shot.png', { type: 'image/png' }));
+            const frame = document.createElement('iframe');
+            frame.src = '/viewer/viewer.html?id=' + id;
+            document.body.append(frame);
+            const doc = await new Promise((resolve, reject) => {
+              const end = Date.now() + 8000;
+              const poll = () => {
+                const w = frame.contentWindow;
+                if (w && w.__ready) return resolve(w.document);
+                if (Date.now() > end) return reject(new Error('viewer iframe never got ready'));
+                setTimeout(poll, 50);
+              };
+              frame.addEventListener('load', poll);
+            });
+            return JSON.stringify({
+              id,
+              name: doc.getElementById('name').textContent,
+              img: !!doc.querySelector('#main img'),
+              error: doc.querySelector('#main .notice')?.textContent || '',
+              download: doc.getElementById('download').download,
+            });
+          })()`),
+        );
+        assert.ok(state.id > 0);
+        assert.deepEqual(
+          { name: state.name, img: state.img, error: state.error, download: state.download },
+          { name: 'shot.png', img: true, error: '', download: 'shot.png' },
+        );
+      },
+      { width: 900, height: 700 },
+    ));
 
   await test('editor: annotations, blur and crop render without errors', () =>
     scene(

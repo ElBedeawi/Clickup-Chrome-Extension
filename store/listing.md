@@ -25,6 +25,7 @@ Report bugs and share feedback without leaving the page. Record your screen, gra
 
 RECORD YOUR SCREEN
 • Record a clip of your entire screen, a window or a tab — pick the resolution (720p to 4K) and microphone
+• Add yourself to the clip as a camera bubble (optional): drag it anywhere, resize it, even while recording
 • Keep recording with the side panel closed — a REC badge shows it's running
 • Preview the recording before it's uploaded
 
@@ -85,7 +86,7 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 |---|---|
 | `sidePanel` | The extension's whole UI (task form, recording controls, attachments) lives in Chrome's side panel so it stays open while the user switches tabs and records. |
 | `storage` | Stores the user's ClickUp API token and last-used Workspace/Space/Folder/List locally, and the current recording state so the side panel can show it after being reopened. |
-| `offscreen` | Screen recording ("Record clip") runs in an offscreen document (reasons DISPLAY_MEDIA and USER_MEDIA) so it keeps going when the user closes the side panel. Also used for the "Entire screen" screenshot. |
+| `offscreen` | Screen recording ("Record clip") runs in an offscreen document (reasons DISPLAY_MEDIA and USER_MEDIA) so it keeps going when the user closes the side panel. USER_MEDIA covers the microphone and the optional camera bubble drawn into the clip. Also used for the "Entire screen" screenshot. |
 | `scripting` | For the "Screenshot → Select area" feature: injects a temporary selection overlay into the current tab so the user can drag a rectangle to capture; the overlay is removed as soon as the selection is made. It only runs when the user chooses "Select area". |
 | Host permission `<all_urls>` | The user can take a screenshot of whatever page they are on, so the extension needs access to any site: chrome.tabs.captureVisibleTab requires it for "Screenshot → Visible tab" and "Select area", and chrome.scripting requires it for the area-selection overlay. Pages are only captured when the user explicitly chooses a screenshot option. It is also used to read the active tab's URL locally to detect when the user is viewing a ClickUp task, so it can be prefilled. No page content is read or sent anywhere otherwise. |
 | Host permission `https://api.clickup.com/*` | All task creation, attachment uploads, comments and workspace lookups go to the ClickUp API. |
@@ -94,7 +95,7 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 
 **Data usage — what user data is collected** (check these):
 - ☑ **Authentication information** — the user's ClickUp API token (stored locally; sent only to api.clickup.com).
-- ☑ **Website content** — screenshots/recordings of pages the user explicitly captures, uploaded to the user's own ClickUp task on request.
+- ☑ **Website content** — screenshots/recordings of pages the user explicitly captures (a recording may include the user's own camera picture as a bubble, if they chose a camera), uploaded to the user's own ClickUp task on request.
 - ☐ Personally identifiable information, health, financial, personal communications, location, web history, user activity — not collected.
 
 **Certifications** (check all three):

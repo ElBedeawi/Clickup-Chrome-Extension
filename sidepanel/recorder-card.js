@@ -1,10 +1,11 @@
-// The "Record clip" card: source, resolution and microphone pickers with a live mic level
-// meter. Choices are remembered in prefs.recorder. Recording itself runs elsewhere (see
-// sidepanel.js); this only collects the options.
+// The "Record clip" card: source, resolution, microphone and camera pickers, with a live mic
+// level meter and a camera bubble preview. Choices are remembered in prefs.recorder. Recording
+// itself runs elsewhere (see sidepanel.js); this only collects the options.
 import { createMenuSelect } from './menu.js';
+import { createBubbleStage } from './bubble-stage.js';
 import { icon } from '../lib/icons.js';
 import { getPrefs, setPrefs } from '../lib/storage.js';
-import { canRecordTab } from '../lib/platform.js';
+import { canRecordTab, isSidebar } from '../lib/platform.js';
 
 const SOURCES = [
   { value: 'screen', label: 'Entire screen', icon: 'monitor' },
@@ -22,22 +23,26 @@ const RESOLUTIONS = [
 ];
 
 const NO_MIC = 'none';
+const NO_CAMERA = 'none';
 const ALLOW = '__allow__'; // pseudo-item shown until the extension has mic permission
+const ALLOW_CAMERA = '__allow-camera__';
 
-const DEFAULTS = { source: 'screen', resolution: '1080', mic: 'default' };
+const DEFAULTS = { source: 'screen', resolution: '1080', mic: 'default', camera: NO_CAMERA, bubble: { x: 0, y: 1, size: 'md' } };
 
 const $ = (id) => document.getElementById(id);
 
 /**
- * @param {{ onGrantMic: () => void }} opts
+ * @param {{ onGrantMic: () => void, onGrantCamera: () => void }} opts
  */
-export async function createRecorderCard({ onGrantMic }) {
+export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
   const sourceIcon = $('rc-source-icon');
   const micIcon = $('rc-mic-icon');
+  const cameraIcon = $('rc-camera-icon');
+  const bubbleRow = $('rc-bubble-row');
   const meterFill = $('rc-meter-fill');
 
   const { recorder: saved = {} } = await getPrefs();
-  const settings = { ...DEFAULTS, ...saved };
+  const settings = { ...DEFAULTS, ...saved, bubble: { ...DEFAULTS.bubble, ...(saved.bubble || {}) } };
   const save = (patch) => {
     Object.assign(settings, patch);
     return setPrefs({ recorder: { ...settings } });
@@ -79,50 +84,117 @@ export async function createRecorderCard({ onGrantMic }) {
     },
   });
 
+  const camera = createMenuSelect($('rc-camera'), {
+    items: [],
+    value: settings.camera,
+    label: 'Camera bubble',
+    onChange: (value) => {
+      if (value === ALLOW_CAMERA) {
+        camera.setValue(settings.camera); // not a real choice
+        onGrantCamera();
+        return;
+      }
+      save({ camera: value });
+      updateIcons();
+      restartPreview();
+    },
+  });
+
+  const stage = createBubbleStage($('rc-bubble'), {
+    value: settings.bubble,
+    onChange: (bubble, { final }) => {
+      if (final) save({ bubble });
+    },
+  });
+
   function updateIcons() {
     sourceIcon.innerHTML = icon(SOURCES.find((s) => s.value === source.value)?.icon || 'monitor');
     micIcon.innerHTML = icon(settings.mic === NO_MIC ? 'micOff' : 'mic');
+    cameraIcon.innerHTML = icon(settings.camera === NO_CAMERA ? 'webcamOff' : 'webcam');
+    bubbleRow.hidden = settings.camera === NO_CAMERA;
   }
 
-  // ---- Microphone devices ----
+  // ---- Devices ----
 
-  async function micPermission() {
+  /** 'granted' | 'prompt' | 'denied' for the microphone or the camera. */
+  async function devicePermission(name, kind) {
     try {
-      return (await navigator.permissions.query({ name: 'microphone' })).state;
+      return (await navigator.permissions.query({ name })).state;
     } catch {
-      // No microphone permission query here: device labels only appear once access was granted.
+      // No permission query here: device labels only appear once access was granted.
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        return devices.some((d) => d.kind === 'audioinput' && d.label) ? 'granted' : 'prompt';
+        return devices.some((d) => d.kind === kind && d.label) ? 'granted' : 'prompt';
       } catch {
         return 'prompt';
       }
     }
   }
 
-  async function refreshDevices() {
-    let inputs = [];
+  async function enumerate() {
     try {
-      inputs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput');
+      return await navigator.mediaDevices.enumerateDevices();
     } catch {
-      // No media devices API — leave the list minimal.
+      return []; // No media devices API — leave the lists minimal.
     }
-    // Without permission Chrome hides device names/ids, so offer the default plus a way to allow.
-    const named = inputs.filter((d) => d.deviceId && d.label);
-    const items = [{ value: NO_MIC, label: 'No microphone', icon: 'micOff' }];
-    if (named.length) {
-      named.forEach((d) => items.push({ value: d.deviceId, label: d.label }));
-    } else {
-      items.push({ value: 'default', label: 'Default microphone' });
-      items.push({ value: ALLOW, label: 'Allow access to pick a microphone…' });
+  }
+
+  /**
+   * Firefox lists no cameras at all (not even unnamed ones) until this document has used one:
+   * a remembered grant from the helper tab isn't enough on its own. Opening the camera once,
+   * silently, makes the named list appear. Only worth it when a grant is likely (no prompt can
+   * show here), hence the timeout: an attempt that would need a prompt just hangs or rejects.
+   */
+  async function probeCamera() {
+    let timer;
+    try {
+      const stream = await Promise.race([
+        navigator.mediaDevices.getUserMedia({ video: true }),
+        new Promise((_, reject) => (timer = setTimeout(() => reject(new Error('timeout')), 3000))),
+      ]);
+      stream.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /** @param {{ probe?: boolean }} [opts] probe: open the camera once if no named camera is listed */
+  async function refreshDevices({ probe = false } = {}) {
+    let inputs = await enumerate();
+    if (probe && !inputs.some((d) => d.kind === 'videoinput' && d.deviceId && d.label) && (await probeCamera())) {
+      inputs = await enumerate();
     }
 
-    // Keep the saved device if it's still plugged in; otherwise fall back to the default.
-    if (!items.some((i) => i.value === settings.mic && i.value !== ALLOW)) {
-      settings.mic = items.find((i) => i.value === 'default')?.value || items[1]?.value || NO_MIC;
+    // Without permission Chrome hides device names/ids, so offer the default plus a way to allow.
+    const namedMics = inputs.filter((d) => d.kind === 'audioinput' && d.deviceId && d.label);
+    const micItems = [{ value: NO_MIC, label: 'No microphone', icon: 'micOff' }];
+    if (namedMics.length) {
+      namedMics.forEach((d) => micItems.push({ value: d.deviceId, label: d.label }));
+    } else {
+      micItems.push({ value: 'default', label: 'Default microphone' });
+      micItems.push({ value: ALLOW, label: 'Allow access to pick a microphone…' });
     }
-    mic.setItems(items);
+    // Keep the saved device if it's still plugged in; otherwise fall back to the default.
+    if (!micItems.some((i) => i.value === settings.mic && i.value !== ALLOW)) {
+      settings.mic = micItems.find((i) => i.value === 'default')?.value || micItems[1]?.value || NO_MIC;
+    }
+    mic.setItems(micItems);
     mic.setValue(settings.mic);
+
+    // The camera is opt-in, so there is no "default camera": pick one by name or stay off.
+    const cams = inputs.filter((d) => d.kind === 'videoinput');
+    const namedCams = cams.filter((d) => d.deviceId && d.label);
+    const camItems = [{ value: NO_CAMERA, label: 'No camera', icon: 'webcamOff' }];
+    // Without permission the browser hides names/ids (Firefox lists nothing at all), so offer a way to allow.
+    if (namedCams.length) namedCams.forEach((d) => camItems.push({ value: d.deviceId, label: d.label, icon: 'webcam' }));
+    else camItems.push({ value: ALLOW_CAMERA, label: 'Allow access to pick a camera…' });
+    if (!camItems.some((i) => i.value === settings.camera && i.value !== ALLOW_CAMERA)) settings.camera = NO_CAMERA;
+    camera.setItems(camItems);
+    camera.setValue(settings.camera);
+
     updateIcons();
   }
 
@@ -132,17 +204,22 @@ export async function createRecorderCard({ onGrantMic }) {
     ?.query({ name: 'microphone' })
     .then((status) => {
       status.onchange = () => {
-        refreshDevices();
-        restartMeter();
+        refreshDevices().then(restartMeter);
+      };
+    })
+    .catch(() => {});
+  navigator.permissions
+    ?.query({ name: 'camera' })
+    .then((status) => {
+      status.onchange = () => {
+        refreshDevices().then(restartPreview);
       };
     })
     .catch(() => {});
   // …and the helper tab also says so explicitly, for browsers where the permission status doesn't fire.
   chrome.storage.session?.onChanged.addListener((changes) => {
-    if ('micGrantedAt' in changes) {
-      refreshDevices();
-      restartMeter();
-    }
+    if ('micGrantedAt' in changes) refreshDevices().then(restartMeter);
+    if ('cameraGrantedAt' in changes) refreshDevices({ probe: true }).then(restartPreview);
   });
 
   // ---- Level meter (only while the card is open) ----
@@ -165,7 +242,7 @@ export async function createRecorderCard({ onGrantMic }) {
   async function restartMeter() {
     stopMeter();
     if (!active || settings.mic === NO_MIC) return;
-    if ((await micPermission()) !== 'granted') return; // a side panel / sidebar can't show the prompt
+    if ((await devicePermission('microphone', 'audioinput')) !== 'granted') return; // a side panel / sidebar can't show the prompt
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -197,24 +274,81 @@ export async function createRecorderCard({ onGrantMic }) {
     tick();
   }
 
-  window.addEventListener('pagehide', stopMeter);
-  document.addEventListener('visibilitychange', () => (document.hidden ? stopMeter() : restartMeter()));
+  // ---- Camera preview inside the bubble (only while the card is open) ----
+
+  let preview = null; // MediaStream
+  let previewToken = 0; // ignores a camera that opens after a newer restart/stop
+
+  function stopPreview() {
+    previewToken++;
+    preview?.getTracks().forEach((t) => t.stop());
+    preview = null;
+    stage.attachPreview(null);
+  }
+
+  async function restartPreview() {
+    stopPreview();
+    if (!active || settings.camera === NO_CAMERA) return;
+    if ((await devicePermission('camera', 'videoinput')) !== 'granted') return; // a side panel / sidebar can't show the prompt
+    const token = previewToken;
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: settings.camera }, width: { ideal: 320 }, height: { ideal: 240 } },
+      });
+    } catch {
+      return;
+    }
+    if (token !== previewToken || !active) {
+      stream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+    preview = stream;
+    stage.attachPreview(stream);
+  }
+
+  function releaseDevices() {
+    stopMeter();
+    stopPreview();
+  }
+
+  window.addEventListener('pagehide', releaseDevices);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) releaseDevices();
+    else {
+      restartMeter();
+      restartPreview();
+    }
+  });
 
   await refreshDevices();
 
   return {
-    /** Start/stop the mic meter as the card opens/closes. */
+    /** Start/stop the mic meter and camera preview as the card opens/closes. */
     setActive(on) {
       active = on;
-      if (on) refreshDevices().then(restartMeter);
-      else stopMeter();
+      if (on) {
+        // Firefox sidebar: a camera was picked before, so the grant is remembered; wake the list up.
+        const probe = isSidebar() && settings.camera !== NO_CAMERA;
+        refreshDevices({ probe }).then(() => {
+          restartMeter();
+          restartPreview();
+        });
+      } else releaseDevices();
     },
-    /** Free the microphone before the recorder needs it. */
-    releaseMic: stopMeter,
+    /** Free the microphone and camera before the recorder needs them. */
+    releaseDevices,
+    /** Remember a bubble moved from the recording strip and mirror it in the card. */
+    setBubble(bubble) {
+      stage.setValue(bubble);
+      return save({ bubble: { ...settings.bubble, ...bubble } });
+    },
     options: () => ({
       source: settings.source,
       resolution: settings.resolution,
       micDeviceId: settings.mic === NO_MIC ? null : settings.mic,
+      cameraDeviceId: settings.camera === NO_CAMERA ? null : settings.camera,
+      bubble: { ...settings.bubble },
     }),
   };
 }

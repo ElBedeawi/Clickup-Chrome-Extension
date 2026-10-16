@@ -49,6 +49,7 @@ test('the zip packager includes every top-level runtime path', () => {
       firefoxManifest.options_ui.page,
       'offscreen/offscreen.html',
       'editor/editor.html',
+      'viewer/viewer.html',
       'permissions/microphone.html',
       'lib/storage.js',
       'fonts/cookie-regular.woff2',
