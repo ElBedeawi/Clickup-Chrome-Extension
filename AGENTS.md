@@ -131,6 +131,13 @@ npm run render              # regenerate icons/ and store/images/ from store/src
 npm run package             # dist/<name>-<version>.zip (Chrome), dist/<name>-<version>-firefox.zip, dist/firefox/ (unpacked)
 ```
 
+The store promo video (the Chrome Web Store "Global promo video", hosted on YouTube) is a separate
+[HyperFrames](https://github.com/heygen-com/hyperframes) project in `store/promo-video/` (`BRIEF.md` → `STORYBOARD.md` +
+`SCRIPT.md` → `compositions/frames/*.html` → `index.html`). It is not part of the extension and installs nothing in the
+repo: render it with `cd store/promo-video && npx hyperframes render --quality high --output renders/video.mp4`
+(needs Node 22+, FFmpeg on PATH, Chrome; the narration is local Kokoro TTS via `hyperframes tts`, no music). Rendered
+files and `.hyperframes/` are git-ignored.
+
 Headless scripts find Chrome/Edge and Firefox automatically (set `CHROME=/path` / `FIREFOX=/path` otherwise). Demo
 pages: any URL with `?demo=<scene>` gets `store/src/demo-shared.js` + `demo-stub.js` injected, which fake `chrome.*`
 and the ClickUp API (scenes: `new`, `details`, `existing`, `clips`, `menu&menu=<source|resolution|mic|shot>`, `editor`);

@@ -1,0 +1,173 @@
+{
+  "typography": [
+    {
+      "role": "display",
+      "fontFamily": "Bricolage Grotesque",
+      "fontSize": "65.6px",
+      "fontWeight": "700",
+      "lineHeight": "72.16px",
+      "letterSpacing": "-1.312px",
+      "color": "#1F1F29",
+      "sampleText": "Bug reports, with the video attached."
+    },
+    {
+      "role": "heading",
+      "fontFamily": "Bricolage Grotesque",
+      "fontSize": "38.4px",
+      "fontWeight": "600",
+      "lineHeight": "42.24px",
+      "letterSpacing": "-0.768px",
+      "color": "#1F1F29",
+      "sampleText": "Three steps, one panel. Or one tab for Clips."
+    },
+    {
+      "role": "heading-3",
+      "fontFamily": "Bricolage Grotesque",
+      "fontSize": "23.2px",
+      "fontWeight": "600",
+      "lineHeight": "30.16px",
+      "letterSpacing": "-0.232px",
+      "color": "#1F1F29",
+      "sampleText": "Capture"
+    },
+    {
+      "role": "body",
+      "fontFamily": "system-ui",
+      "fontSize": "19.2px",
+      "fontWeight": "400",
+      "lineHeight": "30.72px",
+      "letterSpacing": "normal",
+      "color": "#1F1F29",
+      "sampleText": "Record your screen or annotate a screenshot, then file it to"
+    },
+    {
+      "role": "heading-3",
+      "fontFamily": "Bricolage Grotesque",
+      "fontSize": "18.4px",
+      "fontWeight": "600",
+      "lineHeight": "23.92px",
+      "letterSpacing": "-0.184px",
+      "color": "#1F1F29",
+      "sampleText": "Screen recording"
+    },
+    {
+      "role": "link",
+      "fontFamily": "system-ui",
+      "fontSize": "17px",
+      "fontWeight": "600",
+      "lineHeight": "27.2px",
+      "letterSpacing": "normal",
+      "color": "#1F1F29",
+      "sampleText": "Video & Screenshot Uploader for ClickUp"
+    }
+  ],
+  "spacing": {
+    "observed": [
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      22,
+      24,
+      28,
+      36,
+      40,
+      48,
+      72
+    ],
+    "baseUnit": 4
+  },
+  "radius": [
+    "8px",
+    "10px"
+  ],
+  "shadows": [
+    {
+      "value": "rgba(0, 0, 0, 0.16) 0px 12px 32px 0px",
+      "count": 1
+    }
+  ],
+  "buttons": [
+    {
+      "label": "Decline",
+      "background": "#FFFFFF",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1F1F29",
+      "padding": "8px 16px",
+      "borderRadius": "8px",
+      "border": "1px solid rgb(226, 226, 232)",
+      "boxShadow": "none",
+      "fontSize": "14.72px",
+      "fontWeight": "600",
+      "height": "35.6562px"
+    },
+    {
+      "label": "Accept",
+      "background": "#7B68EE",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#FFFFFF",
+      "padding": "8px 16px",
+      "borderRadius": "8px",
+      "border": "1px solid rgb(123, 104, 238)",
+      "boxShadow": "none",
+      "fontSize": "14.72px",
+      "fontWeight": "600",
+      "height": "35.6562px"
+    }
+  ],
+  "cards": [
+    {
+      "label": "card",
+      "background": "transparent",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1F1F29",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px none rgb(31, 31, 41)",
+      "boxShadow": "none",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "height": "724.562px"
+    },
+    {
+      "label": "card",
+      "background": "#F7F7F9",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1F1F29",
+      "padding": "36px",
+      "borderRadius": "14px",
+      "border": "0px none rgb(31, 31, 41)",
+      "boxShadow": "none",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "height": "336.547px"
+    }
+  ],
+  "nav": {
+    "label": "navigation",
+    "background": "transparent",
+    "backgroundImage": "",
+    "backdropFilter": "",
+    "color": "#1F1F29",
+    "padding": "0px",
+    "borderRadius": "0px",
+    "border": "",
+    "boxShadow": "none",
+    "fontSize": "17px",
+    "fontWeight": "400",
+    "height": "65px"
+  },
+  "chips": [],
+  "statCells": [],
+  "tabs": [],
+  "backgrounds": [],
+  "glass": []
+}

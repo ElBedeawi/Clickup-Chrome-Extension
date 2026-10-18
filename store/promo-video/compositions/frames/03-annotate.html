@@ -1,0 +1,374 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1F1F29;
+    }
+
+    /* full-bleed ground — a dedicated clip, never painted on the root */
+    #root [class~="03-annotate-bg"] {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+    }
+
+    #root [class~="03-annotate-stage"] {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ---------- left column: headline, tool chips, sub-line ---------- */
+    #root [class~="03-annotate-col"] {
+      position: absolute;
+      left: 96px;
+      top: 300px;
+      width: 464px;
+      min-width: 0;
+    }
+
+    #root [class~="03-annotate-title"] {
+      margin: 0;
+      font-size: 2.6cqw;
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #1F1F29;
+      will-change: transform, opacity;
+    }
+
+    #root [class~="03-annotate-chips"] {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    #root [class~="03-annotate-chip"] {
+      flex: 0 0 auto;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    /* tag-pill at rest = greyed; the karaoke driver lerps it to the primary fill */
+    #root [class~="03-annotate-pill"] {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      background: rgb(241, 241, 244);
+      color: rgb(154, 154, 154);
+      text-shadow: 0 0 0 rgba(123, 104, 238, 0);
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    #root [class~="03-annotate-sub"] {
+      margin: 36px 0 0;
+      font-size: 1.25cqw;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: #6B6B7B;
+      will-change: transform, opacity;
+    }
+
+    /* ---------- the floating editor window (cutout hero, right) ---------- */
+    #root [class~="03-annotate-window"] {
+      position: absolute;
+      left: 600px;
+      top: 95px;
+      width: 1240px;
+      height: 775px;
+      box-sizing: border-box;
+      border: 1.5px solid rgba(123, 104, 238, 0.2);
+      border-radius: 14px;
+      background: rgba(123, 104, 238, 0.04);
+      overflow: hidden; /* clips the pushed-in content at the card */
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    /* coordinate-target-zoom: outer scales, inner counter-translates */
+    #root [class~="03-annotate-zoom-outer"] {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    #root [class~="03-annotate-zoom-inner"] {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+
+    #root [class~="03-annotate-shot"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* callout overlay in screenshot pixel space (1280×800) */
+    #root [class~="03-annotate-overlay"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    #root [class~="03-annotate-overlay"] path,
+    #root [class~="03-annotate-overlay"] rect {
+      fill: none;
+      stroke: #7B68EE;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    #root [class~="03-annotate-handle"] {
+      fill: #7B68EE !important;
+      stroke: none !important;
+      transform-box: fill-box;
+      transform-origin: 50% 50%;
+    }
+
+    /* the small "email blurred" chip beside the blurred field */
+    #root [class~="03-annotate-email-chip"] {
+      position: absolute;
+      right: 44.4%;
+      top: 34.6%;
+      padding: 7px 13px;
+      border-radius: 100px;
+      background: #7B68EE;
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      transform-origin: 100% 100%;
+      will-change: transform, opacity;
+    }
+  </style>
+
+  <div id="root" data-composition-id="03-annotate" data-width="1920" data-height="1080" data-duration="6.111">
+    <div class="clip 03-annotate-bg" data-start="0" data-duration="6.111" data-track-index="0"></div>
+
+    <div class="clip 03-annotate-stage" data-start="0" data-duration="6.111" data-track-index="1">
+      <div class="03-annotate-col">
+        <h2 class="03-annotate-title">Annotate</h2>
+        <div class="03-annotate-chips">
+          <div class="03-annotate-chip"><span class="03-annotate-pill" data-word="draw">Draw</span></div>
+          <div class="03-annotate-chip"><span class="03-annotate-pill" data-word="text">Text</span></div>
+          <div class="03-annotate-chip"><span class="03-annotate-pill" data-word="blur">Blur</span></div>
+          <div class="03-annotate-chip"><span class="03-annotate-pill" data-word="crop">Crop</span></div>
+        </div>
+        <p class="03-annotate-sub">Full resolution. Nothing leaves your machine until you upload.</p>
+      </div>
+
+      <div class="03-annotate-window">
+        <div class="03-annotate-zoom-outer" data-layout-allow-overflow>
+          <div class="03-annotate-zoom-inner" data-layout-allow-overflow>
+            <img class="03-annotate-shot" src="assets/screenshot-2-annotate.png" alt="" />
+            <svg class="03-annotate-overlay" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- bracket around the text label "Overlaps the order summary" -->
+              <path class="03-annotate-bracket-label" d="" />
+              <!-- bracket around the blurred email field -->
+              <path class="03-annotate-bracket-email" d="" />
+              <!-- crop: solid draw stroke, then swapped for the dashed rectangle + handles -->
+              <path class="03-annotate-crop-draw" d="" />
+              <g class="03-annotate-crop" opacity="0">
+                <rect class="03-annotate-crop-dash" x="100" y="100" width="1080" height="682" rx="8" ry="8" stroke-dasharray="14 10" />
+                <rect class="03-annotate-handle" x="93" y="93" width="14" height="14" rx="2" />
+                <rect class="03-annotate-handle" x="1173" y="93" width="14" height="14" rx="2" />
+                <rect class="03-annotate-handle" x="1173" y="775" width="14" height="14" rx="2" />
+                <rect class="03-annotate-handle" x="93" y="775" width="14" height="14" rx="2" />
+              </g>
+            </svg>
+            <div class="03-annotate-email-chip">email blurred</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var FRAME_ID = "03-annotate";
+      var DURATION = 5.611;
+      var R = document.querySelector('[data-composition-id="' + FRAME_ID + '"]');
+      var q = function (name) { return R.querySelector('[class~="' + FRAME_ID + "-" + name + '"]'); };
+      var qa = function (name) { return Array.prototype.slice.call(R.querySelectorAll('[class~="' + FRAME_ID + "-" + name + '"]')); };
+
+      /* ---------- geometry (screenshot px: 1280×800 → window px) ---------- */
+      var IMG_W = 1280, IMG_H = 800, WIN_W = 1240, WIN_H = 775;
+      var k = WIN_W / IMG_W;
+
+      // coordinate-target-zoom toward the red circle around the Pay button.
+      // Nested-wrapper formula: T = -offset. The vertical offset is clamped so the
+      // zoomed window never shows a gap below the page ("pushes in slightly").
+      var ZOOM = 1.3;
+      var target = { x: 735, y: 560 };
+      var offX = target.x - IMG_W / 2;
+      var offY = target.y - IMG_H / 2;
+      var maxX = (IMG_W / 2) * (1 - 1 / ZOOM) - 2;
+      var maxY = (IMG_H / 2) * (1 - 1 / ZOOM) - 2;
+      var clamp = function (v, m) { return Math.max(-m, Math.min(m, v)); };
+      var counterX = -clamp(offX, maxX) * k;
+      var counterY = -clamp(offY, maxY) * k;
+
+      /* ---------- svg-path-draw setup (measured lengths, analytic fallback) ---------- */
+      function rrPath(x, y, w, h, r) {
+        // starts on the top edge near the top-right corner, clockwise
+        return "M " + (x + w - r) + " " + y +
+          " A " + r + " " + r + " 0 0 1 " + (x + w) + " " + (y + r) +
+          " L " + (x + w) + " " + (y + h - r) +
+          " A " + r + " " + r + " 0 0 1 " + (x + w - r) + " " + (y + h) +
+          " L " + (x + r) + " " + (y + h) +
+          " A " + r + " " + r + " 0 0 1 " + x + " " + (y + h - r) +
+          " L " + x + " " + (y + r) +
+          " A " + r + " " + r + " 0 0 1 " + (x + r) + " " + y +
+          " Z";
+      }
+      function rrLen(w, h, r) { return 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r; }
+      function prepDraw(el, x, y, w, h, r) {
+        el.setAttribute("d", rrPath(x, y, w, h, r));
+        var len = 0;
+        try { len = el.getTotalLength(); } catch (e) { len = 0; }
+        if (!len || !isFinite(len)) len = rrLen(w, h, r);
+        len = len * 1.02;
+        el.style.strokeDasharray = String(len);
+        el.style.strokeDashoffset = String(len);
+      }
+
+      var bracketLabel = q("bracket-label");
+      var bracketEmail = q("bracket-email");
+      var cropDraw = q("crop-draw");
+      var cropGroup = q("crop");
+      var handles = qa("handle");
+
+      prepDraw(bracketLabel, 556, 624, 502, 66, 12);   // around "Overlaps the order summary"
+      prepDraw(bracketEmail, 172, 316, 550, 56, 12);   // around the blurred email field
+      prepDraw(cropDraw, 100, 100, 1080, 682, 8);       // around the page region of the canvas
+
+      /* ---------- asr-keyword-glow (karaoke style) on the four tool chips ---------- */
+      var TIMINGS = {
+        draw: { start: 1.25, end: 1.55 },
+        text: { start: 1.70, end: 2.10 },
+        blur: { start: 2.30, end: 2.65 },
+        crop: { start: 3.45, end: 3.85 }
+      };
+      var ATTACK_DUR = 0.12, RELEASE = 0.4, REST_LEVEL = 0.15;
+      var MAX_BLUR = 30, MAX_SCALE_BOOST = 0.15;
+      var REST_BG = [241, 241, 244], ACTIVE_BG = [123, 104, 238];
+      var REST_FG = [154, 154, 154], ACTIVE_FG = [255, 255, 255];
+
+      function envelope(time, start, end) {
+        if (time < start) return 0;
+        if (time < end) return Math.min((time - start) / ATTACK_DUR, 1);
+        var releaseEnd = end + RELEASE;
+        if (time < releaseEnd) return 1 - ((time - end) / RELEASE) * (1 - REST_LEVEL);
+        return REST_LEVEL;
+      }
+      function lerpRgb(a, b, t) {
+        return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * t) + "," +
+          Math.round(a[1] + (b[1] - a[1]) * t) + "," +
+          Math.round(a[2] + (b[2] - a[2]) * t) + ")";
+      }
+      var pills = qa("pill");
+      var driver = { t: 0 };
+      function applyGlow() {
+        for (var i = 0; i < pills.length; i++) {
+          var el = pills[i];
+          var timing = TIMINGS[el.getAttribute("data-word")];
+          if (!timing) continue;
+          var env = envelope(driver.t, timing.start, timing.end);
+          el.style.background = lerpRgb(REST_BG, ACTIVE_BG, env);
+          el.style.color = lerpRgb(REST_FG, ACTIVE_FG, env);
+          el.style.textShadow = "0 0 " + (MAX_BLUR * env).toFixed(2) + "px rgba(123,104,238," + (0.85 * env).toFixed(3) + ")";
+          el.style.transform = "scale(" + (1 + MAX_SCALE_BOOST * env).toFixed(4) + ")";
+        }
+      }
+      applyGlow();
+
+      /* ---------- timeline ---------- */
+      var tl = gsap.timeline({ paused: true });
+
+      var win = q("window");
+      var zoomOuter = q("zoom-outer");
+      var zoomInner = q("zoom-inner");
+      var title = q("title");
+      var chips = qa("chip");
+      var sub = q("sub");
+      var emailChip = q("email-chip");
+      var cropDash = q("crop-dash");
+
+      // Scene 1 (0.0–1.2s): the editor window pushes in from the right (push-slide
+      // continuation) and settles smoothly; the headline fades in top-left.
+      tl.fromTo(win, { x: 220, scale: 0.94 }, { x: 0, scale: 1, duration: 0.9, ease: "power3.out" }, 0);
+      tl.fromTo(win, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0);
+      tl.fromTo(title, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.2);
+
+      // the four tool chips land greyed before the first tool is spoken (spring-pop, smooth)
+      chips.forEach(function (el, i) {
+        tl.fromTo(el, { scale: 0, opacity: 0, y: 14 }, { scale: 1, opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.85 + i * 0.06);
+      });
+
+      // karaoke driver — one linear sweep for every chip (ease must stay "none")
+      tl.to(driver, { t: DURATION, duration: DURATION, ease: "none", onUpdate: applyGlow }, 0);
+
+      // Scene 2 (1.2–3.4s): on "draw" the camera pushes in toward the red circle and locks …
+      tl.to(zoomOuter, { scale: ZOOM, duration: 1.0, ease: "power3.inOut" }, 1.25);
+      tl.to(zoomInner, { x: counterX, y: counterY, duration: 1.0, ease: "power3.inOut" }, 1.25);
+
+      // … on "text" a thin bracket draws around the label …
+      tl.to(bracketLabel, { strokeDashoffset: 0, duration: 0.5, ease: "power2.out" }, 1.72);
+
+      // … on "blur the private bits" the camera re-frames the whole window (the
+      // floating-window push-in → zoom-out arc) while a bracket draws around the
+      // blurred email and the "email blurred" chip pops beside it.
+      tl.to(zoomOuter, { scale: 1, duration: 0.9, ease: "power3.inOut" }, 2.2);
+      tl.to(zoomInner, { x: 0, y: 0, duration: 0.9, ease: "power3.inOut" }, 2.2);
+      tl.to(bracketEmail, { strokeDashoffset: 0, duration: 0.5, ease: "power2.out" }, 2.38);
+      tl.fromTo(emailChip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "power3.out" }, 2.72);
+
+      // Scene 3 (3.4–4.4s): on "crop" a dashed rectangle draws around the page region,
+      // handles pop at its corners, then the whole crop marquee fades to 40%.
+      tl.to(cropDraw, { strokeDashoffset: 0, duration: 0.6, ease: "power2.out" }, 3.45);
+      tl.to(cropDraw, { opacity: 0, duration: 0.15, ease: "power1.out" }, 4.02);
+      tl.to(cropGroup, { opacity: 1, duration: 0.15, ease: "power1.out" }, 4.02);
+      handles.forEach(function (el, i) {
+        tl.fromTo(el, { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.35, ease: "power3.out" }, 3.98 + i * 0.05);
+      });
+      tl.to(cropGroup, { opacity: 0.4, duration: 0.35, ease: "power1.out" }, 4.3);
+
+      // Scene 4 (4.4–5.61s): on "before anyone sees it" the sub-line reveals; held read,
+      // camera locked, nothing else moves.
+      tl.fromTo(sub, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 4.45);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[FRAME_ID] = tl;
+    })();
+  </script>
+</template>

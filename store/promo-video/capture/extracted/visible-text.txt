@@ -1,0 +1,89 @@
+[span] Video & Screenshot Uploader for ClickUp
+[a] How it works
+[a] Features
+[h1] Bug reports, with the video attached.
+[p] Record your screen or annotate a screenshot, then file it to a ClickUp task, new or existing,
+          or save the recording straight to your ClickUp Clips, without leaving the page.
+          Free and open source. It talks to ClickUp and nothing else.
+[span] Using Firefox?
+[a] Get it for Firefox
+[a] Get it from the Chrome Web Store
+[p] Prefer the file?
+[a] Latest release on GitHub
+[span] REC
+[time] 00:17
+[h2] Three steps, one panel. Or one tab for Clips.
+[p] Everything happens in the browser's side panel, next to the page you're looking at.
+[h3] Capture
+[p] Record a clip of your screen, a window or a tab. Or take a screenshot of the visible tab, a dragged-out area or the whole screen, then draw, write, blur and crop before anyone sees it.
+[h3] Describe
+[p] Pick the list, give the task a title and a formatted description (bold, lists, checklists, links, code), set status and priority. Open More details when you need assignees, a due date, tags or custom fields.
+[h3] Send
+[p] Create the task and upload in one click. Or add to an existing task: open it in ClickUp and the panel picks it up, or paste a link. Leave a comment while you're at it.
+[h3] Or skip the task: save to Clips
+[p] Some recordings aren't bug reports. Switch to the Clips tab and a recording goes to your workspace's Clips Hub, where ClickUp transcribes it and you can share it like any other Clip. Tick one box and it's saved the moment you press Stop. It uses your ClickUp sign-in in the browser, as the public API can't create Clips.
+[h2] Everything it does
+[p] Built for people who file bugs and feedback all day: QA, support, designers, product folks.
+[h3] Screen recording
+[dd] Your entire screen, a window or a tab, at 720p up to 4K or native size, with any microphone and system audio. Add yourself as a movable camera bubble if you like. Clips are written to disk as they record, so long ones don't fill memory. In Chrome you can close the panel while it records.
+[h3] Screenshots you can edit
+[dd] Visible tab, a selected area or the whole screen. Draw, add text, blur sensitive details and crop, with undo, redo and keyboard shortcuts. Edits are applied to the original pixels, so the export is full resolution.
+[h3] Tasks the way your team files them
+[dd] Workspace, Space, Folder and List, each remembered. Title, rich-text description, status and priority. Assignees, due date with a time, tags and custom fields, with required ones checked before you submit.
+[h3] Add to an existing task
+[dd] Open a task in ClickUp and the panel detects it. Or paste a task link, an ID or a custom ID like DEV-123. Attach files and post a comment, or just the comment.
+[h3] Save to ClickUp Clips
+[dd] A Clips tab puts recordings in your workspace's Clips Hub, with ClickUp's transcript and share link, optionally the moment you stop recording. The panel remembers which tab you use. This one feature goes through ClickUp's own web app with your sign-in, since the public API can't create Clips, so it may need an update when ClickUp changes.
+[h3] Any other files
+[dd] Pick, drag or paste files into the panel. Uploads retry on failure and wait out ClickUp's rate limits, and a created task is never duplicated on retry.
+[h3] Private by design
+[dd] Your own personal API token, stored in your browser. The extension talks to ClickUp and nowhere else (its API, plus ClickUp's own web app for the Clips tab): no servers of ours, no analytics, no tracking. The code is open, under the MIT license.
+[h2] Chrome and Firefox
+[p] The same panel in both. A few things differ because the browsers do.
+[th] Chrome, Edge, Brave, Opera, Vivaldi
+[th] Firefox
+[th] Where the panel lives
+[td] Side panel
+[td] Sidebar
+[th] Record a single tab
+[td] Yes
+[td] Screens and windows only
+[th] System audio in recordings
+[td] Yes, tick "Share audio" in the picker
+[td] Microphone only
+[th] Recording while the panel is closed
+[td] Yes, a REC badge shows it's running
+[td] Keep the sidebar open and stop from it. If it's closed, what was recorded is kept
+[th] Minimum version
+[td] Chrome 123
+[td] Firefox 128
+[h2] What it does with your data
+[li] Everything stays in your browser until you press Create, Upload or Save to Clips.
+[li] Data goes to one place: ClickUp. Its API with your own token, and ClickUp's own web app, with your sign-in, only for the Clips tab.
+[li] The developer runs no servers for this extension and receives none of your data.
+[li] No analytics or tracking in the extension. Nothing is sold.
+[p] The full
+[a] privacy policy
+[p] lists every piece of data the extension touches and why.
+[p] This website, as opposed to the extension, counts visits with Cloudflare Web Analytics (no cookies) and, only if you accept the cookie banner, Google Analytics. See the
+[a] privacy policy
+[h2] Questions
+[summary] Is it free?
+[p] Yes. The extension is free and open source under the MIT license. If it saves you time, there's a coffee button, but nothing is locked behind it.
+[summary] Does it work with ClickUp's free plan?
+[p] Yes. It uses your personal API token, which every ClickUp plan provides under Settings, then Apps. Attachments are limited by ClickUp's own per-file limit.
+[summary] Why does it ask for access to all websites?
+[p] So you can screenshot whatever page you're on, draw an area to capture on it, and have the panel notice when the current tab is a ClickUp task. Pages are only read when you click a capture button; nothing is collected in the background.
+[summary] Can it save recordings as ClickUp Clips?
+[p] Yes, from the Clips tab. They land in your workspace's Clips Hub with ClickUp's transcript, so they don't need a task. ClickUp's public API has no way to create a Clip, so this tab uses ClickUp's own web app and needs you signed in to ClickUp in that browser; if ClickUp changes that part of its app, the tab may stop working until the extension is updated. Attaching to tasks never depends on it.
+[summary] Where do recordings go before I upload them?
+[p] They're kept in your browser's storage, on your computer, until you upload or remove them. Unused screenshot drafts are deleted after 24 hours. Uninstalling the extension removes everything it stored.
+[summary] Is this made by ClickUp?
+[p] No. It's an independent project by Wagih Elbedeawi, not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used here only to describe compatibility.
+[a] Source on GitHub
+[a] Changelog
+[a] Report a problem
+[a] Privacy policy
+[a] Cookie settings
+[a] ☕ Buy me a coffee
+[p] Made by Wagih Elbedeawi. Not affiliated with, endorsed by or sponsored by ClickUp. "ClickUp" is a trademark of its owner, used only to describe compatibility.

@@ -1,0 +1,348 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1F1F29;
+    }
+
+    /* full-bleed ground — a dedicated clip, never painted on the root */
+    #root [class~="05-clips-bg"] {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+    }
+
+    #root [class~="05-clips-stage-clip"] {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ---------- Scene 1: title card ---------- */
+    #root [class~="05-clips-chip"] {
+      position: absolute;
+      left: 96px;
+      top: 270px;
+      display: inline-block;
+      padding: 10px 22px;
+      line-height: 24px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      background: #7B68EE;
+      border-radius: 100px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+      z-index: 5;
+    }
+
+    #root [class~="05-clips-title"] {
+      --dof: 0px;
+      position: absolute;
+      left: 0;
+      top: 440px;
+      width: 1920px;
+      text-align: center;
+      font-size: 4.2cqw;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1F1F29;
+      filter: blur(var(--dof));
+      will-change: filter, transform;
+      transform-origin: 50% 50%;
+      z-index: 3;
+    }
+
+    /* ---------- Scene 2+: headline + value lines (left column) ---------- */
+    #root [class~="05-clips-h2"] {
+      position: absolute;
+      left: 214px;
+      top: 264px;
+      font-size: 2.6cqw;
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #1F1F29;
+      will-change: transform, opacity;
+    }
+
+    #root [class~="05-clips-lines"] {
+      position: absolute;
+      left: 96px;
+      top: 370px;
+      width: 1040px;
+    }
+
+    #root [class~="05-clips-line"] {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      height: 60px;
+      margin-bottom: 26px;
+      font-size: 1.8cqw;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: #1F1F29;
+      will-change: transform, opacity;
+      min-width: 0;
+    }
+
+    #root [class~="05-clips-tick"] {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #7B68EE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #root [class~="05-clips-tick"] svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+
+    /* ---------- the product window (right column, cutout) ---------- */
+    #root [class~="05-clips-card"] {
+      --dof: 0px;
+      position: absolute;
+      left: 1240px;
+      top: 150px;
+      width: 560px;
+      height: 720px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(123, 104, 238, 0.2);
+      background: #FFFFFF;
+      overflow: hidden;
+      filter: blur(var(--dof));
+      will-change: filter, transform, opacity;
+      transform-origin: 50% 50%;
+      z-index: 4;
+    }
+
+    /* 400×800 panel column in source px, scaled ×1.4 */
+    #root [class~="05-clips-stage"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 400px;
+      height: 800px;
+      transform: scale(1.4);
+      transform-origin: 0 0;
+      overflow: hidden;
+    }
+
+    #root [class~="05-clips-shot"] {
+      position: absolute;
+      left: -880px;
+      top: 0;
+      width: 1280px;
+      height: 800px;
+      display: block;
+    }
+
+    /* keyword-glow highlights over the raster tab / toggle row (source px) */
+    #root [class~="05-clips-hl"] {
+      position: absolute;
+      border: 1.5px solid rgba(123, 104, 238, 0);
+      border-radius: 8px;
+      background: rgba(123, 104, 238, 0);
+      box-shadow: 0 0 0 rgba(123, 104, 238, 0);
+      transform-origin: 50% 50%;
+      pointer-events: none;
+    }
+
+    #root [class~="05-clips-hl-tab"] {
+      left: 288px;
+      top: 78px;
+      width: 96px;
+      height: 30px;
+    }
+
+    #root [class~="05-clips-hl-toggle"] {
+      left: 10px;
+      top: 178px;
+      width: 232px;
+      height: 24px;
+    }
+
+    #root [class~="05-clips-bracket"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 400px;
+      height: 800px;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    #root [class~="05-clips-bracket"] path {
+      fill: none;
+      stroke: #7B68EE;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+
+  <div id="root" data-composition-id="05-clips" data-width="1920" data-height="1080" data-duration="6.964">
+    <div class="05-clips-bg clip" data-start="0" data-duration="6.964" data-track-index="0"></div>
+
+    <div class="05-clips-stage-clip clip" data-start="0" data-duration="6.964" data-track-index="1">
+      <!-- Scene 1 title card: the NEW chip persists and later shrinks to the headline row -->
+      <div class="05-clips-chip" id="05-clips-chip">New</div>
+      <div class="05-clips-title" id="05-clips-title">Save to Clips</div>
+
+      <!-- Scene 2+: headline + value lines -->
+      <div class="05-clips-h2" id="05-clips-h2">Clips</div>
+      <div class="05-clips-lines">
+        <div class="05-clips-line" id="05-clips-line-1">
+          <span class="05-clips-tick"><svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>Transcribed by ClickUp</span>
+        </div>
+        <div class="05-clips-line" id="05-clips-line-2">
+          <span class="05-clips-tick"><svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>Share like any Clip</span>
+        </div>
+        <div class="05-clips-line" id="05-clips-line-3">
+          <span class="05-clips-tick"><svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>No task needed</span>
+        </div>
+      </div>
+
+      <!-- the product window: panel column of screenshot-5, pushed in on the Clips tab -->
+      <div class="05-clips-card" id="05-clips-card">
+        <div class="05-clips-stage" data-layout-allow-overflow>
+          <img class="05-clips-shot" src="assets/screenshot-5-clips.png" alt="" data-layout-allow-overflow />
+          <div class="05-clips-hl 05-clips-hl-tab" id="05-clips-hl-tab"></div>
+          <div class="05-clips-hl 05-clips-hl-toggle" id="05-clips-hl-toggle"></div>
+          <svg class="05-clips-bracket" viewBox="0 0 400 800" xmlns="http://www.w3.org/2000/svg">
+            <path id="05-clips-bracket-path" d="M 382 68 A 10 10 0 0 1 392 78 V 200 A 10 10 0 0 1 382 210 H 18 A 10 10 0 0 1 8 200 V 78 A 10 10 0 0 1 18 68 H 382" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var FRAME_ID = "05-clips";
+      var DURATION = 6.464;
+      var R = document.querySelector('[data-composition-id="' + FRAME_ID + '"]');
+      var $ = function (id) { return R.querySelector('[id="' + FRAME_ID + "-" + id + '"]'); };
+
+      var chip = $("chip");
+      var title = $("title");
+      var h2 = $("h2");
+      var card = $("card");
+      var lines = [$("line-1"), $("line-2"), $("line-3")];
+      var bracket = $("bracket-path");
+      var hlTab = $("hl-tab");
+      var hlToggle = $("hl-toggle");
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* ---- Scene 1 (0.0–1.5s): title card. One move, then hold. ---- */
+      // The chip's resting slot is the headline row (left 96 / top 270); in Scene 1
+      // it sits scaled-up at the canvas centre via x/y offsets.
+      var CHIP_X = 817, CHIP_Y = 88, CHIP_BIG = 2.2;
+      tl.fromTo(chip,
+        { scale: 0, opacity: 0, x: CHIP_X, y: CHIP_Y },
+        { scale: CHIP_BIG, opacity: 1, x: CHIP_X, y: CHIP_Y, duration: 0.55, ease: "power3.out" },
+        0.02);
+      tl.fromTo(title,
+        { opacity: 0, scale: 0.95 },
+        { opacity: 1, scale: 1, duration: 0.6, ease: "power2.out" },
+        0.3);
+
+      /* ---- Scene 2 (1.5–3.2s): blur-away → snap-into-focus handoff ---- */
+      // outgoing title card: text-scale blur (10px), dims on a linear opacity channel
+      tl.to(title, { "--dof": "10px", scale: 0.96, duration: 0.4, ease: "power2.in" }, 1.5);
+      tl.to(title, { opacity: 0, duration: 0.4, ease: "none" }, 1.5);
+      // incoming product window: pre-blurred (full-frame surface, 18px) snaps sharp
+      tl.fromTo(card,
+        { "--dof": "18px", opacity: 0.15, scale: 1.05 },
+        { "--dof": "0px", opacity: 1, scale: 1, duration: 0.7, ease: "expo.out" },
+        1.62);
+      // the NEW chip shrinks into the headline row (plain scale + position tween)
+      tl.to(chip, { scale: 1, x: 0, y: 0, duration: 0.7, ease: "power3.inOut" }, 1.55);
+      tl.fromTo(h2,
+        { opacity: 0, x: -14 },
+        { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" },
+        2.0);
+
+      // bracket draws around the Clips tab + the Save-to-Clips toggle row
+      var len = 1040;
+      try { var m = bracket.getTotalLength(); if (m && isFinite(m) && m > 0) len = m * 1.05; } catch (e) {}
+      bracket.style.strokeDasharray = String(len);
+      bracket.style.strokeDashoffset = String(len);
+      tl.to(bracket, { strokeDashoffset: 0, duration: 0.7, ease: "power2.out" }, 2.35);
+
+      /* ---- Scene 3 (3.2–5.4s): three value lines, one per VO cue ---- */
+      var LINE_AT = [3.3, 4.0, 4.75];
+      lines.forEach(function (el, i) {
+        tl.fromTo(el,
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+          LINE_AT[i]);
+      });
+
+      /* ---- keyword glow: one linear driver, attack/sustain/release envelope ----
+         Applied to highlight overlays over the raster UI (the tab and the toggle
+         row are image pixels, not glyphs), so the glow rides box-shadow + border. */
+      var ATTACK = 0.15, RELEASE = 0.4, REST = 0.2, MAX_BLUR = 20, MAX_SCALE = 0.06;
+      var HL = [
+        { el: hlTab, start: 2.75, end: 3.25 },     // "…ClickUp Clips"
+        { el: hlToggle, start: 4.85, end: 5.45 }   // "no task needed"
+      ];
+      function envelope(t, s, e) {
+        if (t < s) return 0;
+        if (t < e) return Math.min((t - s) / ATTACK, 1);
+        var re = e + RELEASE;
+        if (t < re) return 1 - ((t - e) / RELEASE) * (1 - REST);
+        return REST;
+      }
+      function paint(el, env) {
+        el.style.boxShadow = "0 0 " + (MAX_BLUR * env).toFixed(2) + "px rgba(123,104,238," + (0.85 * env).toFixed(3) + ")";
+        el.style.borderColor = "rgba(123,104,238," + env.toFixed(3) + ")";
+        el.style.backgroundColor = "rgba(123,104,238," + (0.12 * env).toFixed(3) + ")";
+        el.style.transform = "scale(" + (1 + MAX_SCALE * env).toFixed(4) + ")";
+      }
+      var driver = { t: 0 };
+      tl.to(driver, {
+        t: DURATION,
+        duration: DURATION,
+        ease: "none",
+        onUpdate: function () {
+          HL.forEach(function (h) { paint(h.el, envelope(driver.t, h.start, h.end)); });
+        }
+      }, 0);
+      HL.forEach(function (h) { paint(h.el, 0); });
+
+      /* ---- Scene 4 (5.4–6.46s): held read, camera locked, dead still ---- */
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[FRAME_ID] = tl;
+      tl.seek(0);
+    })();
+  </script>
+</template>

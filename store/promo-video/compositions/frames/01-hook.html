@@ -1,0 +1,252 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    /* root styled by #root only (never a class on the composition element) */
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1f1f29;
+    }
+
+    /* full-bleed white ground on its own clip layer */
+    [id="01-hook-bg"] {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+    }
+
+    /* stage: everything centers on one fixed anchor, lifted to ~0.42h (keep-out safe) */
+    [id="01-hook-stage"] {
+      position: absolute;
+      inset: 0;
+    }
+    [class~="01-hook-layer"] {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-bottom: 16cqh;
+      text-align: center;
+    }
+
+    /* h1 ink from frame.md: 4.2cqw / 700 / 1.08 / -0.02em / near-black */
+    [class~="01-hook-h1"] {
+      font-size: 4.2cqw;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1f1f29;
+      max-width: 60cqw;
+    }
+
+    [class~="01-hook-line"] {
+      display: block;
+      white-space: nowrap;
+    }
+    [class~="01-hook-word"] {
+      display: inline-block;
+      transform-origin: 50% 60%;
+      will-change: transform, filter, opacity;
+    }
+
+    /* scene 2: beat row = primary dot + beat text, re-centered on every hard cut */
+    [id="01-hook-row"] {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.34em;
+      white-space: nowrap;
+    }
+    [id="01-hook-dot"] {
+      display: block;
+      width: 0.26em;
+      height: 0.26em;
+      border-radius: 50%;
+      background: #7b68ee;
+      transform-origin: 50% 50%;
+      flex: none;
+    }
+    [id="01-hook-beat"] {
+      display: inline-block;
+      min-height: 1.08em;
+    }
+
+    /* scene 3: payoff line + primary marker underline under "leaving the page" */
+    [id="01-hook-s3"] {
+      will-change: transform, opacity;
+    }
+    [class~="01-hook-mark"] {
+      position: relative;
+      display: inline-block;
+    }
+    [class~="01-hook-mark-text"] {
+      position: relative;
+      z-index: 1;
+    }
+    [id="01-hook-underline"] {
+      position: absolute;
+      left: 0.02em;
+      right: 0.02em;
+      bottom: -0.03em;
+      height: 0.075em;
+      background: #7b68ee;
+      border-radius: 4px;
+      transform-origin: left center;
+      z-index: 0;
+    }
+    [id="01-hook-s3"] [class~="01-hook-h1"] {
+      max-width: none;
+    }
+  </style>
+
+  <div id="root" data-composition-id="01-hook" data-width="1920" data-height="1080" data-duration="7.355">
+    <div id="01-hook-bg" class="clip" data-start="0" data-duration="7.355" data-track-index="0"></div>
+
+    <div id="01-hook-stage" class="clip" data-start="0" data-duration="7.355" data-track-index="1">
+      <!-- Scene 1: the promise, per-word slam on one pulse grid -->
+      <div id="01-hook-s1" class="01-hook-layer">
+        <div class="01-hook-h1">
+          <span class="01-hook-line">
+            <span class="01-hook-word">A</span>
+            <span class="01-hook-word">bug</span>
+            <span class="01-hook-word">report</span>
+            <span class="01-hook-word">your</span>
+            <span class="01-hook-word">team</span>
+          </span>
+          <span class="01-hook-line">
+            <span class="01-hook-word">can</span>
+            <span class="01-hook-word">actually</span>
+            <span class="01-hook-word">reproduce.</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Scene 2: three beats replace each other in place (discrete text sequence) -->
+      <div id="01-hook-s2" class="01-hook-layer">
+        <div id="01-hook-row" class="01-hook-h1">
+          <span id="01-hook-dot"></span>
+          <span id="01-hook-beat"></span>
+        </div>
+      </div>
+
+      <!-- Scene 3: the payoff line, underline drawn on "page" -->
+      <div id="01-hook-s3" class="01-hook-layer">
+        <div class="01-hook-h1">
+          <span class="01-hook-line">without
+            <span class="01-hook-mark"><span class="01-hook-mark-text">leaving the page.</span><span id="01-hook-underline"></span></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var ID = "01-hook";
+      var DUR = 6.955;
+      var root = document.querySelector('[data-composition-id="' + ID + '"]');
+      var q = function (sel) { return root.querySelector(sel); };
+      var qa = function (sel) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
+
+      var tl = gsap.timeline({ paused: true });
+
+      // One tempo grid drives every onset (kinetic-beat-slam).
+      var PULSE = 0.1;
+      var BEATS = {
+        words: PULSE * 1,      // 0.1  scene 1 first word (hero visible by 0.5s)
+        clear1: PULSE * 23,    // 2.3  scene 1 fades up and away
+        recorded: PULSE * 26,  // 2.6  "Recorded."
+        markedUp: PULSE * 33,  // 3.3  "Marked up."
+        onTask: PULSE * 40.5,  // 4.05 "On the task."
+        clear2: PULSE * 45.2,  // 4.52 beats fade up and away
+        payoff: PULSE * 48.2,  // 4.82 "without leaving the page." fades in
+        underline: PULSE * 60  // 6.0  underline draws on "page"
+      };
+
+      /* ---------- Scene 1 (0.0-2.6s): per-word staggered slam, smooth register ---------- */
+      var words = qa('[class~="01-hook-word"]');
+      words.forEach(function (w, i) {
+        tl.fromTo(
+          w,
+          { scale: 1.28, y: 14, opacity: 0, filter: "blur(8px)" },
+          { scale: 1, y: 0, opacity: 1, filter: "blur(0px)", duration: 0.5, ease: "power4.out" },
+          BEATS.words + i * PULSE
+        );
+      });
+
+      // clear: the line accelerates up and fades (cut-the-curve, upward), dying at the cut
+      var s1 = q('[id="01-hook-s1"]');
+      tl.fromTo(s1, { y: 0 }, { y: -80, duration: 0.32, ease: "power4.in" }, BEATS.clear1);
+      tl.fromTo(s1, { opacity: 1 }, { opacity: 0, duration: 0.2, ease: "power1.in" }, BEATS.clear1 + 0.1);
+
+      /* ---------- Scene 2 (2.6-4.8s): three beats by hard cut + a primary dot pop ---------- */
+      var beatEl = q('[id="01-hook-beat"]');
+      var dot = q('[id="01-hook-dot"]');
+      var row = q('[id="01-hook-row"]');
+
+      // discrete-text-sequence: sparse states, reverse-searched on every update (instant jumps)
+      var SEQUENCE = [
+        { t: 0, text: "" },
+        { t: BEATS.recorded, text: "Recorded." },
+        { t: BEATS.markedUp, text: "Marked up." },
+        { t: BEATS.onTask, text: "On the task." }
+      ];
+      function textAt(time) {
+        for (var i = SEQUENCE.length - 1; i >= 0; i--) {
+          if (time >= SEQUENCE[i].t) return SEQUENCE[i].text;
+        }
+        return "";
+      }
+      var driver = { t: 0 };
+      var lastText = null;
+      function applyText() {
+        var txt = textAt(driver.t);
+        if (txt !== lastText) {
+          beatEl.textContent = txt;
+          lastText = txt;
+        }
+      }
+      tl.to(driver, { t: DUR, duration: DUR, ease: "none", onUpdate: applyText }, 0);
+      applyText();
+
+      // the row continues scene 1's upward motion into place (velocity-matched entry)
+      tl.fromTo(row, { y: 48, opacity: 0.35 }, { y: 0, opacity: 1, duration: 0.4, ease: "power4.out" }, BEATS.recorded);
+
+      // spring-pop-entrance (smooth, power3.out, no overshoot) once beside each beat
+      [BEATS.recorded, BEATS.markedUp, BEATS.onTask].forEach(function (at) {
+        tl.fromTo(dot, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "power3.out" }, at);
+      });
+
+      // clear: beats fade up and away, dying at the cut into scene 3
+      tl.fromTo(row, { y: 0 }, { y: -80, duration: 0.32, ease: "power4.in" }, BEATS.clear2);
+      tl.fromTo(row, { opacity: 1 }, { opacity: 0, duration: 0.2, ease: "power1.in" }, BEATS.clear2 + 0.1);
+
+      /* ---------- Scene 3 (4.8-6.96s): payoff fades in, underline draws on "page", hold ---------- */
+      var s3 = q('[id="01-hook-s3"]');
+      tl.fromTo(s3, { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, BEATS.payoff);
+
+      // css-marker-patterns (highlight-bar mechanics as an underline): scaleX 0 -> 1 from the left
+      var underline = q('[id="01-hook-underline"]');
+      tl.fromTo(underline, { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, BEATS.underline);
+
+      // holds dead still from ~6.5s to the end (no exit: the root transition is the exit)
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[ID] = tl;
+      tl.seek(0);
+    })();
+  </script>
+</template>

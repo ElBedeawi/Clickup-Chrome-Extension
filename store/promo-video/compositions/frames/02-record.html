@@ -1,0 +1,403 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1f1f29;
+    }
+
+    /* ---------- ground (full-bleed clip, never on #root) ---------- */
+    [id="02-record-bg"] {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(62% 58% at 66% 44%, rgba(123, 104, 238, 0.07), rgba(123, 104, 238, 0) 72%),
+        #ffffff;
+    }
+
+    /* ---------- the floating window (card-tinted, clipped) ---------- */
+    [id="02-record-window"] {
+      position: absolute;
+      left: 688px;
+      top: 110px;
+      width: 1152px;
+      height: 720px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(123, 104, 238, 0.04);
+      box-shadow: none;
+    }
+    [id="02-record-window"]::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1.5px solid rgba(123, 104, 238, 0.2);
+      border-radius: 14px;
+      pointer-events: none;
+      z-index: 5;
+    }
+    [id="02-record-zoom-outer"] {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    [id="02-record-zoom-inner"] {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+    /* the screenshot in its native 1280x800 pixel space, scaled 0.9 to fit the 1152x720 card */
+    [id="02-record-world"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1280px;
+      height: 800px;
+      transform: scale(0.9);
+      transform-origin: 0 0;
+    }
+    [id="02-record-shot"] {
+      display: block;
+      width: 1280px;
+      height: 800px;
+    }
+    /* keyword-glow overlays on the panel rows (image pixel coords) */
+    [data-f02-record="glow"] {
+      position: absolute;
+      border-radius: 8px;
+      border: 2px solid rgba(123, 104, 238, 0);
+      background: rgba(123, 104, 238, 0);
+      box-shadow: 0 0 0 0 rgba(123, 104, 238, 0);
+      transform-origin: 50% 50%;
+      pointer-events: none;
+    }
+    [id="02-record-bracket"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1280px;
+      height: 800px;
+      overflow: visible;
+      pointer-events: none;
+    }
+    [id="02-record-bracket-path"] {
+      fill: none;
+      stroke: #7b68ee;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ---------- left column: eyebrow, accent line, headline, chips, sub-lines ---------- */
+    [id="02-record-copy"] {
+      position: absolute;
+      left: 96px;
+      top: 236px;
+      width: 540px;
+    }
+    [id="02-record-eyebrow"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 1.1cqw;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6A57E0;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    [id="02-record-rule"] {
+      position: absolute;
+      left: 0;
+      top: 38px;
+      width: 60px;
+      height: 4px;
+      border-radius: 2px;
+      background: #7b68ee;
+      transform-origin: 0 50%;
+    }
+    [id="02-record-title"] {
+      position: absolute;
+      left: 0;
+      top: 56px;
+      margin: 0;
+      font-size: 4.2cqw;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1f1f29;
+      white-space: nowrap;
+    }
+    [id="02-record-chips"] {
+      position: absolute;
+      left: 0;
+      top: 180px;
+      display: flex;
+      gap: 14px;
+    }
+    [data-f02-record="chip"] {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      height: 54px;
+      padding: 0 24px;
+      border-radius: 100px;
+      background: rgba(123, 104, 238, 0.08);
+      color: #7b68ee;
+      font-size: 1.4cqw;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      transform-origin: 50% 50%;
+    }
+    [data-f02-record="chip-text"] {
+      position: relative;
+      z-index: 1;
+    }
+    [data-f02-record="underline"] {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      bottom: 9px;
+      height: 3px;
+      border-radius: 2px;
+      background: #7b68ee;
+      transform-origin: 0 50%;
+      z-index: 0;
+    }
+    [id="02-record-lines"] {
+      position: absolute;
+      left: 0;
+      top: 290px;
+      width: 540px;
+    }
+    [data-f02-record="line"] {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 44px;
+      margin-bottom: 14px;
+      font-size: 1.45cqw;
+      font-weight: 600;
+      line-height: 1.2;
+      color: #6b6b7b;
+      white-space: nowrap;
+    }
+    [data-f02-record="dot"] {
+      flex: 0 0 auto;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #7b68ee;
+    }
+    [data-f02-record="line"]:nth-child(2) [data-f02-record="dot"] {
+      opacity: 0.85;
+    }
+    [data-f02-record="line"]:nth-child(3) [data-f02-record="dot"] {
+      opacity: 0.7;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="02-record"
+    data-width="1920"
+    data-height="1080"
+    data-duration="7.583"
+  >
+    <!-- ground -->
+    <div id="02-record-bg" class="clip" data-start="0" data-duration="7.583" data-track-index="0"></div>
+
+    <!-- the floating window: real screenshot, camera pushes in on the panel column inside the clipped card -->
+    <div
+      id="02-record-window"
+      class="clip"
+      data-start="0"
+      data-duration="7.583"
+      data-track-index="1"
+      data-layout-allow-overflow
+    >
+      <div id="02-record-zoom-outer" data-layout-allow-overflow>
+        <div id="02-record-zoom-inner" data-layout-allow-overflow>
+          <div id="02-record-world" data-layout-allow-overflow>
+            <img id="02-record-shot" src="assets/screenshot-1-record.png" width="1280" height="800" alt="" />
+            <!-- keyword-glow targets: source row / microphone row / Record Clip row (image px) -->
+            <div data-f02-record="glow" data-word="screen" style="left: 906px; top: 180px; width: 349px; height: 40px"></div>
+            <div data-f02-record="glow" data-word="mic" style="left: 906px; top: 264px; width: 349px; height: 40px"></div>
+            <div data-f02-record="glow" data-word="camera" style="left: 906px; top: 316px; width: 349px; height: 43px"></div>
+            <!-- bracket around the panel column -->
+            <svg id="02-record-bracket" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg">
+              <path
+                id="02-record-bracket-path"
+                d="M 898 120 H 1262 Q 1274 120 1274 132 V 636 Q 1274 648 1262 648 H 898 Q 886 648 886 636 V 132 Q 886 120 898 120 Z"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- side copy -->
+    <div id="02-record-copy" class="clip" data-start="0" data-duration="7.583" data-track-index="2">
+      <div id="02-record-eyebrow">Side panel</div>
+      <div id="02-record-rule"></div>
+      <h1 id="02-record-title">Record</h1>
+      <div id="02-record-chips">
+        <span data-f02-record="chip"><span data-f02-record="underline"></span><span data-f02-record="chip-text">Screen</span></span>
+        <span data-f02-record="chip"><span data-f02-record="underline"></span><span data-f02-record="chip-text">Window</span></span>
+        <span data-f02-record="chip"><span data-f02-record="underline"></span><span data-f02-record="chip-text">Tab</span></span>
+      </div>
+      <div id="02-record-lines">
+        <div data-f02-record="line"><span data-f02-record="dot"></span><span>Microphone + level meter</span></div>
+        <div data-f02-record="line"><span data-f02-record="dot"></span><span>System audio (Chrome)</span></div>
+        <div data-f02-record="line"><span data-f02-record="dot"></span><span>Camera bubble</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var ID = "02-record";
+      var DUR = 7.083;
+      var byId = function (s) { return document.getElementById(s); };
+      var all = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+      var win = byId("02-record-window");
+      var outer = byId("02-record-zoom-outer");
+      var inner = byId("02-record-zoom-inner");
+      var rule = byId("02-record-rule");
+      var title = byId("02-record-title");
+      var eyebrow = byId("02-record-eyebrow");
+      var chips = all('[data-f02-record="chip"]');
+      var underlines = all('[data-f02-record="underline"]');
+      var lines = all('[data-f02-record="line"]');
+      var glows = all('[data-f02-record="glow"]');
+      var bracket = byId("02-record-bracket-path");
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* ---------- Scene 1 (0.0-1.4s): window slides in from the right, long-tail settle; camera pushes in ---------- */
+      tl.fromTo(win, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 0);
+      tl.fromTo(win, { x: 260 }, { x: 0, duration: 1.2, ease: "expo.out" }, 0);
+
+      // coordinate-target-zoom, nested form: outer scales around 50%/50%, inner counter-translates by T = -offset.
+      // Geometry is fixed pixels (no font metrics), so the offset is derived from the known layout and baked once.
+      var S = 1.4;            // push-in scale: the Record clip card ends ~54% of frame height
+      var WS = 0.9;           // world scale (1280x800 screenshot inside the 1152x720 card)
+      var CW = 1152, CH = 720;
+      var visW = CW / (S * WS);           // visible image width after the zoom (image px)
+      var visH = CH / (S * WS);           // visible image height after the zoom (image px)
+      var CROP_TOP = 92;                  // image y of the card's top edge after the zoom
+      var tx = 1280 - visW / 2;           // target center x: image right edge pinned to the card's right edge
+      var ty = CROP_TOP + visH / 2;       // target center y
+      var offX = WS * tx - CW / 2;
+      var offY = WS * ty - CH / 2;
+      var ZOOM_AT = 0.25, ZOOM_DUR = 1.15;
+      tl.to(outer, { scale: S, duration: ZOOM_DUR, ease: "power3.inOut" }, ZOOM_AT);
+      tl.to(inner, { x: -offX, y: -offY, duration: ZOOM_DUR, ease: "power3.inOut" }, ZOOM_AT);
+      // camera locks at 1.4s for the rest of the frame
+
+      /* ---------- Scene 2 (1.4-3.2s): side headline, chips one per spoken word with underline sweeps ---------- */
+      tl.fromTo(rule, { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power3.out" }, 1.35);
+      tl.fromTo(title, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, 1.4);
+
+      var CHIP_AT = [1.5, 2.1, 2.7]; // "screen" / "window" / "tab"
+      chips.forEach(function (chip, i) {
+        tl.fromTo(
+          chip,
+          { opacity: 0, scale: 0.86, y: 10 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          CHIP_AT[i]
+        );
+        tl.fromTo(
+          underlines[i],
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.35, ease: "power2.out" },
+          CHIP_AT[i] + 0.1
+        );
+      });
+
+      /* ---------- Scene 3 (3.2-5.8s): bracket draws around the panel column; sub-lines reveal per cue ---------- */
+      tl.fromTo(eyebrow, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 3.2);
+
+      var len = 0;
+      try { len = bracket.getTotalLength(); } catch (e) { len = 0; }
+      if (!(len > 0)) len = 1900;
+      len = len * 1.02;
+      bracket.style.strokeDasharray = String(len);
+      bracket.style.strokeDashoffset = String(len);
+      tl.fromTo(bracket, { strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.8, ease: "power2.out" }, 3.2);
+
+      var LINE_AT = [4.1, 4.8, 5.5]; // "your mic" / "system audio" / "camera bubble"
+      lines.forEach(function (line, i) {
+        tl.fromTo(
+          line,
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+          LINE_AT[i]
+        );
+      });
+
+      /* ---------- asr-keyword-glow on the panel rows: one linear driver, envelope per row ---------- */
+      var TIMINGS = {
+        screen: { start: 1.5, end: 1.95 },
+        mic: { start: 4.1, end: 4.55 },
+        camera: { start: 5.5, end: 5.95 }
+      };
+      var ATTACK_DUR = 0.15, RELEASE = 0.4, REST_LEVEL = 0.2;
+      var MAX_BLUR = 20, MAX_SPREAD = 6, MAX_SCALE_BOOST = 0.04;
+      function envelope(time, start, end) {
+        if (time < start) return 0;
+        if (time < end) return Math.min((time - start) / ATTACK_DUR, 1);
+        var releaseEnd = end + RELEASE;
+        if (time < releaseEnd) return 1 - ((time - end) / RELEASE) * (1 - REST_LEVEL);
+        return REST_LEVEL;
+      }
+      function paintGlows(t) {
+        glows.forEach(function (el) {
+          var timing = TIMINGS[el.dataset.word];
+          if (!timing) return;
+          var env = envelope(t, timing.start, timing.end);
+          el.style.boxShadow =
+            "0 0 " + (MAX_BLUR * env).toFixed(2) + "px " + (MAX_SPREAD * env).toFixed(2) + "px rgba(123, 104, 238, " + (0.5 * env).toFixed(3) + ")";
+          el.style.borderColor = "rgba(123, 104, 238, " + (0.85 * env).toFixed(3) + ")";
+          el.style.backgroundColor = "rgba(123, 104, 238, " + (0.1 * env).toFixed(3) + ")";
+          el.style.transform = "scale(" + (1 + MAX_SCALE_BOOST * env).toFixed(4) + ")";
+        });
+      }
+      var driver = { t: 0 };
+      paintGlows(0);
+      tl.to(
+        driver,
+        {
+          t: DUR,
+          duration: DUR,
+          ease: "none",
+          onUpdate: function () { paintGlows(driver.t); }
+        },
+        0
+      );
+
+      /* ---------- Scene 4 (5.8-7.08s): held read, camera locked, nothing moves ---------- */
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[ID] = tl;
+      tl.seek(0);
+    })();
+  </script>
+</template>

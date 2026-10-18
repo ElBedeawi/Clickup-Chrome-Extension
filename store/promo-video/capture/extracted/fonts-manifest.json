@@ -1,0 +1,38 @@
+{
+  "files": [
+    {
+      "file": "bricolage-grotesque.woff2",
+      "family": "Bricolage Grotesque 96pt",
+      "rawFamily": "Bricolage Grotesque 96pt ExtraBold",
+      "subfamily": "Regular",
+      "postscript": "BricolageGrotesque-96ptExtraBold",
+      "weight": 800,
+      "style": "normal",
+      "variationAxes": [
+        "opsz",
+        "wght",
+        "wdth"
+      ],
+      "identified": true,
+      "isIcon": false
+    }
+  ],
+  "families": [
+    {
+      "family": "Bricolage Grotesque 96pt",
+      "weights": [
+        800
+      ],
+      "variable": true,
+      "fileCount": 1,
+      "files": [
+        "bricolage-grotesque.woff2"
+      ]
+    }
+  ],
+  "unidentified": [],
+  "meta": {
+    "generatedAt": "2026-10-18T21:56:03.963Z",
+    "tool": "fontkit"
+  }
+}

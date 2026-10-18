@@ -1,0 +1,398 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1f1f29;
+    }
+
+    /* ---------- ground ---------- */
+    [id="04-task-bg"] {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+    }
+
+    /* ---------- left column: header + slot ---------- */
+    [id="04-task-copy"] {
+      position: absolute;
+      left: 96px;
+      top: 150px;
+      width: 640px;
+    }
+    [id="04-task-eyebrow"] {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    [id="04-task-eyebrow"] > i {
+      display: block;
+      width: 60px;
+      height: 4px;
+      border-radius: 2px;
+      background: #7b68ee;
+    }
+    [id="04-task-eyebrow"] > span {
+      font-size: 27px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #7b68ee;
+      line-height: 1.2;
+    }
+    [id="04-task-headline"] {
+      margin-top: 14px;
+      font-size: 82px;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1f1f29;
+    }
+
+    [id="04-task-slot"] {
+      position: absolute;
+      left: 96px;
+      top: 372px;
+      width: 640px;
+    }
+    [id="04-task-chips"],
+    [id="04-task-lines"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 640px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    [id="04-task-chips"] {
+      gap: 14px;
+    }
+    [id="04-task-chips"] > div {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 28px 14px 22px;
+      border-radius: 100px;
+      background: rgba(123, 104, 238, 0.04);
+      border: 1.5px solid rgba(123, 104, 238, 0.2);
+      font-size: 29px;
+      font-weight: 600;
+      line-height: 1.2;
+      color: #1f1f29;
+      white-space: nowrap;
+    }
+    [id="04-task-chips"] > div > i {
+      display: block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #7b68ee;
+      flex: none;
+    }
+    [id="04-task-lines"] {
+      gap: 16px;
+    }
+    [id="04-task-lines"] > div {
+      width: 640px;
+      padding: 18px 24px;
+      border-radius: 12px;
+      background: rgba(123, 104, 238, 0.08);
+      border-left: 4px solid #7b68ee;
+      font-size: 31px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: #1f1f29;
+    }
+
+    /* ---------- the window card (persistent chrome) ---------- */
+    [id="04-task-card"] {
+      position: absolute;
+      left: 1100px;
+      top: 96px;
+      width: 583px;
+      height: 803px;
+      box-sizing: border-box;
+      border-radius: 14px;
+      border: 1.5px solid rgba(123, 104, 238, 0.2);
+      background: #ffffff;
+      overflow: hidden;
+    }
+    [id="04-task-chrome"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 580px;
+      height: 36px;
+      background: rgba(123, 104, 238, 0.04);
+      border-bottom: 1px solid rgba(123, 104, 238, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 16px;
+      box-sizing: border-box;
+    }
+    [id="04-task-chrome"] > i {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(123, 104, 238, 0.22);
+    }
+    [id="04-task-screen"] {
+      position: absolute;
+      left: 0;
+      top: 36px;
+      width: 580px;
+      height: 764px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    /* coordinate-target-zoom: outer scales, inner translates */
+    [id="04-task-zoom-outer"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 580px;
+      height: 764px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    [id="04-task-zoom-inner"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 580px;
+      height: 764px;
+      will-change: transform;
+    }
+
+    /* the lateral strip: both panel columns side by side (3d-page-scroll translateX form) */
+    [id="04-task-strip"] {
+      position: absolute;
+      left: 90px;
+      top: -18px;
+      width: 800px;
+      height: 800px;
+      will-change: transform;
+    }
+    [id="04-task-strip"] > div {
+      position: absolute;
+      width: 400px;
+      height: 800px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    [id="04-task-panel-3"] {
+      left: 0;
+      top: 0;
+    }
+    [id="04-task-panel-4"] {
+      left: 400px;
+      top: 290.667px;
+    }
+    [id="04-task-strip"] img {
+      position: absolute;
+      left: -880px;
+      top: 0;
+      width: 1280px;
+      height: 800px;
+      display: block;
+    }
+
+    /* keyword-glow overlays (image-pixel coordinates inside each panel column) */
+    [id="04-task-strip"] [data-glow] {
+      position: absolute;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1.5px solid rgba(123, 104, 238, 0);
+      background-color: rgba(123, 104, 238, 0);
+      transform-origin: 50% 50%;
+      pointer-events: none;
+    }
+    [id="04-task-strip"] [data-glow="assignees"] { left: 17px; top: 379px; width: 196px; height: 40px; }
+    [id="04-task-strip"] [data-glow="due"]       { left: 9px;  top: 476px; width: 372px; height: 46px; }
+    [id="04-task-strip"] [data-glow="custom"]    { left: 9px;  top: 636px; width: 382px; height: 158px; }
+    [id="04-task-strip"] [data-glow="tab"]       { left: 199px; top: 74px; width: 188px; height: 40px; }
+
+    /* thin primary outline around the detected task URL field */
+    [id="04-task-url-outline"] {
+      position: absolute;
+      left: 11px;
+      top: 139px;
+      width: 311px;
+      height: 42px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1.5px solid #7b68ee;
+      pointer-events: none;
+    }
+  </style>
+
+  <div id="root" data-composition-id="04-task" data-width="1920" data-height="1080" data-duration="8.336">
+    <!-- ground -->
+    <div id="04-task-bg" class="clip" data-start="0" data-duration="8.336" data-track-index="0"></div>
+
+    <!-- the window card: persistent chrome, zoomed + sliding panel inside -->
+    <div id="04-task-card" class="clip" data-start="0" data-duration="8.336" data-track-index="1">
+      <div id="04-task-chrome"><i></i><i></i><i></i></div>
+      <div id="04-task-screen">
+        <div id="04-task-zoom-outer" data-layout-allow-overflow>
+          <div id="04-task-zoom-inner" data-layout-allow-overflow>
+            <div id="04-task-strip" data-layout-allow-overflow>
+              <div id="04-task-panel-3" data-layout-allow-overflow>
+                <img src="assets/screenshot-3-details.png" alt="" />
+                <div data-glow="assignees"></div>
+                <div data-glow="due"></div>
+                <div data-glow="custom"></div>
+              </div>
+              <div id="04-task-panel-4" data-layout-allow-overflow>
+                <img src="assets/screenshot-4-existing.png" alt="" />
+                <div data-glow="tab"></div>
+                <div id="04-task-url-outline"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- left column -->
+    <div id="04-task-left" class="clip" data-start="0" data-duration="8.336" data-track-index="2">
+      <div id="04-task-copy">
+        <div id="04-task-eyebrow"><i></i><span>New or existing task</span></div>
+        <div id="04-task-headline">File it</div>
+      </div>
+      <div id="04-task-slot">
+        <div id="04-task-chips">
+          <div><i></i>Title</div>
+          <div><i></i>Rich-text description</div>
+          <div><i></i>Assignees</div>
+          <div><i></i>Due date</div>
+          <div><i></i>Custom fields</div>
+        </div>
+        <div id="04-task-lines">
+          <div>Detected from the open ClickUp tab</div>
+          <div>Add a comment while you're at it</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var ID = "04-task";
+      var D = 7.936;
+      var el = function (id) { return document.getElementById(id); };
+
+      var card = el("04-task-card");
+      var zoomOuter = el("04-task-zoom-outer");
+      var zoomInner = el("04-task-zoom-inner");
+      var strip = el("04-task-strip");
+      var eyebrow = el("04-task-eyebrow");
+      var headline = el("04-task-headline");
+      var chipsWrap = el("04-task-chips");
+      var chips = Array.prototype.slice.call(chipsWrap.children);
+      var lines = Array.prototype.slice.call(el("04-task-lines").children);
+      var urlOutline = el("04-task-url-outline");
+      var glows = Array.prototype.slice.call(strip.querySelectorAll("[data-glow]"));
+
+      // coordinate-target-zoom, nested-wrapper form (outer scale, inner counter-translate).
+      // Screen area 580x764, origin at its center (290,382); the 400x800 panel image is
+      // centered in the inner wrapper, so image point (ix,iy) lands at
+      //   screen = center + S * ((ix-200, iy-400) + T).
+      // State A: S=1.45, Ty=136.6  -> image top (iy=0) at screen top, width fills 580.
+      // State B: S=1.5,  Ty=-145.333 -> image bottom (iy=800) at screen bottom; the
+      //   More details block (iy 335-800) shows at screen y 66-764 (~65% of frame height).
+      var ZOOM_A = { s: 1.45, y: 136.6 };
+      var ZOOM_B = { s: 1.5, y: -145.333 };
+      var ZOOM_AT = 0.5, ZOOM_DUR = 1.1, ZOOM_EASE = "power3.inOut";
+
+      // asr-keyword-glow envelope (one linear driver loops every glow box)
+      var GLOW = {
+        assignees: { start: 2.70, end: 3.15 },
+        due:       { start: 3.35, end: 3.85 },
+        custom:    { start: 4.05, end: 4.55 },
+        tab:       { start: 5.45, end: 6.10 }
+      };
+      var ATTACK = 0.15, RELEASE = 0.35, REST = 0.25, MAX_BLUR = 20, MAX_SCALE = 0.04;
+      function envelope(t, start, end) {
+        if (t < start) return 0;
+        if (t < end) return Math.min((t - start) / ATTACK, 1);
+        var releaseEnd = end + RELEASE;
+        if (t < releaseEnd) return 1 - ((t - end) / RELEASE) * (1 - REST);
+        return REST;
+      }
+      function paintGlows(t) {
+        for (var i = 0; i < glows.length; i++) {
+          var g = glows[i];
+          var w = GLOW[g.getAttribute("data-glow")];
+          if (!w) continue;
+          var env = envelope(t, w.start, w.end);
+          g.style.boxShadow = "0 0 " + (MAX_BLUR * env).toFixed(2) + "px rgba(123,104,238," + (0.55 * env).toFixed(3) + ")";
+          g.style.backgroundColor = "rgba(123,104,238," + (0.12 * env).toFixed(3) + ")";
+          g.style.borderColor = "rgba(123,104,238," + (0.75 * env).toFixed(3) + ")";
+          g.style.transform = "scale(" + (1 + MAX_SCALE * env).toFixed(4) + ")";
+        }
+      }
+
+      var tl = gsap.timeline({ paused: true });
+
+      // ---- Scene 1 (0.0-1.3s): card arrives (push-slide continuation), headline fades in left,
+      //      camera pushes in on More details and locks.
+      tl.fromTo(card, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power1.out" }, 0);
+      tl.fromTo(card, { x: 140 }, { x: 0, duration: 0.8, ease: "power3.out" }, 0);
+      tl.fromTo(eyebrow, { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.55, ease: "power3.out" }, 0.2);
+      tl.fromTo(headline, { opacity: 0, x: -28 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.32);
+      tl.fromTo(zoomOuter, { scale: ZOOM_A.s }, { scale: ZOOM_B.s, duration: ZOOM_DUR, ease: ZOOM_EASE }, ZOOM_AT);
+      tl.fromTo(zoomInner, { x: 0, y: ZOOM_A.y }, { x: 0, y: ZOOM_B.y, duration: ZOOM_DUR, ease: ZOOM_EASE }, ZOOM_AT);
+
+      // ---- Scene 2 (1.3-4.6s): five chips fade up into their slots, one per VO cue;
+      //      the panel's assignees / due date / custom fields glow via the driver below.
+      var CHIP_AT = [1.40, 1.95, 2.60, 3.25, 3.95];
+      for (var c = 0; c < chips.length; c++) {
+        tl.fromTo(chips[c], { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, CHIP_AT[c]);
+      }
+
+      // ---- Scene 3 (4.6-6.8s): lateral slide inside the clipped window (chrome persists):
+      //      panel 3 exits left, panel 4 enters from the right and settles on its tab row.
+      var SLIDE_AT = 4.65;
+      tl.fromTo(strip, { x: 0 }, { x: -400, duration: 0.9, ease: "power3.out" }, SLIDE_AT);
+      // chips list -> two lines: plain opacity swap
+      tl.to(chipsWrap, { opacity: 0, duration: 0.3, ease: "power1.inOut" }, SLIDE_AT);
+      tl.fromTo(lines[0], { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 5.05);
+      tl.fromTo(lines[1], { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 5.30);
+      // thin primary outline around the detected task URL field
+      tl.fromTo(urlOutline, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.inOut" }, 5.8);
+
+      // ---- keyword-glow driver: linear, full duration, one onUpdate for all glow boxes.
+      //      (Also carries the timeline to the full 7.936s; Scene 4 (6.8-7.94s) is a held read.)
+      var driver = { t: 0 };
+      tl.to(driver, {
+        t: D,
+        duration: D,
+        ease: "none",
+        onUpdate: function () { paintGlows(driver.t); }
+      }, 0);
+
+      paintGlows(0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines[ID] = tl;
+      tl.seek(0);
+    })();
+  </script>
+</template>

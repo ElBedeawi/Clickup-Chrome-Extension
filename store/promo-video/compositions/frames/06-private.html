@@ -1,0 +1,290 @@
+<template>
+<style>
+@font-face{
+  font-family: "Bricolage Grotesque";
+  src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+  font-weight: 200 800;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+
+/* ── frame root (contract: styled via #root, never a class) ── */
+#root {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  container-type: size;
+  font-family: "Bricolage Grotesque", sans-serif;
+  color: #1F1F29;
+}
+#root .clip {
+  position: absolute;
+  inset: 0;
+}
+
+/* full-bleed ground on its own clip layer (never on #root) */
+[class~="06-private-bg"] {
+  background: #FFFFFF;
+}
+
+/* centered column, ~50% width, hero anchored high */
+[class~="06-private-col"] {
+  position: absolute;
+  left: 480px;
+  top: 214px;
+  width: 960px;
+}
+
+[class~="06-private-head"] {
+  margin-bottom: 44px;
+}
+[class~="06-private-rule"] {
+  width: 60px;
+  height: 4px;
+  border-radius: 2px;
+  background: #7B68EE;
+  margin-bottom: 22px;
+  transform-origin: 0% 50%;
+  will-change: transform;
+}
+[class~="06-private-h2"] {
+  margin: 0;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 2.6cqw;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #1F1F29;
+  will-change: transform, opacity;
+}
+
+/* the benefit list — BUILD mode: every line stays fully lit */
+[class~="06-private-list"] {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+[class~="06-private-row"] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  min-height: 56px;
+}
+
+/* step-circle marker: 56px, primary fill */
+[class~="06-private-mark"] {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #7B68EE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  opacity: 0;
+}
+[class~="06-private-mark"] svg {
+  width: 56px;
+  height: 56px;
+  display: block;
+}
+[class~="06-private-mark"] path {
+  fill: none;
+  stroke: #FFFFFF;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* line text — display ramp h3 role, lifted above the 1.4cqw legibility floor */
+[class~="06-private-text"] {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 1.85cqw;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: #1F1F29;
+  white-space: nowrap;
+  clip-path: inset(0% 100% 0% 0%);
+}
+
+/* ambient glow behind the final marker (behind: z 1; marker: z 2) */
+[class~="06-private-glow"] {
+  position: absolute;
+  z-index: 1;
+  left: -102px;
+  top: 50%;
+  width: 260px;
+  height: 260px;
+  margin-top: -130px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(91, 69, 230, 0.55) 0%,
+    rgba(91, 69, 230, 0.20) 36%,
+    rgba(91, 69, 230, 0) 68%);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+</style>
+
+<div id="root" data-composition-id="06-private" data-width="1920" data-height="1080" data-duration="7.604">
+  <div class="clip 06-private-bg" data-start="0" data-duration="7.604" data-track-index="0"></div>
+
+  <div class="clip 06-private-stage" data-start="0" data-duration="7.604" data-track-index="1">
+    <div class="06-private-col">
+      <div class="06-private-head">
+        <div class="06-private-rule" id="06-private-rule"></div>
+        <h2 class="06-private-h2" id="06-private-h2">Private by design</h2>
+      </div>
+
+      <ul class="06-private-list" id="06-private-list">
+        <li class="06-private-row" data-06-private-line="1">
+          <div class="06-private-mark">
+            <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M17 29 L25 37 L40 20"/>
+            </svg>
+          </div>
+          <div class="06-private-text">Your own API token, stored in your browser</div>
+        </li>
+        <li class="06-private-row" data-06-private-line="2">
+          <div class="06-private-mark">
+            <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M17 29 L25 37 L40 20"/>
+            </svg>
+          </div>
+          <div class="06-private-text">Talks to ClickUp and nothing else</div>
+        </li>
+        <li class="06-private-row" data-06-private-line="3">
+          <div class="06-private-mark">
+            <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M17 29 L25 37 L40 20"/>
+            </svg>
+          </div>
+          <div class="06-private-text">No servers, no analytics, no tracking</div>
+        </li>
+        <li class="06-private-row" data-06-private-line="4">
+          <div class="06-private-glow" id="06-private-glow"></div>
+          <div class="06-private-mark">
+            <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M17 29 L25 37 L40 20"/>
+            </svg>
+          </div>
+          <div class="06-private-text">Free and open source (MIT)</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script id="06-private-gsap" src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script>
+(function () {
+  var FRAME_ID = "06-private";
+  var DURATION = 7.104;
+
+  function build() {
+    if (!window.gsap) return;
+    window.__timelines = window.__timelines || {};
+    if (window.__timelines[FRAME_ID]) return;
+
+    var root = document.querySelector('[data-composition-id="' + FRAME_ID + '"]');
+    if (!root) return;
+
+    var h2 = document.getElementById("06-private-h2");
+    var rule = document.getElementById("06-private-rule");
+    var glow = document.getElementById("06-private-glow");
+    var rows = Array.prototype.slice.call(root.querySelectorAll("[data-06-private-line]"));
+
+    var tl = gsap.timeline({ paused: true });
+
+    /* ── Scene 1 (0.0–1.6s): headline + first line ── */
+    // headline fades in upper-left of the column; hero visible well before 0.5s
+    tl.fromTo(h2,
+      { opacity: 0, y: 14 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+      0);
+    // accent-line grows from the left under the same beat
+    tl.fromTo(rule,
+      { scaleX: 0, opacity: 0 },
+      { scaleX: 1, opacity: 1, duration: 0.45, ease: "power2.out" },
+      0.06);
+
+    /* ── lines 1–4, each on its voiceover cue (BUILD mode: co-resident, no dimming) ──
+       line 1 on "Your own API token", then ~1.9s / ~3.6s / ~5.0s per the shot sequence */
+    var CUES = [0.55, 1.9, 3.6, 5.0];
+    var POP_DUR = 0.5;      // spring-pop-entrance: smooth power3.out settle, no overshoot
+    var DRAW_DUR = 0.4;     // svg-path-draw: power2.out "pen lifts at end of stroke"
+    var WIPE_DUR = 0.55;    // clip-path mask-wipe, left → right
+
+    rows.forEach(function (row, i) {
+      var at = CUES[i];
+      var mark = row.querySelector('[class~="06-private-mark"]');
+      var path = row.querySelector("path");
+      var text = row.querySelector('[class~="06-private-text"]');
+
+      // measured geometry for the check stroke (fallback if not laid out yet)
+      var len = 0;
+      try { len = path.getTotalLength(); } catch (e) { len = 0; }
+      if (!len || !isFinite(len)) len = 36;
+      len = len * 1.05;
+      path.style.strokeDasharray = String(len);
+      path.style.strokeDashoffset = String(len);
+
+      // 1. primary circle marker pops (scale 0 → 1, smooth long-tail settle)
+      tl.fromTo(mark,
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: POP_DUR, ease: "power3.out" },
+        at);
+
+      // 2. the check draws inside the marker (dashoffset len → 0)
+      tl.fromTo(path,
+        { strokeDashoffset: len },
+        { strokeDashoffset: 0, duration: DRAW_DUR, ease: "power2.out" },
+        at + 0.22);
+
+      // 3. the text wipes in left → right (clip-path reveal)
+      tl.fromTo(text,
+        { clipPath: "inset(0% 100% 0% 0%)" },
+        { clipPath: "inset(0% 0% 0% 0%)", duration: WIPE_DUR, ease: "power2.out" },
+        at + 0.18);
+    });
+
+    /* ── Scene 3 (5.6–7.1s): held read; the last check gets one primary glow pulse ──
+       ambient-glow-bloom, pulse-on-arrival form: bloom slightly past peak as line 4 settles,
+       then ease down to a steady hold. Single pass, no loop; peak ≤ 0.45. */
+    tl.fromTo(glow,
+      { opacity: 0, scale: 0.8 },
+      { opacity: 0.40, scale: 1.06, duration: 0.6, ease: "power2.out" },
+      5.45);
+    tl.to(glow,
+      { opacity: 0.22, scale: 1.0, duration: 0.85, ease: "power2.inOut" },
+      6.05);
+
+    // pin the timeline to the frame's fixed duration (no exit — the root transition owns that)
+    tl.set({}, {}, DURATION);
+
+    window.__timelines[FRAME_ID] = tl;
+  }
+
+  if (window.gsap) {
+    build();
+  } else {
+    var loader = document.getElementById("06-private-gsap");
+    if (loader) loader.addEventListener("load", build);
+  }
+})();
+</script>
+</template>

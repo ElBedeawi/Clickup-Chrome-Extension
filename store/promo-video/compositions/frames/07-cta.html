@@ -1,0 +1,300 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    /* ids carry the 07-cta- prefix; they start with a digit, so CSS + JS address them
+       through [id="..."] attribute selectors (a bare #07-… is not a valid selector). */
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1F1F29;
+    }
+
+    /* full-bleed ground: its own clip, never the root */
+    [id="07-cta-ground"] {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+    }
+
+    /* end-card layer (fades to the canvas over the last 0.3s) */
+    [id="07-cta-card"] {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* closing atmosphere: faint concentric rings (frame.md closing treatment) */
+    [id="07-cta-rings"] {
+      position: absolute;
+      left: 960px;
+      top: 470px;
+      width: 0;
+      height: 0;
+    }
+    [id="07-cta-rings"] span {
+      position: absolute;
+      border: 1.5px solid rgba(123, 104, 238, 0.10);
+      border-radius: 50%;
+    }
+    [id="07-cta-ring-1"] { width: 760px;  height: 760px;  left: -380px; top: -380px; }
+    [id="07-cta-ring-2"] { width: 1120px; height: 1120px; left: -560px; top: -560px; border-color: rgba(123, 104, 238, 0.06); }
+
+    /* the mark: the stage carries the make-room slide, the img carries the drop */
+    [id="07-cta-mark-stage"] {
+      position: absolute;
+      left: 841px;   /* (1920 - 238) / 2 */
+      top: 170px;
+      width: 238px;  /* ~22% of frame height */
+      height: 238px;
+      will-change: transform;
+    }
+    [id="07-cta-glow"] {
+      position: absolute;
+      left: -261px;  /* (760 - 238) / 2 */
+      top: -261px;
+      width: 760px;
+      height: 760px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(123, 104, 238, 0.42) 0%, rgba(123, 104, 238, 0.16) 32%, rgba(123, 104, 238, 0) 66%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    [id="07-cta-mark"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 238px;
+      height: 238px;
+      display: block;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    /* name: h1 ink, h2 muted; the words are the waterfall units */
+    [id="07-cta-title"] {
+      position: absolute;
+      left: 0;
+      top: 440px;
+      width: 1920px;
+      text-align: center;
+      font-size: 80px;        /* h1 4.2cqw */
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1F1F29;
+      white-space: nowrap;
+    }
+    [id="07-cta-sub"] {
+      position: absolute;
+      left: 0;
+      top: 538px;
+      width: 1920px;
+      text-align: center;
+      font-size: 50px;        /* h2 2.6cqw */
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #6B6B7B;
+      white-space: nowrap;
+    }
+    [id="07-cta-title"] .w,
+    [id="07-cta-sub"] .w {
+      display: inline-block;
+      opacity: 0;             /* waterfall-entry: binary reveal via tl.set */
+      will-change: transform;
+    }
+
+    /* chip rows */
+    [id="07-cta-row-free"],
+    [id="07-cta-row-stores"],
+    [id="07-cta-row-url"] {
+      position: absolute;
+      left: 0;
+      width: 1920px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+    }
+    [id="07-cta-row-free"]   { top: 626px; }
+    [id="07-cta-row-stores"] { top: 690px; }
+    [id="07-cta-row-url"]    { top: 768px; }
+
+    [id="07-cta-chip-free"],
+    [id="07-cta-chip-chrome"],
+    [id="07-cta-chip-firefox"] {
+      display: inline-flex;
+      align-items: center;
+      height: 50px;
+      padding: 0 26px;
+      border-radius: 100px;
+      font-size: 25px;        /* tag type, lifted to the 1.3cqw legibility floor */
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: #7B68EE;
+      background: rgba(123, 104, 238, 0.08);   /* accent-light */
+      white-space: nowrap;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    [id="07-cta-chip-chrome"],
+    [id="07-cta-chip-firefox"] {
+      background: rgba(123, 104, 238, 0.04);          /* card-bg */
+      border: 1.5px solid rgba(123, 104, 238, 0.2);   /* border */
+    }
+    [id="07-cta-chip-chrome"]::before,
+    [id="07-cta-chip-firefox"]::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #7B68EE;
+      margin-right: 12px;
+    }
+
+    /* URL pill: counter type, primary on accent-light; the text snaps to ink on the final beat */
+    [id="07-cta-url"] {
+      display: inline-flex;
+      align-items: center;
+      height: 64px;
+      padding: 0 40px;
+      border-radius: 100px;
+      background: rgba(123, 104, 238, 0.08);   /* accent-light */
+      white-space: nowrap;
+      will-change: clip-path;
+    }
+    [id="07-cta-url-text"] {
+      font-size: 30px;        /* counter type, lifted to ~1.5cqw so the URL is typeable from the screen */
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #7B68EE;
+    }
+  </style>
+
+  <div id="root" data-composition-id="07-cta" data-width="1920" data-height="1080">
+    <!-- track 0: full-bleed ground -->
+    <div id="07-cta-ground" class="clip" data-start="0" data-duration="7.5" data-track-index="0"></div>
+
+    <!-- track 1: the end card -->
+    <div id="07-cta-card" class="clip" data-start="0" data-duration="7.5" data-track-index="1">
+      <div id="07-cta-rings" aria-hidden="true">
+        <span id="07-cta-ring-1"></span>
+        <span id="07-cta-ring-2"></span>
+      </div>
+
+      <div id="07-cta-mark-stage">
+        <div id="07-cta-glow"></div>
+        <img id="07-cta-mark" src="assets/brand-icon.svg" alt="" width="238" height="238">
+      </div>
+
+      <div id="07-cta-title">
+        <span class="w" id="07-cta-w1">Video</span>
+        <span class="w" id="07-cta-w2">&amp;</span>
+        <span class="w" id="07-cta-w3">Screenshot</span>
+        <span class="w" id="07-cta-w4">Uploader</span>
+      </div>
+      <div id="07-cta-sub">
+        <span class="w" id="07-cta-w5">for</span>
+        <span class="w" id="07-cta-w6">ClickUp</span>
+      </div>
+
+      <div id="07-cta-row-free">
+        <span id="07-cta-chip-free">Free · Open source</span>
+      </div>
+      <div id="07-cta-row-stores">
+        <span id="07-cta-chip-chrome">Chrome Web Store</span>
+        <span id="07-cta-chip-firefox">Firefox Add-ons</span>
+      </div>
+      <div id="07-cta-row-url">
+        <span id="07-cta-url"><span id="07-cta-url-text">clickup-uploader.macawshub.com</span></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var F = 1 / 60;
+      var $ = function (id) { return '[id="07-cta-' + id + '"]'; };
+      var tl = gsap.timeline({ paused: true });
+
+      /* ---------- Scene 1 (0.0–1.2s): the mark drops in, one glow pass ---------- */
+      // the stage rests 80px lower in Scene 1 (dead-center-upper); in Scene 2 it slides up to make room
+      tl.fromTo($("mark-stage"), { y: 80 }, { y: 0, duration: 0.5, ease: "power2.inOut" }, 1.15);
+
+      // spring-pop-entrance, smooth settle with a y-offset drop from above (no overshoot)
+      tl.fromTo($("mark"),
+        { y: -260, scale: 0.72, opacity: 0 },
+        { y: 0, scale: 1, opacity: 1, duration: 0.7, ease: "power3.out" },
+        0.08);
+
+      // soft primary glow behind the mark: a single fade-in-and-out pass
+      tl.fromTo($("glow"), { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power2.out" }, 0.18);
+      tl.to($("glow"), { opacity: 0, duration: 0.7, ease: "power2.inOut" }, 0.63);
+
+      /* ---------- Scene 2 (1.2–3.2s): the name builds word by word (waterfall-entry, lateral) ---------- */
+      // binary opacity via tl.set, whip in from the left on power4.out, overlaps tighten across the cascade
+      var t0 = 1.3;                                   // "Video" — anchor
+      tl.set($("w1"), { opacity: 1, x: -80 }, t0);
+      tl.to($("w1"), { x: 0, duration: 0.18, ease: "power4.out" }, t0);
+      var t1 = t0 + 0.18 - F;                         // "&" — light, 1f overlap
+      tl.set($("w2"), { opacity: 1, x: -36 }, t1);
+      tl.to($("w2"), { x: 0, duration: 0.11, ease: "power4.out" }, t1);
+      var t2 = t1 + 0.11 - F;                         // "Screenshot" — heavy
+      tl.set($("w3"), { opacity: 1, x: -70 }, t2);
+      tl.to($("w3"), { x: 0, duration: 0.17, ease: "power4.out" }, t2);
+      var t3 = t2 + 0.17 - 2 * F;                     // "Uploader" — final, heaviest, tightest overlap
+      tl.set($("w4"), { opacity: 1, x: -84 }, t3);
+      tl.to($("w4"), { x: 0, duration: 0.2, ease: "power4.out" }, t3);
+
+      var t4 = 2.05;                                  // "for" — light
+      tl.set($("w5"), { opacity: 1, x: -40 }, t4);
+      tl.to($("w5"), { x: 0, duration: 0.13, ease: "power4.out" }, t4);
+      var t5 = t4 + 0.13 - 2 * F;                     // "ClickUp" — anchor of the second line
+      tl.set($("w6"), { opacity: 1, x: -80 }, t5);
+      tl.to($("w6"), { x: 0, duration: 0.2, ease: "power4.out" }, t5);
+
+      /* ---------- Scene 3 (3.2–4.8s): chips pop, the URL wipes in, its text snaps to ink ---------- */
+      // "Free" → the free chip pops under the name
+      tl.fromTo($("chip-free"),
+        { scale: 0, opacity: 0, y: 16 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+        3.2);
+
+      // "Chrome and Firefox" → two store chips pop side by side, staggered
+      [$("chip-chrome"), $("chip-firefox")].forEach(function (sel, i) {
+        tl.fromTo(sel,
+          { scale: 0, opacity: 0, y: 16 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          3.6 + i * 0.08);
+      });
+
+      // the URL pill wipes in left→right (clip-path reveal)
+      tl.fromTo($("url"),
+        { clipPath: "inset(0% 100% 0% 0% round 100px)" },
+        { clipPath: "inset(0% 0% 0% 0% round 100px)", duration: 0.5, ease: "power3.out" },
+        4.05);
+
+      // final beat: the URL text snaps to ink
+      tl.set($("url-text"), { color: "#1F1F29" }, 4.8);
+
+      /* ---------- Scene 4 (4.8–7.5s): dead-static hold; fade to the canvas over the last 0.3s ---------- */
+      tl.to($("card"), { opacity: 0, duration: 0.3, ease: "power1.inOut" }, 7.2);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["07-cta"] = tl;
+    })();
+  </script>
+</template>
