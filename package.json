@@ -13,6 +13,7 @@
     "test:smoke:firefox": "node --test --test-concurrency=1 tests/smoke/firefox.test.mjs",
     "test:all": "npm test && npm run test:smoke && npm run test:smoke:firefox",
     "render": "node scripts/render-assets.mjs",
-    "package": "node scripts/package.mjs"
+    "package": "node scripts/package.mjs",
+    "spike:clip": "node scripts/spike-clip.mjs"
   }
 }

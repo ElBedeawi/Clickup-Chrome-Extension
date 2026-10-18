@@ -75,6 +75,11 @@
         sub: 'Paste a task link — or open the task and it’s picked up automatically. Close the panel; the recording keeps going.',
         url: 'shop.acme.dev/checkout',
       },
+      clips: {
+        title: 'Or skip the task and save it to <em>ClickUp Clips</em>',
+        sub: 'The Clips tab sends recordings to your workspace’s Clips Hub, where ClickUp transcribes them — by itself when you stop, if you like.',
+        url: 'shop.acme.dev/checkout',
+      },
     };
     const scene = new URLSearchParams(location.search).get('scene') || 'new';
     const s = SCENES[scene];

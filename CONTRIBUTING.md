@@ -33,7 +33,7 @@ See the [README](README.md#project-layout) for how the code is organised, and [A
 
 - **Keep it dependency-free.** No frameworks, bundlers or packages in the extension itself.
 - **No remote code.** Manifest V3 and both stores forbid loading scripts from other sites. Bundle any assets locally.
-- **Privacy first.** The extension talks only to `api.clickup.com`. Don't add analytics, tracking or new network destinations. If a change affects what data is handled, update [docs/privacy-policy.html](docs/privacy-policy.html) in the same PR.
+- **Privacy first.** The extension talks only to ClickUp: the public API at `api.clickup.com`, plus ClickUp's web-app hosts for the optional Clips tab only (see AGENTS.md). Don't add analytics, tracking or new network destinations. If a change affects what data is handled, update [docs/privacy-policy.html](docs/privacy-policy.html) in the same PR.
 - **Ask for as few permissions as possible.** A new permission needs a strong reason and a justification in [store/listing.md](store/listing.md) (Chrome) and [store/firefox-listing.md](store/firefox-listing.md) (Firefox); unit tests check both.
 - **Both browsers.** Use `chrome.*` (Firefox returns promises for it too). Anything browser-specific goes through [lib/platform.js](lib/platform.js), and user-facing text shouldn't say "Chrome" unless it is about Chrome.
 - **Match the surrounding code:** 2-space indentation, single quotes, semicolons, small focused modules, short comments that explain *why*.
@@ -61,6 +61,7 @@ Some things can't be automated (real ClickUp, the share picker, the microphone),
 - [ ] If you touched the microphone flow (Firefox): grant in the helper tab with and without "Remember this decision".
 - [ ] If you touched the camera bubble (Chrome): pick a camera, check the preview, record the entire screen, close the panel mid-recording, reopen it and move/resize the bubble, then stop from the "Stop sharing" bar. The clip must stay smooth with the bubble mirrored and where the stage showed it. Also deny the camera once: the clip records without it and the panel offers to grant access.
 - [ ] If you touched the camera bubble (Firefox): grant the camera in the helper tab, record with the bubble, move it from the sidebar and from a second window's sidebar, and close the sidebar mid-recording (the partial clip must appear).
+- [ ] If you touched the Clips tab: save a recording with a signed-in ClickUp tab open, with none open (one is opened and closed for you) and signed out (the error must leave the recording in the list to retry); after "Record another" the list and the next panel open must be empty. With "Save to Clips when recording stops" on: Stop from the panel saves by itself, but a recording that ended while the panel was closed (Chrome's "Stop sharing" bar) or that Firefox recovered after the sidebar closed must show up pending, not saved. Close and reopen the panel: it comes back on the Clips tab.
 - [ ] If you touched screenshots or the editor: try all three capture modes and the draw, text, blur and crop tools.
 - [ ] If you touched the side panel UI: check it at a **narrow width (about 320 px)** as well as the default, in light and dark mode.
 - [ ] The browser console (side panel: right-click → Inspect) shows no errors.

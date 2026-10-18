@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Video &amp; Screenshot Uploader for ClickUp — record, annotate, attach</title>
-  <meta name="description" content="Free, open-source Chrome and Firefox extension: record your screen or annotate a screenshot, then attach it to a new or existing ClickUp task from the browser's side panel. Uses your own ClickUp token; talks to ClickUp and nothing else." />
+  <meta name="description" content="Free, open-source Chrome and Firefox extension: record your screen or annotate a screenshot, then attach it to a new or existing ClickUp task, or save the recording to your ClickUp Clips, from the browser's side panel. Uses your own ClickUp token; talks to ClickUp and nothing else." />
   <link rel="canonical" href="https://clickup-uploader.macawshub.com/" />
   <link rel="icon" href="icon.png" />
   <link rel="stylesheet" href="site.css" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Video &amp; Screenshot Uploader for ClickUp" />
-  <meta property="og:description" content="Record your screen or annotate a screenshot, then attach it to a ClickUp task without leaving the page. Free for Chrome and Firefox." />
+  <meta property="og:description" content="Record your screen or annotate a screenshot, then attach it to a ClickUp task or save it to your ClickUp Clips, without leaving the page. Free for Chrome and Firefox." />
   <meta property="og:url" content="https://clickup-uploader.macawshub.com/" />
   <meta property="og:image" content="https://clickup-uploader.macawshub.com/images/og.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -53,7 +53,8 @@
         <h1>Bug reports, with the video attached.</h1>
         <p class="lead">
           Record your screen or annotate a screenshot, then file it to a ClickUp task, new or existing,
-          without leaving the page. Free and open source. It talks to ClickUp and nothing else.
+          or save the recording straight to your ClickUp Clips, without leaving the page.
+          Free and open source. It talks to ClickUp and nothing else.
         </p>
         <!-- Official store badges. site.js marks <html data-browser="firefox|chromium"> so visitors see
              their own store first; without JavaScript both badges show. -->
@@ -82,7 +83,7 @@
 
   <section class="section" id="how">
     <div class="wrap">
-      <h2>Three steps, one panel</h2>
+      <h2>Three steps, one panel. Or one tab for Clips.</h2>
       <p class="muted">Everything happens in the browser's side panel, next to the page you're looking at.</p>
       <ol class="steps">
         <li>
@@ -108,6 +109,14 @@
           </div>
           <img src="images/screenshot-4-existing.png" width="1280" height="800" loading="lazy"
                alt="The side panel attaching a screenshot and a comment to an existing task while a recording is in progress" />
+        </li>
+        <li>
+          <div class="step-text">
+            <h3>Or skip the task: save to Clips</h3>
+            <p>Some recordings aren't bug reports. Switch to the Clips tab and a recording goes to your workspace's Clips Hub, where ClickUp transcribes it and you can share it like any other Clip. Tick one box and it's saved the moment you press Stop. It uses your ClickUp sign-in in the browser, as the public API can't create Clips.</p>
+          </div>
+          <img src="images/screenshot-5-clips.png" width="1280" height="800" loading="lazy"
+               alt="The side panel on its Clips tab, with the Record clip card open, a recording ready to save and a Save to Clips button" />
         </li>
       </ol>
     </div>
@@ -139,6 +148,11 @@
           <dd>Open a task in ClickUp and the panel detects it. Or paste a task link, an ID or a custom ID like DEV-123. Attach files and post a comment, or just the comment.</dd>
         </div>
         <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m2 7 3.5-4M8 7l3.5-4M14 7l3.5-4M2 11h20"/></svg>
+          <dt><h3>Save to ClickUp Clips</h3></dt>
+          <dd>A Clips tab puts recordings in your workspace's Clips Hub, with ClickUp's transcript and share link, optionally the moment you stop recording. The panel remembers which tab you use. This one feature goes through ClickUp's own web app with your sign-in, since the public API can't create Clips, so it may need an update when ClickUp changes.</dd>
+        </div>
+        <div>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5 12.6 20a5 5 0 0 1-7.1-7.1l8-8a3.3 3.3 0 0 1 4.7 4.7l-8 8a1.7 1.7 0 0 1-2.4-2.4l7.3-7.3"/></svg>
           <dt><h3>Any other files</h3></dt>
           <dd>Pick, drag or paste files into the panel. Uploads retry on failure and wait out ClickUp's rate limits, and a created task is never duplicated on retry.</dd>
@@ -146,7 +160,7 @@
         <div>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
           <dt><h3>Private by design</h3></dt>
-          <dd>Your own personal API token, stored in your browser. The extension talks to api.clickup.com and nowhere else: no servers of ours, no analytics, no tracking. The code is open, under the MIT license.</dd>
+          <dd>Your own personal API token, stored in your browser. The extension talks to ClickUp and nowhere else (its API, plus ClickUp's own web app for the Clips tab): no servers of ours, no analytics, no tracking. The code is open, under the MIT license.</dd>
         </div>
       </dl>
     </div>
@@ -177,8 +191,8 @@
         <div>
           <h2>What it does with your data</h2>
           <ul>
-            <li>Everything stays in your browser until you press Create or Upload.</li>
-            <li>Data goes to one place: ClickUp's API, with your own token.</li>
+            <li>Everything stays in your browser until you press Create, Upload or Save to Clips.</li>
+            <li>Data goes to one place: ClickUp. Its API with your own token, and ClickUp's own web app, with your sign-in, only for the Clips tab.</li>
             <li>The developer runs no servers for this extension and receives none of your data.</li>
             <li>No analytics or tracking in the extension. Nothing is sold.</li>
           </ul>
@@ -206,6 +220,10 @@
         <details>
           <summary>Why does it ask for access to all websites?</summary>
           <p>So you can screenshot whatever page you're on, draw an area to capture on it, and have the panel notice when the current tab is a ClickUp task. Pages are only read when you click a capture button; nothing is collected in the background.</p>
+        </details>
+        <details>
+          <summary>Can it save recordings as ClickUp Clips?</summary>
+          <p>Yes, from the Clips tab. They land in your workspace's Clips Hub with ClickUp's transcript, so they don't need a task. ClickUp's public API has no way to create a Clip, so this tab uses ClickUp's own web app and needs you signed in to ClickUp in that browser; if ClickUp changes that part of its app, the tab may stop working until the extension is updated. Attaching to tasks never depends on it.</p>
         </details>
         <details>
           <summary>Where do recordings go before I upload them?</summary>

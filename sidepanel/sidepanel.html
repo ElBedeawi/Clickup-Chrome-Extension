@@ -40,24 +40,44 @@
 
       <!-- Locked once the target task is known (edits would no longer apply) -->
       <fieldset id="task-fields" class="bare">
+      <!-- Where the files go: a new task, an existing task, or the workspace's Clips Hub.
+           The last choice is remembered (prefs.mode). Labels shorten at narrow widths (CSS). -->
       <nav class="tabs" role="tablist">
-        <button role="tab" id="tab-new" class="tab active" aria-selected="true" data-mode="new">New task</button>
-        <button role="tab" id="tab-existing" class="tab" aria-selected="false" data-mode="existing">Existing task</button>
+        <button role="tab" id="tab-new" class="tab active" aria-selected="true" data-mode="new">
+          <span class="tab-label">New<span class="tab-label-extra"> task</span></span>
+        </button>
+        <button role="tab" id="tab-existing" class="tab" aria-selected="false" data-mode="existing">
+          <span class="tab-label">Existing<span class="tab-label-extra"> task</span></span>
+        </button>
+        <button role="tab" id="tab-clips" class="tab" aria-selected="false" data-mode="clips">
+          <span class="tab-label">Clips</span>
+        </button>
       </nav>
 
       <!-- New task -->
       <section id="panel-new" class="panel" role="tabpanel">
-        <label for="sel-workspace">Workspace</label>
-        <select id="sel-workspace"></select>
+        <!-- Where the task goes. Collapses into one "Space › Folder › List" row once a list is
+             chosen (sidepanel.js renderLocation); "Change" expands the four selects again. -->
+        <details id="location" class="more location">
+          <summary>
+            <span class="loc-pin" data-icon="pin" data-size="14"></span>
+            <span id="location-path" class="loc-path"><span class="muted">Loading…</span></span>
+            <span id="location-change" class="loc-change">Change</span>
+          </summary>
+          <div class="more-body loc-rows">
+            <label for="sel-workspace">Workspace</label>
+            <select id="sel-workspace"></select>
 
-        <label for="sel-space">Space</label>
-        <select id="sel-space" disabled></select>
+            <label for="sel-space">Space</label>
+            <select id="sel-space" disabled></select>
 
-        <label for="sel-folder">Folder</label>
-        <select id="sel-folder" disabled></select>
+            <label for="sel-folder">Folder</label>
+            <select id="sel-folder" disabled></select>
 
-        <label for="sel-list">List</label>
-        <select id="sel-list" disabled></select>
+            <label for="sel-list">List</label>
+            <select id="sel-list" disabled></select>
+          </div>
+        </details>
 
         <label for="task-title">Title <span class="req">*</span></label>
         <input id="task-title" type="text" placeholder="Task name" />
@@ -126,13 +146,27 @@
           </div>
         </details>
       </section>
+
+      <!-- Clips: recordings go to the workspace's Clips Hub (lib/clickup-clips.js), no task involved.
+           The attachments area below becomes video-only in this mode (sidepanel.js setMode). -->
+      <section id="panel-clips" class="panel" role="tabpanel" hidden>
+        <p class="clips-intro muted small">
+          <span class="clips-icon" data-icon="clip" data-size="16"></span>
+          <span>Saved to your workspace’s <strong>Clips Hub</strong>, where ClickUp transcribes them.
+            Needs you signed in to ClickUp in this browser. Videos up to <span id="clips-limit">45 MB</span>.</span>
+        </p>
+        <label class="checkbox clips-auto">
+          <input id="clips-auto-save" type="checkbox" />
+          Save to Clips when recording stops
+        </label>
+      </section>
       </fieldset>
 
       <!-- Attachments (shared) -->
       <section id="attachments" class="attachments">
         <div class="att-head">
-          <h2>Attachments</h2>
-          <span class="muted small">Drop or paste files anywhere</span>
+          <h2 id="att-title">Attachments</h2>
+          <span id="att-hint" class="muted small">Drop or paste files anywhere</span>
         </div>
 
         <div class="toolbar-wrap">

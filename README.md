@@ -32,7 +32,8 @@ The official ClickUp Chrome extension can't attach videos to tasks. This one can
 - **Screenshots:** visible tab, a selected area or the entire screen, then draw, add text, blur sensitive details or crop.
 - **Create a task** with title, a rich-text description (headings, bold, lists, checklists, links, code), status, priority, plus optional assignees, due date, tags and custom fields.
 - **Add to an existing task:** paste a link or open the task and it's detected automatically, with an optional comment.
-- **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://clickup-uploader.macawshub.com/privacy-policy.html)).
+- **Save to Clips:** a third tab saves recordings to your workspace's Clips Hub, with ClickUp's automatic transcript, optionally as soon as the recording stops. The public API can't create Clips, so this tab talks to ClickUp's own web-app API and needs you to be signed in to ClickUp in the browser; it is undocumented and may stop working after a ClickUp update. The task upload never depends on it.
+- **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://clickup-uploader.macawshub.com/privacy-policy.html)). Everything goes to ClickUp's API; only the Clips tab also talks to ClickUp's web-app hosts.
 
 ## Supported browsers
 
@@ -83,11 +84,13 @@ The token is kept in the extension's local storage on this machine only. **Revok
 
 **New task:** pick Workspace → Space → Folder (or "No folder") → List, enter a title and an optional description (format it with the toolbar or Markdown shortcuts like `- ` and `**bold**`), status and priority. Then press **Create task & upload**.
 - The panel opens on the list you used last.
-- Each dropdown remembers your last pick inside each parent, and picks the only option automatically when there is just one.
+- Each dropdown remembers your last pick inside each parent, and picks the only option automatically when there is just one. Once a list is chosen the four dropdowns collapse into a single "Space › Folder › List" row; click **Change** to pick another location.
 - **More details** (collapsed by default) adds assignees, due date (optionally with a time), tags and custom fields. A badge shows how many are set.
 - Supported custom field types: text, number, currency, email, URL, phone, date, checkbox, dropdown, labels and rating. Other types are listed so you can set them in ClickUp afterwards. Required fields are checked before submitting.
 
 **Existing task:** open a task in ClickUp and the panel picks it up from the current tab. You can also paste a task URL, a task ID, or a custom ID like `DEV-123`, then press **Check**. **Add a comment** (collapsed) posts a comment after the upload. You can also post just a comment.
+
+**Clips:** no task at all. Record (or attach) videos and press **Save to Clips** to put them in your workspace's Clips Hub, where ClickUp transcribes them. Tick **Save to Clips when recording stops** and a recording you start in this tab is saved the moment you stop it. This tab is video-only (the Screenshot tool is hidden and Attach takes videos), needs you signed in to ClickUp in this browser (a ClickUp tab is opened in the background if none is open) and takes videos up to 45 MB. The tab you used last is the one the panel opens on.
 
 **Attachments**: a toolbar with three tools.
 - **🎥 Record clip** opens the recording card:
@@ -125,7 +128,7 @@ For maintainers: the link is `BUY_ME_A_COFFEE_URL` in [lib/links.js](lib/links.j
 
 ## Contributing
 
-Contributions are welcome! Start with [CONTRIBUTING.md](CONTRIBUTING.md). It covers setup (no build step: load the folder unpacked), coding guidelines and how to test. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md). For help, see [SUPPORT.md](SUPPORT.md).
+Contributions are welcome! Start with [CONTRIBUTING.md](CONTRIBUTING.md). It covers setup (no build step: load the folder unpacked), coding guidelines and how to test. What's planned, and why, is in [ROADMAP.md](ROADMAP.md). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md). For help, see [SUPPORT.md](SUPPORT.md).
 
 ## Releasing
 

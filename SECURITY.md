@@ -30,6 +30,7 @@ You can expect an acknowledgement within a few days. Once the issue is confirmed
 Especially relevant areas:
 
 - handling of the ClickUp API token (stored in `chrome.storage.local`, sent only to `api.clickup.com`)
+- handling of the short-lived ClickUp session token used by the Clips tab ("Save to Clips") (kept in memory only, sent only to the workspace's ClickUp API host)
 - the `<all_urls>` host permission and the area-selection overlay injected into pages
 - anything that could send user data anywhere other than ClickUp's API
 

@@ -1,4 +1,6 @@
 import * as api from '../lib/clickup-api.js';
+import { clipsHubUrl, clipsEligible, setClipsPrefs, MAX_CLIP_BYTES } from '../lib/clickup-clips.js';
+import { uploadAsClip as uploadClipViaTab } from './clips-host.js';
 import { getToken, getPrefs, setPrefs, onTokenChanged } from '../lib/storage.js';
 import { listAttachments, deleteAttachment } from '../lib/attachments-db.js';
 import { captureScreenshot, openEditor } from '../lib/screenshot.js';
@@ -22,8 +24,14 @@ const el = {
   tabs: document.querySelectorAll('.tab'),
   panelNew: $('panel-new'),
   panelExisting: $('panel-existing'),
+  panelClips: $('panel-clips'),
+  clipsAutoSave: $('clips-auto-save'),
+  clipsLimit: $('clips-limit'),
   targetBanner: $('target-banner'),
 
+  location: $('location'),
+  locationPath: $('location-path'),
+  locationChange: $('location-change'),
   workspace: $('sel-workspace'),
   space: $('sel-space'),
   folder: $('sel-folder'),
@@ -38,7 +46,10 @@ const el = {
   taskRefHint: $('task-ref-hint'),
   taskFound: $('task-found'),
 
+  attTitle: $('att-title'),
+  attHint: $('att-hint'),
   toolRecord: $('tool-record'),
+  toolShot: $('tool-shot'),
   recordCard: $('record-card'),
   btnRecord: $('btn-record'),
   recordHint: $('record-hint'),
@@ -68,7 +79,15 @@ const el = {
 };
 
 const state = {
-  mode: 'new', // 'new' | 'existing'
+  /** Where the files go (the tabs; remembered in prefs.mode): 'new' | 'existing' | 'clips' */
+  mode: 'new',
+  /** Clips tab: save a recording to the Clips Hub as soon as it stops (prefs.clips.autoSave). */
+  clipsAutoSave: false,
+  /**
+   * This panel started the running recording, or pressed Stop on one it hosts. Only then does
+   * auto-save fire when it ends: recordings recovered or found at boot are never uploaded unasked.
+   */
+  recordingOwned: false,
   busy: false,
   /** Folders of the selected space, keyed by id — each includes its `lists`. */
   folders: new Map(),
@@ -77,8 +96,9 @@ const state = {
   /** Existing-task ref auto-filled from the active tab (so we don't overwrite manual input). */
   autoRef: '',
   /**
-   * `dbId` is set for recordings, which are also kept in IndexedDB until uploaded or removed.
-   * @type {{ id: number, file: File, url: string, dbId?: number, status: 'pending'|'uploading'|'done'|'failed', progress: number, error?: string }[]}
+   * `dbId` is set for recordings, which are also kept in IndexedDB until uploaded or removed
+   * (`createdAt` comes from that record). `status` is the task upload; `clip` the Clips Hub one.
+   * @type {{ id: number, file: File, url: string, dbId?: number, createdAt?: number, status: 'pending'|'uploading'|'done'|'failed', progress: number, error?: string, clip?: { status: 'uploading'|'done'|'failed', progress?: number|null, hubUrl?: string, error?: string } }[]}
    */
   attachments: [],
   /** Mirrors chrome.storage.session `recording`: { startedAt, camera } while the recorder runs. */
@@ -202,6 +222,7 @@ async function loadWorkspaces() {
     resetSelect(el.workspace, 'Failed to load');
     showError(err.message);
   }
+  renderLocation();
 }
 
 async function loadSpaces() {
@@ -288,27 +309,70 @@ async function loadStatuses() {
 // Save before loading the next level so prefs writes never interleave.
 el.workspace.addEventListener('change', async () => {
   await remember('workspace', el.workspace.value);
-  loadSpaces();
+  await loadSpaces();
+  renderLocation();
 });
 el.space.addEventListener('change', async () => {
   await remember('space', el.space.value);
-  loadFolders();
+  await loadFolders();
+  renderLocation();
 });
 el.folder.addEventListener('change', async () => {
   await remember('folder', el.folder.value);
-  loadLists();
+  await loadLists();
+  renderLocation();
 });
 el.list.addEventListener('change', async () => {
   await remember('list', el.list.value);
   details.reload();
+  if (el.list.value) el.location.open = false; // picked: collapse to the summary row
+  renderLocation();
   loadStatuses();
+});
+
+// ---------------------------------------------------------------------------
+// Location row: the four selects live in a <details> whose summary shows the chosen path
+// ("Space › Folder › List"). It stays collapsed while a list is selected (most sessions never
+// change it) and opens itself whenever there is no list to create the task in.
+// ---------------------------------------------------------------------------
+
+const selectedName = (select) => (select.value ? select.options[select.selectedIndex]?.text ?? '' : '');
+
+function renderLocation() {
+  const crumbs = [
+    el.workspace.options.length > 1 ? selectedName(el.workspace) : '', // one workspace: not worth a crumb
+    selectedName(el.space),
+    selectedName(el.folder), // "— No folder —" has value "" and is skipped
+  ].filter(Boolean);
+  const sep = () => Object.assign(document.createElement('span'), { className: 'sep', textContent: ' › ' });
+  const nodes = [];
+  if (crumbs.length) {
+    // Leading crumbs in one span that ellipsizes before the list name does (see .loc-prefix)
+    const prefix = Object.assign(document.createElement('span'), { className: 'loc-prefix' });
+    crumbs.forEach((name, i) => prefix.append(...(i ? [sep(), name] : [name])));
+    nodes.push(prefix, sep());
+  }
+  const listName = selectedName(el.list);
+  nodes.push(
+    listName
+      ? Object.assign(document.createElement('b'), { textContent: listName })
+      : Object.assign(document.createElement('span'), { className: 'muted', textContent: 'Choose a list' }),
+  );
+  el.locationPath.replaceChildren(...nodes);
+  el.locationPath.title = el.locationPath.textContent;
+  if (!el.list.value) el.location.open = true;
+}
+
+el.location.addEventListener('toggle', () => {
+  el.locationChange.textContent = el.location.open ? 'Done' : 'Change';
 });
 
 // ---------------------------------------------------------------------------
 // Mode tabs
 // ---------------------------------------------------------------------------
 
-function setMode(mode) {
+/** Switches the destination tab. `persist: false` when restoring the remembered one at boot. */
+function setMode(mode, { persist = true } = {}) {
   state.mode = mode;
   el.tabs.forEach((tab) => {
     const active = tab.dataset.mode === mode;
@@ -317,11 +381,30 @@ function setMode(mode) {
   });
   el.panelNew.hidden = mode !== 'new';
   el.panelExisting.hidden = mode !== 'existing';
+  el.panelClips.hidden = mode !== 'clips';
+
+  // The Clips tab is video-only: no screenshots, Attach takes videos, and recording is the
+  // main action, so its card is open from the start.
+  const clips = mode === 'clips';
+  document.body.classList.toggle('clips-mode', clips);
+  el.toolShot.hidden = clips;
+  el.fileInput.accept = clips ? 'video/*' : '';
+  el.btnAddFiles.title = clips ? 'Attach a video' : 'Attach files';
+  el.attTitle.textContent = clips ? 'Clips' : 'Attachments';
+  el.attHint.textContent = clips ? 'Drop or paste videos anywhere' : 'Drop or paste files anywhere';
+  if (clips && !state.recording) setRecordCardOpen(true);
+
   showError('');
   render();
+  if (persist) setPrefs({ mode }).catch(console.error);
 }
 
 el.tabs.forEach((tab) => tab.addEventListener('click', () => setMode(tab.dataset.mode)));
+
+el.clipsAutoSave.addEventListener('change', () => {
+  state.clipsAutoSave = el.clipsAutoSave.checked;
+  setClipsPrefs({ autoSave: state.clipsAutoSave }).catch(console.error);
+});
 
 // ---------------------------------------------------------------------------
 // Existing task: detect from active tab, validate
@@ -347,7 +430,7 @@ async function checkExistingTask() {
     el.taskFound.textContent = `✓ ${task.name}`;
     el.taskFound.hidden = false;
     showError('');
-    return { id: task.id, url: task.url, name: task.name, customTaskIds: false };
+    return { id: task.id, url: task.url, name: task.name, customTaskIds: false, teamId: task.team_id };
   } catch (err) {
     showError(err.status === 404 || err.status === 400 ? `Task not found: ${err.message}` : err.message);
     return null;
@@ -402,6 +485,15 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
 // ---------------------------------------------------------------------------
 
 function addFiles(files) {
+  files = [...files];
+  if (state.mode === 'clips') {
+    // Only videos can become Clips; say so instead of listing a file that would be skipped.
+    const refused = files.map((file) => ({ file, ...clipsEligible(file) })).filter((r) => !r.ok);
+    if (refused.length) {
+      showError(refused.map((r) => `${r.file.name}: ${r.reason}`).join('\n'));
+      files = files.filter((file) => clipsEligible(file).ok);
+    }
+  }
   for (const file of files) {
     state.attachments.push({
       id: nextAttachmentId++,
@@ -468,16 +560,17 @@ function renderAttachments() {
       remove.title = 'Remove';
       remove.disabled = state.busy || a.status === 'done';
       remove.addEventListener('click', () => removeAttachment(a.id));
-      const preview = a.file.type.startsWith('video/') || a.file.type.startsWith('image/');
-      if (preview) {
+      const trailing = [];
+      if (a.file.type.startsWith('video/') || a.file.type.startsWith('image/')) {
         const open = document.createElement('button');
         open.className = 'open';
         open.innerHTML = icon('external', 14);
         open.title = 'Open in a new tab';
         open.setAttribute('aria-label', 'Open in a new tab');
         open.addEventListener('click', () => openInTab(a));
-        meta.append(name, size, open, remove);
-      } else meta.append(name, size, remove);
+        trailing.push(open);
+      }
+      meta.append(name, size, ...trailing, remove);
       li.append(meta);
 
       if (a.file.type.startsWith('video/')) {
@@ -508,6 +601,18 @@ function renderAttachments() {
         s.textContent = a.status === 'done' ? '✓ Uploaded' : `✕ ${a.error || 'Upload failed'}`;
         li.append(s);
       }
+
+      // Clips tab: a file added in a task tab that can't be a Clip stays listed, dimmed, and is skipped.
+      const eligible = state.mode === 'clips' ? clipsEligible(a.file) : { ok: true };
+      if (!eligible.ok) {
+        li.classList.add('skipped');
+        const s = document.createElement('div');
+        s.className = 'state muted';
+        s.textContent = `${eligible.reason} Skipped.`;
+        li.append(s);
+      }
+
+      if (a.clip) li.append(clipStateEl(a));
       return li;
     }),
   );
@@ -517,6 +622,115 @@ function renderAttachments() {
 function updateProgress(a) {
   const fill = el.attachmentList.querySelector(`[data-id="${a.id}"] .progress > div`);
   if (fill) fill.style.width = `${Math.round(a.progress * 100)}%`;
+}
+
+// ---------------------------------------------------------------------------
+// Clips tab: "Save to Clips" (see lib/clickup-clips.js and clips-host.js)
+// ---------------------------------------------------------------------------
+
+/** The Clip status line under an attachment card. */
+function clipStateEl(a) {
+  const c = a.clip;
+  const box = document.createElement('div');
+  box.className = `clip-state ${c.status}`;
+  if (c.status === 'uploading') {
+    const label = document.createElement('span');
+    label.textContent = 'Uploading as Clip…';
+    box.append(label);
+    if (typeof c.progress === 'number') {
+      const bar = document.createElement('div');
+      bar.className = 'progress clip-progress';
+      const fill = document.createElement('div');
+      fill.style.width = `${Math.round(c.progress * 100)}%`;
+      bar.append(fill);
+      box.append(bar);
+    }
+  } else if (c.status === 'done') {
+    box.append('✓ Saved to Clips · ');
+    const link = document.createElement('a');
+    link.href = c.hubUrl;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Open Clips Hub ↗';
+    box.append(link);
+  } else {
+    box.textContent = `✕ ${c.error || 'Clip upload failed'}`;
+  }
+  return box;
+}
+
+function updateClipProgress(a) {
+  if (typeof a.clip.progress !== 'number') return;
+  const fill = el.attachmentList.querySelector(`[data-id="${a.id}"] .clip-progress > div`);
+  if (fill) fill.style.width = `${Math.round(a.clip.progress * 100)}%`;
+}
+
+/** Attachments the Clips tab would save: eligible videos not yet in the Clips Hub. */
+function pendingClips() {
+  return state.attachments.filter((a) => clipsEligible(a.file).ok && a.clip?.status !== 'done');
+}
+
+/**
+ * Saves `queue` to the Clips Hub, one at a time (clips-host drives a single app.clickup.com tab).
+ * clips-host decides the workspace (the one the signed-in ClickUp tab is viewing) and does the
+ * mint + upload inside that tab. Shows the success card when everything went through.
+ */
+async function submitClips(queue = pendingClips()) {
+  showError('');
+  if (!queue.length) return showError('Record or attach a video to save to Clips.');
+
+  setBusy(true);
+  let failed = 0;
+  let hubUrl = '';
+  try {
+    for (const a of queue) {
+      if (a.clip?.status === 'done') continue;
+      a.clip = { status: 'uploading', progress: null };
+      renderAttachments();
+      try {
+        const res = await uploadClipViaTab(a.file, (p) => {
+          a.clip.progress = p;
+          updateClipProgress(a);
+        });
+        hubUrl = clipsHubUrl(res.workspaceId);
+        a.clip = { status: 'done', hubUrl };
+        // Forget it now, not on "Record another": closing the panel after the success card would
+        // otherwise bring the file back as pending, and the next save would make a duplicate Clip.
+        forgetPending(a);
+        a.dbId = undefined;
+      } catch (err) {
+        console.warn('[clip] upload failed', err?.status, err?.message);
+        a.clip = { status: 'failed', error: err.message };
+        failed++;
+        // Signed out fails every clip the same way — stop early.
+        if (err.status === 401) {
+          queue.filter((q) => q !== a && q.clip?.status !== 'done').forEach((q) => {
+            q.clip = { status: 'failed', error: 'Skipped' };
+            failed++;
+          });
+          break;
+        }
+      }
+      renderAttachments();
+    }
+    if (failed) {
+      showError(`${failed} clip${failed > 1 ? 's' : ''} failed to save. Fix the issue and press Retry.`);
+      return;
+    }
+    showClipsSuccess(queue.length, hubUrl);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function showClipsSuccess(count, hubUrl) {
+  el.successTitle.textContent = 'Saved to Clips';
+  el.successLink.href = hubUrl;
+  el.successLink.textContent = 'Open Clips Hub ↗';
+  el.successDetail.textContent = `${count} clip${count > 1 ? 's' : ''} saved. ClickUp is transcribing ${count > 1 ? 'them' : 'it'}.`;
+  el.successAgain.textContent = 'Record another';
+  el.success.hidden = false;
+  el.formArea.hidden = true;
 }
 
 el.btnAddFiles.addEventListener('click', () => el.fileInput.click());
@@ -586,6 +800,8 @@ const backgroundHost = {
   stop: () => sendToBackground({ type: 'rec:stop' }),
   setBubble: (bubble) => sendToBackground({ type: 'rec:bubble', bubble }),
   screenshot: () => sendToBackground({ type: 'shot:screen' }),
+  // The offscreen recorder is shared by every panel of this profile; Stop from any of them counts.
+  ownsSession: () => true,
 };
 
 function createLocalHost() {
@@ -652,6 +868,8 @@ function createLocalHost() {
       }
     },
     screenshot: () => session.screenshot().catch(failure),
+    // Stopping another window's recording doesn't make it ours (that sidebar auto-saves, not this one).
+    ownsSession: () => session.isRecording(),
   };
 }
 
@@ -702,6 +920,7 @@ async function syncPending() {
       file: record.file,
       url: URL.createObjectURL(record.file),
       dbId: record.id,
+      createdAt: record.createdAt,
       status: 'pending',
       progress: 0,
     });
@@ -727,11 +946,27 @@ function applyRecordingState(recording) {
   render();
 }
 
+/**
+ * A recording ended while this panel was open (the file is in IndexedDB before the state flips):
+ * list it, and in the Clips tab with auto-save on, save it right away — but only if this panel
+ * owns it. Boot and recovery never set `recordingOwned`, so a clip found on disk is never
+ * uploaded unasked. (Two Chrome windows with open panels, one started it and the other pressed
+ * Stop: both own it and both would save; accepted.)
+ */
+async function onRecordingEnded({ startedAt }) {
+  const owned = state.recordingOwned;
+  state.recordingOwned = false;
+  await syncPending();
+  if (!owned || state.mode !== 'clips' || !state.clipsAutoSave || state.busy) return;
+  const fresh = state.attachments.filter((a) => a.dbId && a.createdAt >= startedAt && !a.clip && clipsEligible(a.file).ok);
+  if (fresh.length) submitClips(fresh);
+}
+
 chrome.storage.session.onChanged.addListener((changes) => {
   if ('recording' in changes) {
-    const wasRecording = !!state.recording;
+    const ended = state.recording && !changes.recording.newValue ? state.recording : null;
     applyRecordingState(changes.recording.newValue);
-    if (wasRecording && !state.recording) syncPending();
+    if (ended) onRecordingEnded(ended);
   }
   if (changes.recordingError?.newValue) showError(changes.recordingError.newValue);
   if ('attachmentsChangedAt' in changes) syncPending();
@@ -767,6 +1002,7 @@ el.btnRecord.addEventListener('click', async () => {
     const res = await host.start(recorderCard.options());
     el.recordHint.textContent = '';
     if (res?.ok) {
+      state.recordingOwned = true;
       if (res.micError) el.micNotice.hidden = false;
       if (res.cameraError) el.cameraNotice.hidden = false;
     } else if (res?.name === 'NotAllowedError') {
@@ -786,6 +1022,7 @@ el.btnRecord.addEventListener('click', async () => {
 
 el.btnStop.addEventListener('click', async () => {
   el.btnStop.disabled = true;
+  if (host.ownsSession()) state.recordingOwned = true; // pressing Stop here is as good as having started it
   try {
     const res = await host.stop();
     if (!res?.ok) showError(`Recording stopped with an error: ${res?.error || 'unknown error'}`);
@@ -925,6 +1162,7 @@ async function uploadPending(target) {
 async function submit() {
   showError('');
   if (state.recording) return showError('Stop the recording first.');
+  if (state.mode === 'clips') return submitClips();
 
   const comment = state.mode === 'existing' ? el.commentText.value.trim() : '';
 
@@ -932,7 +1170,11 @@ async function submit() {
   let extra;
   if (!state.target) {
     if (state.mode === 'new') {
-      if (!el.list.value) return showError('Pick a list for the new task.');
+      if (!el.list.value) {
+        el.location.open = true;
+        ([el.workspace, el.space, el.list].find((s) => !s.value) || el.list).focus();
+        return showError('Pick a list for the new task.');
+      }
       if (!el.title.value.trim()) {
         el.title.focus();
         return showError('Give the task a title.');
@@ -962,7 +1204,7 @@ async function submit() {
           due_date_time: extra.due_date_time,
           custom_fields: extra.custom_fields,
         });
-        state.target = { id: task.id, url: task.url, name: task.name, customTaskIds: false, created: true };
+        state.target = { id: task.id, url: task.url, name: task.name, customTaskIds: false, created: true, teamId: task.team_id };
       } else {
         const found = await checkExistingTask();
         if (!found) return;
@@ -1070,7 +1312,11 @@ function render() {
   el.submit.disabled = recording;
 
   if (state.busy) el.submit.textContent = 'Working…';
-  else if (hasFailed && state.target) el.submit.textContent = 'Retry failed uploads';
+  else if (state.mode === 'clips') {
+    const n = pendingClips().length;
+    if (state.attachments.some((a) => a.clip?.status === 'failed')) el.submit.textContent = 'Retry failed clips';
+    else el.submit.textContent = n > 1 ? `Save ${n} clips` : 'Save to Clips';
+  } else if (hasFailed && state.target) el.submit.textContent = 'Retry failed uploads';
   else if (state.commentError && state.target) el.submit.textContent = 'Retry comment';
   else if (state.mode === 'new') el.submit.textContent = state.attachments.length ? 'Create task & upload' : 'Create task';
   else el.submit.textContent = state.attachments.length ? 'Upload to task' : 'Post comment';
@@ -1086,6 +1332,14 @@ $('no-token-options').addEventListener('click', () => chrome.runtime.openOptions
 onTokenChanged(applyToken);
 // Pick up a recording that's still running, or ones finished while the panel was closed.
 applyRecordingState((await chrome.storage.session.get('recording')).recording);
+// Reopen on the destination tab used last, with its Clips settings.
+{
+  const prefs = await getPrefs();
+  state.clipsAutoSave = !!prefs.clips?.autoSave;
+  el.clipsAutoSave.checked = state.clipsAutoSave;
+  el.clipsLimit.textContent = `${Math.round(MAX_CLIP_BYTES / 1024 ** 2)} MB`;
+  setMode(['existing', 'clips'].includes(prefs.mode) ? prefs.mode : 'new', { persist: false });
+}
 if (isSidebar()) await recoverAfterSidebarClosed();
 await syncPending();
 await applyToken(await getToken());

@@ -15,7 +15,11 @@ attaches them to a new or existing ClickUp task via the ClickUp API v2, using th
   in `scripts/` and `tests/` uses only Node built-ins (Node 22+). Don't add npm packages.
 - **No remote code.** MV3 and the Chrome Web Store forbid loading scripts from other sites. Bundle assets
   locally (e.g. the Cookie font in `fonts/`, OFL-licensed).
-- **Network goes only to `https://api.clickup.com`.** No analytics, tracking or new endpoints. If the data
+- **Network goes only to ClickUp.** Everything uses the public API at `https://api.clickup.com`, with one
+  user-triggered exception: the Clips tab's "Save to Clips" (`lib/clickup-clips.js`, `sidepanel/clips-host.js`) talks to
+  ClickUp's web-app API (`id.app.clickup.com` for a session token, the workspace's `frontdoor-*.clickup.com` host
+  for the upload, found via the public shard handshake), because the public API cannot create Clips. Keep that
+  code isolated and failing soft; never route anything else through it. No analytics, tracking or new endpoints. If the data
   handled changes, update `docs/privacy-policy.html` and the data-usage answers in `store/listing.md`.
 - **Permissions are minimal and justified.** Every permission in `manifest.json` must have a justification in
   `store/listing.md`, and every one in the derived Firefox manifest in `store/firefox-listing.md` (unit tests
@@ -74,9 +78,11 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
 | `rec:ping` / `rec:stop` (`target: 'host'`) | sidebar → recording sidebar | Firefox: "is anyone recording?" (answered only while recording) / stop it from another window |
 
 **State**
-- `chrome.storage.local`: `clickupToken`; `prefs` = `{ last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}} }`
-  (`camera` is `'none'` or a device id; `bubble.x/y` are 0–1 fractions of the area the bubble may occupy, so the
-  corners are exactly 0/1 pairs; `size` is `sm|md|lg`).
+- `chrome.storage.local`: `clickupToken`; `prefs` = `{ mode, last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}}, clips: {autoSave, shards} }`
+  (`mode` is the destination tab used last, `new|existing|clips`; `camera` is `'none'` or a device id; `bubble.x/y`
+  are 0–1 fractions of the area the bubble may occupy, so the corners are exactly 0/1 pairs; `size` is `sm|md|lg`;
+  `clips.autoSave` is the "Save to Clips when recording stops" toggle and `clips.shards` the per-workspace API host
+  cache, written only through `setClipsPrefs()` because `setPrefs` merges one level deep).
 - `chrome.storage.session`: `recording` (`{startedAt, camera}` while recording; the panel mirrors it), `recordingError`,
   `attachmentsChangedAt` (bumped to make an open panel re-read IndexedDB), `micGrantedAt` / `cameraGrantedAt` (bumped by
   the permission helper page so an open panel re-reads the device list).
@@ -127,7 +133,7 @@ npm run package             # dist/<name>-<version>.zip (Chrome), dist/<name>-<v
 
 Headless scripts find Chrome/Edge and Firefox automatically (set `CHROME=/path` / `FIREFOX=/path` otherwise). Demo
 pages: any URL with `?demo=<scene>` gets `store/src/demo-shared.js` + `demo-stub.js` injected, which fake `chrome.*`
-and the ClickUp API (scenes: `new`, `details`, `existing`, `menu&menu=<source|resolution|mic|shot>`, `editor`);
+and the ClickUp API (scenes: `new`, `details`, `existing`, `clips`, `menu&menu=<source|resolution|mic|shot>`, `editor`);
 add `&browser=firefox` to fake Firefox's `chrome.sidebarAction` and get the sidebar variant of the UI.
 
 ## Making changes

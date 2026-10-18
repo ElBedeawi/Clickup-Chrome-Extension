@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-19
+
+### Added
+
+- **Clips tab**: next to "New task" and "Existing task", a third destination saves recordings to your workspace's **Clips Hub**, where ClickUp transcribes them. In that tab the attachments area is video-only (no Screenshot tool, Attach takes videos, the Record clip card is open from the start), **Save to Clips** uploads what's pending, and an optional **Save to Clips when recording stops** toggle does it by itself when a recording you started in that tab ends. The tab you used last is remembered, so the panel reopens in Clips if that's your routine. Because the public ClickUp API cannot create Clips, this tab uses ClickUp's own web-app API: it needs you to be signed in to ClickUp in this browser (a background ClickUp tab is opened if none is), takes videos up to 45 MB, is undocumented and may stop working after a ClickUp update. If a save fails, the recording stays in the list to retry or attach to a task.
+
+### Changed
+
+- The Workspace, Space, Folder and List dropdowns now collapse into a single "Space › Folder › List" row once a list is chosen, so the title, description and attachments sit higher in the panel. Click **Change** to pick another location; the row opens by itself when there is no list yet.
+
 ## [0.4.0] - 2026-10-16
 
 ### Added
@@ -47,7 +57,8 @@ First public release.
 - Automatic retry when ClickUp rate-limits requests (HTTP 429).
 - Settings page with token test and revoke, and a Buy Me a Coffee link.
 
-[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.1...v0.2.0

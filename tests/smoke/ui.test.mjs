@@ -24,13 +24,115 @@ await withBrowser(async ({ openPage }) => {
       const state = JSON.parse(
         await page.evaluate(`JSON.stringify({
           list: document.getElementById('sel-list').value,
+          location: document.getElementById('location').open,
+          path: document.getElementById('location-path').textContent,
           attachments: document.querySelectorAll('.attachment').length,
+          tabs: document.querySelectorAll('.tab').length, // New task / Existing task / Clips
+          clipsPanel: !document.getElementById('panel-clips').hidden,
+          shotTool: !document.getElementById('tool-shot').hidden,
           cardOpen: !document.getElementById('record-card').hidden,
           bubble: !document.getElementById('rc-bubble-row').hidden,
           submit: document.getElementById('btn-submit').textContent,
         })`),
       );
-      assert.deepEqual(state, { list: '1000', attachments: 2, cardOpen: true, bubble: true, submit: 'Create task & upload' });
+      assert.deepEqual(state, {
+        list: '1000',
+        location: false,
+        path: 'Web Shop › Storefront › Bugs',
+        attachments: 2,
+        tabs: 3,
+        clipsPanel: false,
+        shotTool: true,
+        cardOpen: true,
+        bubble: true,
+        submit: 'Create task & upload',
+      });
+    }));
+
+  await test('side panel: the Clips tab is video-only, remembers itself and saves to the Clips Hub', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=clips', async (page) => {
+      const state = JSON.parse(
+        await page.evaluate(`(async () => {
+          const $ = (id) => document.getElementById(id);
+          const before = {
+            selected: $('tab-clips').getAttribute('aria-selected'),
+            clipsPanel: !$('panel-clips').hidden,
+            newPanel: !$('panel-new').hidden,
+            shotTool: !$('tool-shot').hidden,
+            accept: $('file-input').accept,
+            cardOpen: !$('record-card').hidden,
+            title: $('att-title').textContent,
+            attachments: document.querySelectorAll('.attachment').length,
+            skipped: document.querySelectorAll('.attachment.skipped').length,
+            submit: $('btn-submit').textContent,
+            autoSave: $('clips-auto-save').checked,
+            mode: (await chrome.storage.local.get('prefs')).prefs.mode,
+          };
+          // A screenshot dropped on the panel is refused here: Clips are videos.
+          const dt = new DataTransfer();
+          dt.items.add(new File(['x'], 'shot.png', { type: 'image/png' }));
+          document.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+          await new Promise((r) => setTimeout(r, 50));
+          const dropped = { error: $('error').textContent, attachments: document.querySelectorAll('.attachment').length };
+          // The toggle is remembered next to the shard cache.
+          $('clips-auto-save').click();
+          await new Promise((r) => setTimeout(r, 50));
+          const prefs = (await chrome.storage.local.get('prefs')).prefs;
+          // Back in a task tab the same file is listed with the usual label.
+          $('tab-new').click();
+          await new Promise((r) => setTimeout(r, 50)); // the tab is persisted asynchronously
+          const back = { submit: $('btn-submit').textContent, title: $('att-title').textContent, shotTool: !$('tool-shot').hidden, mode: (await chrome.storage.local.get('prefs')).prefs.mode };
+          return JSON.stringify({ before, dropped, autoSave: prefs.clips.autoSave, last: prefs.last.workspace, back });
+        })()`),
+      );
+      assert.deepEqual(state.before, {
+        selected: 'true',
+        clipsPanel: true,
+        newPanel: false,
+        shotTool: false,
+        accept: 'video/*',
+        cardOpen: true,
+        title: 'Clips',
+        attachments: 1,
+        skipped: 0,
+        submit: 'Save to Clips',
+        autoSave: false,
+        mode: 'clips',
+      });
+      assert.match(state.dropped.error, /shot\.png: Only videos can be saved to Clips\./);
+      assert.equal(state.dropped.attachments, 1);
+      assert.equal(state.autoSave, true);
+      assert.equal(state.last, '1', 'the other prefs survive the clips merge');
+      assert.deepEqual(state.back, { submit: 'Create task & upload', title: 'Attachments', shotTool: true, mode: 'new' });
+    }));
+
+  await test('side panel: the location row opens when no list is picked and collapses once one is', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=new', async (page) => {
+      const state = JSON.parse(
+        await page.evaluate(`(async () => {
+          const loc = document.getElementById('location');
+          const list = document.getElementById('sel-list');
+          const path = () => document.getElementById('location-path').textContent;
+          const change = (value) => {
+            list.value = value;
+            list.dispatchEvent(new Event('change'));
+            return new Promise((r) => setTimeout(r, 100));
+          };
+          await change('');
+          const cleared = { open: loc.open, path: path(), button: document.getElementById('location-change').textContent };
+          document.getElementById('btn-submit').click();
+          await new Promise((r) => setTimeout(r, 50));
+          const submitted = { error: document.getElementById('error').textContent, focused: document.activeElement.id };
+          await change('1001');
+          const picked = { open: loc.open, path: path(), button: document.getElementById('location-change').textContent };
+          return JSON.stringify({ cleared, submitted, picked });
+        })()`),
+      );
+      assert.deepEqual(state, {
+        cleared: { open: true, path: 'Web Shop › Storefront › Choose a list', button: 'Done' },
+        submitted: { error: 'Pick a list for the new task.', focused: 'sel-list' },
+        picked: { open: false, path: 'Web Shop › Storefront › Sprint 24', button: 'Change' },
+      });
     }));
 
   await test('side panel: the description editor has a formatting toolbar and gives Markdown', () =>
@@ -128,8 +230,9 @@ await withBrowser(async ({ openPage }) => {
   // Regression guard: the toolbar once spilled "Screenshot" out of its button at ~340px, and
   // labels got truncated on Linux, whose UI fonts are wider than Windows' Segoe UI. Verdana is
   // a deliberately wide font, so it stands in for the widest system font on any OS.
-  // The Firefox mid-recording scene adds the "keep this sidebar open" note and drops a source.
-  const LAYOUT_SCENES = ['new', 'existing&browser=firefox'];
+  // The Firefox mid-recording scene adds the "keep this sidebar open" note and drops a source;
+  // the Clips scene has the three-tab row with its third tab selected and the explainer.
+  const LAYOUT_SCENES = ['new', 'existing&browser=firefox', 'clips'];
   for (const font of ['system', 'wide (Verdana)']) {
     for (const demo of LAYOUT_SCENES) {
     await test(`side panel: nothing overflows or gets clipped at narrow widths — ${font} font, ${demo}`, async () => {
@@ -155,16 +258,16 @@ await withBrowser(async ({ openPage }) => {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, .rte, .rte-btn, .rte-block')]
+        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, .rte, .rte-btn, .rte-block')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)
-        ...[...document.querySelectorAll('.tool-btn')]
+        ...[...document.querySelectorAll('.tool-btn, .tab')]
           .filter((el) => el.scrollWidth > el.clientWidth + 1)
           .map((el) => 'clipped: ' + el.textContent.trim()),
-        // Visible labels must be shown in full, not truncated to "Screensh…"
+        // Visible labels must be shown in full, not truncated to "Screensh…" or "Existing t…"
         // (icon-only mode hides them entirely, which is fine)
-        ...[...document.querySelectorAll('.tool-label')]
+        ...[...document.querySelectorAll('.tool-label, .tab-label')]
           .filter((el) => el.offsetParent !== null && el.scrollWidth > el.clientWidth + 1)
           .map((el) => 'truncated label: ' + el.textContent.trim()),
       ])`),

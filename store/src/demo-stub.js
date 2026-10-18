@@ -206,6 +206,15 @@
       window.scrollTo(0, 0);
     },
 
+    async clips() {
+      await until(() => $('sel-list').value === '1000');
+      $('tab-clips').click(); // the Record clip card opens by itself in the Clips tab
+      const video = new File([await DemoShared.mockVideo()], 'recording-2026-10-06-14-31.webm', { type: 'video/webm' });
+      await addAttachments([video]);
+      await sleep(600); // let the video preview decode its first frame
+      window.scrollTo(0, 0);
+    },
+
     async editor() {
       // The editor loads its draft itself; we annotate it the way a user would.
       const canvas = $('canvas');

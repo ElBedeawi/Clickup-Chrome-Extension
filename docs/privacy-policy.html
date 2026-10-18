@@ -33,7 +33,7 @@
     <strong>In short</strong>
     <ul>
       <li>Everything stays in your browser until you choose to send it to ClickUp.</li>
-      <li>Data goes to one place only: ClickUp’s API (<code>api.clickup.com</code>), using your own token.</li>
+      <li>Data goes to ClickUp only: its API (<code>api.clickup.com</code>), using your own token. The optional Clips tab (“Save to Clips”) also talks to ClickUp’s web-app hosts (<code>id.app.clickup.com</code> and your workspace’s <code>*.clickup.com</code> API host), using your existing ClickUp sign-in in this browser.</li>
       <li>The developer runs no servers for this extension and receives none of your data.</li>
       <li>No analytics, no tracking, no ads, and nothing is ever sold.</li>
     </ul>
@@ -63,6 +63,11 @@
       <td>Task details you type (title, description, assignees, due date, tags, custom fields, comments)</td>
       <td>To create the task or post the comment.</td>
       <td>Sent to <code>api.clickup.com</code> when you submit. Not stored by the extension afterwards.</td>
+    </tr>
+    <tr>
+      <td>A short-lived ClickUp session token (only if you use the Clips tab)</td>
+      <td>To save a recording to your Clips Hub, which ClickUp’s public API cannot do. The token is obtained from your existing ClickUp sign-in in this browser.</td>
+      <td>Kept in memory while the panel is open, never written to disk. Sent only to ClickUp (<code>id.app.clickup.com</code> to obtain it, your workspace’s <code>*.clickup.com</code> API host to upload). The recording goes to the same ClickUp host.</td>
     </tr>
     <tr>
       <td>Your last-used Workspace / Space / Folder / List</td>

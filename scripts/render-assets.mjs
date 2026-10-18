@@ -21,6 +21,7 @@ const JOBS = [
   { url: '/store/src/editor-demo.html', w: 1280, h: 800, out: 'store/images/screenshot-2-annotate.png' },
   { url: '/store/src/screenshot.html?scene=details', w: 1280, h: 800, out: 'store/images/screenshot-3-details.png' },
   { url: '/store/src/screenshot.html?scene=existing', w: 1280, h: 800, out: 'store/images/screenshot-4-existing.png' },
+  { url: '/store/src/screenshot.html?scene=clips', w: 1280, h: 800, out: 'store/images/screenshot-5-clips.png' },
   { url: '/store/src/promo.html?size=small', w: 440, h: 280, out: 'store/images/promo-small-440x280.png' },
   { url: '/store/src/promo.html?size=marquee', w: 1400, h: 560, out: 'store/images/promo-marquee-1400x560.png' },
 ];
