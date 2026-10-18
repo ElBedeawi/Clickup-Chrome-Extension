@@ -21,7 +21,7 @@ Record your screen or capture and annotate screenshots, then attach them to a ne
 **Description:**
 
 ```
-Report bugs and share feedback without leaving the page. Record your screen, grab an annotated screenshot, and attach it to a ClickUp task — new or existing — straight from Chrome's side panel.
+Report bugs and share feedback without leaving the page. Record your screen, grab an annotated screenshot, and attach it to a ClickUp task — new or existing — or save the recording to your ClickUp Clips, straight from Chrome's side panel.
 
 RECORD YOUR SCREEN
 • Record a clip of your entire screen, a window or a tab — pick the resolution (720p to 4K) and microphone
@@ -47,7 +47,7 @@ SAVE TO CLIPS (OPTIONAL)
 
 PRIVATE BY DESIGN
 • Uses your own ClickUp API token, stored only in your browser
-• Talks only to ClickUp's API — no developer servers, no analytics, no tracking
+• Talks only to ClickUp — no developer servers, no analytics, no tracking
 • Recordings and screenshots stay on your computer until you upload them
 
 GETTING STARTED
