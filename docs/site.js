@@ -132,7 +132,7 @@ for (const link of document.querySelectorAll('.video-facade[data-youtube]')) {
     e.preventDefault();
     const frame = document.createElement('iframe');
     frame.src = `https://www.youtube-nocookie.com/embed/${link.dataset.youtube}?autoplay=1&rel=0`;
-    frame.title = 'Video & Screenshot Uploader for ClickUp: the 50-second tour';
+    frame.title = 'Video & Screenshot Uploader for ClickUp: the 55-second tour';
     frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
     frame.allowFullscreen = true;
     frame.referrerPolicy = 'strict-origin-when-cross-origin';

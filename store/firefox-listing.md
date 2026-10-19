@@ -34,7 +34,7 @@ Record your screen or capture and annotate screenshots, then attach them to a ne
   "Keep the sidebar open while recording — a REC badge shows it's running, and Stop in the sidebar ends
   the clip. If the sidebar is closed, what was recorded so far is kept."
 - "Needs you signed in to ClickUp in this browser" (Save to Clips) → "Needs you signed in to ClickUp in Firefox"
-- After the first paragraph, add "Watch the 50-second tour: https://youtu.be/GjaSTIQAYdM" (AMO has no promo-video
+- After the first paragraph, add "Watch the 55-second tour: https://youtu.be/IYCYp5thhZE" (AMO has no promo-video
   field, so the store video is linked from the description instead)
 - Section headings are wrapped in `**…**` (AMO renders that as bold), and the closing credit also links the
   repository: "Made by Wagih Elbedeawi. Open source (MIT): https://github.com/ElBedeawi/Clickup-Chrome-Extension"
