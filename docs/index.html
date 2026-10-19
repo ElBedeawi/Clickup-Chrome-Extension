@@ -73,9 +73,17 @@
           Prefer the file? <a href="https://github.com/ElBedeawi/Clickup-Chrome-Extension/releases/latest">Latest release on GitHub</a>.
         </p>
       </div>
+      <!-- Click-to-play: nothing loads from YouTube until a visitor asks for the video (site.js swaps in a
+           youtube-nocookie player); without JavaScript the link simply opens the video on YouTube. -->
       <div class="hero-media">
-        <img src="images/screenshot-1-record.png" width="1280" height="800"
-             alt="A web page with the extension's side panel docked on the right: a new ClickUp task with a screen recording and an annotated screenshot attached" />
+        <a class="video-facade" href="https://youtu.be/GjaSTIQAYdM" data-youtube="GjaSTIQAYdM" target="_blank" rel="noopener">
+          <img src="images/screenshot-1-record.png" width="1280" height="800"
+               alt="A web page with the extension's side panel docked on the right: a new ClickUp task with a screen recording and an annotated screenshot attached" />
+          <span class="play">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+            Watch the 50-second tour
+          </span>
+        </a>
         <span class="rec" aria-hidden="true"><i></i>REC <time>00:00</time></span>
       </div>
     </div>

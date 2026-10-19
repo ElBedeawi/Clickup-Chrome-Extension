@@ -130,7 +130,28 @@ html[data-browser="unknown"] .only-unknown { display: inline; }
 .hero-copy .lead { font-size: 1.2rem; margin: 22px 0 28px; max-width: 46ch; }
 .hero-copy .after { margin-top: 16px; }
 .hero-media { position: relative; }
-.hero-media img { border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 24px 60px -30px rgba(31, 31, 41, 0.45); }
+.hero-media img,
+.hero-media iframe { border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 24px 60px -30px rgba(31, 31, 41, 0.45); }
+.hero-media iframe { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; background: #000; }
+
+/* Click-to-play facade over the hero screenshot (site.js swaps in the player). */
+.video-facade { position: relative; display: block; color: inherit; text-decoration: none; border-radius: 12px; }
+.video-facade img { display: block; transition: filter 0.2s ease; }
+.video-facade:hover img { filter: brightness(0.94); }
+.play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 22px 14px 16px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-text);
+  font: 600 1rem/1 var(--body); white-space: nowrap;
+  box-shadow: 0 12px 30px -10px rgba(123, 104, 238, 0.7);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.play svg { flex: none; }
+.video-facade:hover .play { background: var(--accent-hover); transform: translate(-50%, -50%) scale(1.04); }
+.video-facade:focus-visible .play { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+@media (max-width: 480px) { .play { padding: 11px 16px 11px 12px; font-size: 0.9rem; } }
+@media (prefers-reduced-motion: reduce) { .play, .video-facade img { transition: none; } }
 
 /* The one lively element: the recording indicator, like the badge the extension puts on its icon. */
 .rec {

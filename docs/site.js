@@ -124,3 +124,20 @@ if (rec && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     rec.textContent = `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`;
   }, 1000);
 }
+
+// 3. Click-to-play hero video: YouTube (privacy-enhanced youtube-nocookie.com) loads only after a click.
+for (const link of document.querySelectorAll('.video-facade[data-youtube]')) {
+  link.addEventListener('click', (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // let "open in new tab" work
+    e.preventDefault();
+    const frame = document.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${link.dataset.youtube}?autoplay=1&rel=0`;
+    frame.title = 'Video & Screenshot Uploader for ClickUp: the 50-second tour';
+    frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    frame.allowFullscreen = true;
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    link.closest('.hero-media')?.querySelector('.rec')?.remove();
+    link.replaceWith(frame);
+    frame.focus();
+  });
+}
