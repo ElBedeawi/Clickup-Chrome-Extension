@@ -69,6 +69,7 @@ Made by Wagih Elbedeawi. This extension is not affiliated with, endorsed by or s
 | Screenshot 3 | `store/images/screenshot-3-details.png` |
 | Screenshot 4 | `store/images/screenshot-4-existing.png` |
 | Screenshot 5 | `store/images/screenshot-5-clips.png` |
+| Global promo video (YouTube URL) | https://youtu.be/GjaSTIQAYdM (rendered from `store/promo-video/`; public on the Wagih El-Bedeawi channel) |
 | Small promo tile (440×280) | `store/images/promo-small-440x280.png` |
 | Marquee promo tile (1400×560, optional) | `store/images/promo-marquee-1400x560.png` |
 
