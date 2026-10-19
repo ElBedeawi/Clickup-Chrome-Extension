@@ -1,0 +1,158 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1F1F29;
+    }
+
+    #root [class~="v2-04-bubble-bg"] { position: absolute; inset: 0; background: #FFFFFF; }
+    #root [class~="v2-04-bubble-text"] { position: absolute; inset: 0; }
+
+    #root [class~="v2-04-bubble-h2"] {
+      position: absolute;
+      left: 96px;
+      top: 300px;
+      font-size: 2.6cqw;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    #root [class~="v2-04-bubble-sub"] {
+      position: absolute;
+      left: 96px;
+      top: 376px;
+      width: 470px;
+      font-size: 1.35cqw;
+      font-weight: 600;
+      line-height: 1.25;
+      color: #6B6B7B;
+    }
+    #root [class~="v2-04-bubble-chips"] {
+      position: absolute;
+      left: 96px;
+      top: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 18px;
+    }
+    #root [class~="v2-04-bubble-chip"] {
+      padding: 12px 26px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(123, 104, 238, 0.35);
+      background: #F4F2FE;
+      font-size: 26px;
+      font-weight: 700;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+
+    /* the recording, made with the extension (bubble.mp4, 1880×1080, shown ×0.649) */
+    #root [class~="v2-04-bubble-win"] {
+      position: absolute;
+      left: 620px;
+      top: 190px;
+      width: 1220px;
+      height: 701px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(123, 104, 238, 0.2);
+      background: #FFFFFF;
+      overflow: hidden;
+      will-change: transform, opacity;
+    }
+    #root [class~="v2-04-bubble-video"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1220px;
+      height: 701px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* one-shot rings around the bubble, in frame px (top-right, then bottom-left after the drag) */
+    #root [class~="v2-04-bubble-ring"] {
+      position: absolute;
+      width: 168px;
+      height: 168px;
+      border-radius: 50%;
+      border: 4px solid #7B68EE;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #root [class~="v2-04-bubble-ring-a"] { left: 1670px; top: 184px; }
+    #root [class~="v2-04-bubble-ring-b"] { left: 749px; top: 669px; }
+  </style>
+
+  <div data-hf-id="hf-mksc" id="root" data-composition-id="v2-04-bubble" data-width="1920" data-height="1080" data-duration="6.267">
+    <div data-hf-id="hf-tthh" class="v2-04-bubble-bg clip" data-start="0" data-duration="6.267" data-track-index="0"></div>
+
+    <div data-hf-id="hf-wdr8" class="v2-04-bubble-text clip" data-start="0" data-duration="6.267" data-track-index="1">
+      <div data-hf-id="hf-fihn" class="v2-04-bubble-h2" id="v2-04-bubble-h2">Camera bubble</div>
+      <div data-hf-id="hf-3lir" class="v2-04-bubble-sub" id="v2-04-bubble-sub">Your face, right in the recording</div>
+      <div data-hf-id="hf-woc2" class="v2-04-bubble-chips">
+        <div data-hf-id="hf-elbs" class="v2-04-bubble-chip" id="v2-04-bubble-c1">Drag to any corner</div>
+        <div data-hf-id="hf-t0hd" class="v2-04-bubble-chip" id="v2-04-bubble-c2">S · M · L</div>
+        <div data-hf-id="hf-s6t2" class="v2-04-bubble-chip" id="v2-04-bubble-c3">Even while recording</div>
+      </div>
+      <div data-hf-id="hf-hgml" class="v2-04-bubble-ring v2-04-bubble-ring-a" id="v2-04-bubble-ring-a"></div>
+      <div data-hf-id="hf-27mf" class="v2-04-bubble-ring v2-04-bubble-ring-b" id="v2-04-bubble-ring-b"></div>
+    </div>
+
+    <!-- not inside a timed wrapper: the video carries its own timing -->
+    <div data-hf-id="hf-m4vy" class="v2-04-bubble-win" id="v2-04-bubble-win">
+      <video data-hf-id="hf-4pmy"
+        id="v2-04-bubble-video"
+        class="v2-04-bubble-video clip"
+        src="assets/footage/bubble.mp4"
+        playsinline
+        muted
+        data-start="0"
+        data-duration="6.267"
+        data-media-start="9.4"
+        data-track-index="2"
+      ></video>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var FRAME_ID = "v2-04-bubble";
+      var R = document.querySelector('[data-composition-id="' + FRAME_ID + '"]');
+      var $ = function (id) { return R.querySelector('[id="' + FRAME_ID + "-" + id + '"]'); };
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* the window arrives with the push-slide; the footage plays as recorded */
+      tl.fromTo($("win"), { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0);
+      tl.fromTo($("h2"), { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 0.05);
+      tl.fromTo($("sub"), { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 0.55);
+
+      /* "Add a camera bubble" — ring the bubble where it sits */
+      tl.fromTo($("ring-a"), { opacity: 0.95, scale: 0.85 }, { opacity: 0, scale: 1.25, duration: 0.8, ease: "power2.out", immediateRender: false }, 1.5);
+
+      /* "drag it to any corner" (footage: the bubble moves at 2.2–3.2s) · "pick a size" · "even while you record" */
+      [["c1", 2.3], ["c2", 3.75], ["c3", 4.7]].forEach(function (c) {
+        tl.fromTo($(c[0]), { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.45, ease: "power3.out" }, c[1]);
+      });
+      tl.fromTo($("ring-b"), { opacity: 0.95, scale: 0.85 }, { opacity: 0, scale: 1.25, duration: 0.8, ease: "power2.out", immediateRender: false }, 3.35);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[FRAME_ID] = tl;
+      tl.seek(0);
+    })();
+  </script>
+</template>

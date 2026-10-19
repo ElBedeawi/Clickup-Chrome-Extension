@@ -69,7 +69,7 @@ Made by Wagih Elbedeawi. This extension is not affiliated with, endorsed by or s
 | Screenshot 3 | `store/images/screenshot-3-details.png` |
 | Screenshot 4 | `store/images/screenshot-4-existing.png` |
 | Screenshot 5 | `store/images/screenshot-5-clips.png` |
-| Global promo video (YouTube URL) | https://youtu.be/GjaSTIQAYdM (rendered from `store/promo-video/`; public on the Wagih El-Bedeawi channel) |
+| Global promo video (YouTube URL) | https://youtu.be/GjaSTIQAYdM (v1, 0.5.0; public on the Wagih El-Bedeawi channel). **Pending with 0.6.0:** https://youtu.be/IYCYp5thhZE (v2, Clips-first; uploaded unlisted 2026-10-19 because it says "No size limit", true only from 0.6.0). When 0.6.0 is live: set v2 Public, swap the ID here, in `docs/index.html` (and "50-second tour" → "55-second" in `docs/index.html`, `docs/site.js`, `docs/privacy-policy.html`), in `firefox-listing.md` and on AMO, then make v1 Unlisted. Both rendered from `store/promo-video/`. |
 | Small promo tile (440×280) | `store/images/promo-small-440x280.png` |
 | Marquee promo tile (1400×560, optional) | `store/images/promo-marquee-1400x560.png` |
 

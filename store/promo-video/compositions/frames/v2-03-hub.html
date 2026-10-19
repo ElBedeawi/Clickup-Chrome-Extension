@@ -1,0 +1,147 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1F1F29;
+    }
+
+    #root [class~="v2-03-hub-bg"] { position: absolute; inset: 0; background: #FFFFFF; }
+    #root [class~="v2-03-hub-stage"] { position: absolute; inset: 0; }
+
+    #root [class~="v2-03-hub-h2"] {
+      position: absolute;
+      left: 96px;
+      top: 236px;
+      font-size: 2.6cqw;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    #root [class~="v2-03-hub-lines"] { position: absolute; left: 96px; top: 340px; width: 520px; }
+    #root [class~="v2-03-hub-line"] {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      height: 56px;
+      margin-bottom: 26px;
+      font-size: 1.6cqw;
+      font-weight: 600;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+    #root [class~="v2-03-hub-tick"] {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #7B68EE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #root [class~="v2-03-hub-tick"] svg { width: 20px; height: 20px; display: block; }
+
+    /* the opened Clip, from the user's real Hub (hub-clip.png, 1848×896) */
+    #root [class~="v2-03-hub-win"] {
+      position: absolute;
+      left: 620px;
+      top: 230px;
+      width: 1220px;
+      height: 620px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(123, 104, 238, 0.2);
+      background: #FFFFFF;
+      overflow: hidden;
+      will-change: transform, opacity;
+    }
+    #root [class~="v2-03-hub-cam"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1848px;
+      height: 896px;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+    #root [class~="v2-03-hub-img"] { position: absolute; left: 0; top: 0; width: 1848px; height: 896px; display: block; }
+    #root [class~="v2-03-hub-hl"] {
+      position: absolute;
+      border: 2px solid rgba(123, 104, 238, 0);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+    /* transcript lines and the Copy link button, in source px */
+    #root [class~="v2-03-hub-hl-tr"] { left: 1366px; top: 98px; width: 420px; height: 178px; }
+    #root [class~="v2-03-hub-hl-link"] { left: 1716px; top: 4px; width: 96px; height: 30px; }
+  </style>
+
+  <div data-hf-id="hf-1g0c" id="root" data-composition-id="v2-03-hub" data-width="1920" data-height="1080" data-duration="5.925">
+    <div data-hf-id="hf-wy1f" class="v2-03-hub-bg clip" data-start="0" data-duration="5.925" data-track-index="0"></div>
+
+    <div data-hf-id="hf-9cv1" class="v2-03-hub-stage clip" data-start="0" data-duration="5.925" data-track-index="1">
+      <div data-hf-id="hf-dt2w" class="v2-03-hub-h2" id="v2-03-hub-h2">In your Clips Hub</div>
+      <div data-hf-id="hf-2anm" class="v2-03-hub-lines">
+        <div data-hf-id="hf-h76t" class="v2-03-hub-line" id="v2-03-hub-l1"><span data-hf-id="hf-r6b3" class="v2-03-hub-tick"><svg data-hf-id="hf-0n2h" viewBox="0 0 20 20"><path data-hf-id="hf-cucd" d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-hf-id="hf-wh6y">Transcribed by ClickUp</span></div>
+        <div data-hf-id="hf-l5au" class="v2-03-hub-line" id="v2-03-hub-l2"><span data-hf-id="hf-goun" class="v2-03-hub-tick"><svg data-hf-id="hf-ebb1" viewBox="0 0 20 20"><path data-hf-id="hf-7xrl" d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-hf-id="hf-adi2">Ready to share</span></div>
+        <div data-hf-id="hf-p3ev" class="v2-03-hub-line" id="v2-03-hub-l3"><span data-hf-id="hf-gajm" class="v2-03-hub-tick"><svg data-hf-id="hf-fi84" viewBox="0 0 20 20"><path data-hf-id="hf-94oo" d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-hf-id="hf-v6yk">No task needed</span></div>
+        <div data-hf-id="hf-t1iw" class="v2-03-hub-line" id="v2-03-hub-l4"><span data-hf-id="hf-fw8l" class="v2-03-hub-tick"><svg data-hf-id="hf-f3x3" viewBox="0 0 20 20"><path data-hf-id="hf-8qdn" d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-hf-id="hf-6v5c">No size limit</span></div>
+        <div data-hf-id="hf-tt6p" class="v2-03-hub-line" id="v2-03-hub-l5"><span data-hf-id="hf-iods" class="v2-03-hub-tick"><svg data-hf-id="hf-gau6" viewBox="0 0 20 20"><path data-hf-id="hf-6qui" d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-hf-id="hf-6pva">No switching tabs</span></div>
+      </div>
+
+      <div data-hf-id="hf-lwh8" class="v2-03-hub-win" id="v2-03-hub-win">
+        <div data-hf-id="hf-bqlx" class="v2-03-hub-cam" id="v2-03-hub-cam" data-layout-allow-overflow>
+          <img data-hf-id="hf-u39f" class="v2-03-hub-img" src="assets/footage/hub-clip.png" alt="" data-layout-allow-overflow />
+          <div data-hf-id="hf-2fx1" class="v2-03-hub-hl v2-03-hub-hl-tr" id="v2-03-hub-hl-tr"></div>
+          <div data-hf-id="hf-eexp" class="v2-03-hub-hl v2-03-hub-hl-link" id="v2-03-hub-hl-link"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var FRAME_ID = "v2-03-hub";
+      var R = document.querySelector('[data-composition-id="' + FRAME_ID + '"]');
+      var $ = function (id) { return R.querySelector('[id="' + FRAME_ID + "-" + id + '"]'); };
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* the window (push-slide continuation) and the whole clip at base scale */
+      var S0 = 1220 / 1848, S1 = 0.95;
+      tl.set($("cam"), { scale: S0, x: 0, y: 0 }, 0);
+      tl.fromTo($("win"), { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0);
+      tl.fromTo($("h2"), { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 0.05);
+
+      /* one push-in toward the transcript (front half only), then locked */
+      tl.to($("cam"), { scale: S1, x: -(1848 - 1220 / S1) * S1, y: 0, duration: 1.1, ease: "power3.inOut" }, 0.35);
+
+      /* lines on cue: "Transcribed…" 0.1 · "ready to share" 1.25 · "No task" 2.6 · "no size limit" 3.25 · "no switching tabs" 4.35 */
+      [["l1", 0.15], ["l2", 1.25], ["l3", 2.6], ["l4", 3.25], ["l5", 4.35]].forEach(function (l) {
+        tl.fromTo($(l[0]), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, l[1]);
+      });
+
+      /* glows: the transcript while "Transcribed" lands, Copy link on "share" */
+      tl.to($("hl-tr"), { borderColor: "rgba(123,104,238,1)", boxShadow: "0 0 22px rgba(123,104,238,0.6)", duration: 0.2, ease: "none" }, 1.0);
+      tl.to($("hl-tr"), { borderColor: "rgba(123,104,238,0.45)", boxShadow: "0 0 0px rgba(123,104,238,0)", duration: 0.5, ease: "power1.out" }, 1.7);
+      tl.to($("hl-link"), { borderColor: "rgba(123,104,238,1)", boxShadow: "0 0 18px rgba(123,104,238,0.7)", duration: 0.15, ease: "none" }, 1.35);
+      tl.to($("hl-link"), { borderColor: "rgba(123,104,238,0.4)", boxShadow: "0 0 0px rgba(123,104,238,0)", duration: 0.45, ease: "power1.out" }, 1.9);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[FRAME_ID] = tl;
+      tl.seek(0);
+    })();
+  </script>
+</template>

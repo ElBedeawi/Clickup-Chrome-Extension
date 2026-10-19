@@ -196,3 +196,58 @@ Scene 1 (0.0–1.2s): white canvas; on "Video" the brand icon (brand-icon.svg, ~
 Scene 2 (1.2–3.2s): the name "Video & Screenshot Uploader" (`h1`, ink) and a second line "for ClickUp" (`h2`, muted) build word by word beneath the icon as the VO reads them (`waterfall-entry`, lateral cascade, smooth), centered template ~70% width; the icon slides up slightly to make room (a plain y tween).
 Scene 3 (3.2–4.8s): on "Free" a `tag-pill` "Free · Open source" pops under the name; on "Chrome and Firefox" two chips "Chrome Web Store" and "Firefox Add-ons" pop side by side (`spring-pop-entrance`, staggered); then the URL pill "clickup-uploader.macawshub.com" (`counter` type, `primary` text on `accent-light`) wipes in left→right beneath them (clip-path reveal) and its text snaps to ink on the final beat (a timeline set).
 Scene 4 (4.8–7.5s): dead-static hold on the complete end card to the last frame (this is the deliverable stillness; the voice ends at 4.84s and the card simply holds); the final frame fades to the canvas over the last 0.3s only.
+
+---
+
+# v2 — 2026-10-19 (Clips-first cut) — BUILT
+
+Status: built 2026-10-19, 55.4 s, rendered to `renders/video-v2.mp4`. Frames 1–7 above are the locked v1 (0.5.0)
+film and stay untouched; v2 frames are new files (`compositions/frames/v2-*.html`). See "Build notes (v2)" below.
+
+- duration: ~57 s · format 1920x1080 · music: none · voice: Kokoro `af_heart`, speed 1.0
+- arc: the request (since 2021) → Clips from any page → in the Clips Hub → camera bubble → annotate → file to a
+  task → private → CTA
+- message: "Record a ClickUp Clip from any page — the thing people have asked for since 2021 — or file it to a task."
+- direction: same palette, type, card treatment and motion grammar as v1 (see "Video direction" above). One
+  addition: the Clips section is the only place the `primary` accent fills large areas (the celebration), and it
+  gets the film's only `spring-pop-entrance` in its full (not smooth) register, once, on "Now you can."
+
+| # | Frame | VO (new = generate, v1 = reuse WAV) | ~s | Visual |
+|---|---|---|---|---|
+| 1 | The ask | new: "Record a ClickUp Clip from any page. People have been asking for it since 2021. Now you can." | 6.5 | A neutral request card (our own styling, no ClickUp UI): "Record Clips from the browser extension" · "Requested since 2021"; on "Now you can." the card stamps ✓ and the NEW chip pops |
+| 2 | Clips from any page | new: "Open the side panel on any page and record your screen, a window, or a tab. Stop — and it's saved straight to your ClickUp Clips." | 8 | screenshot-5 (Clips tab), push-in on the panel; the "Save to Clips when recording stops" toggle glows on "Stop"; an upload progress bar fills (0.6.0) |
+| 3 | In the Clips Hub | new: "Transcribed by ClickUp and ready to share. No task, no size limit, no switching tabs." | 7 | **Footage B** (your Clips Hub with the saved clip and its transcript), cropped to the clip; three chips land on cue |
+| 4 | Camera bubble | new: "Want your face in it? Add a camera bubble — drag it to any corner, pick a size, even while you record." | 7.5 | **Footage A** (a real recording with your bubble) in a floating window; the bubble moves corner-to-corner as it did when you recorded; "S · M · L" chips; inset of the panel's bubble control from screenshot-1 |
+| 5 | Annotate | v1 line 3: "Or grab a screenshot — draw, add text, blur the private bits, crop — before anyone sees it." | 5.6 | v1 frame 3 as built |
+| 6 | File it to a task | new (v1 line 4 with a lead-in): "Filing a bug instead? Create the task right there — title, description, assignees, due date, custom fields — or add it to the task you already have open." | 9 | v1 frame 4 as built, retimed to the new line |
+| 7 | Private by design | v1 line 6 | 7.1 | v1 frame 6 as built |
+| 8 | CTA | v1 line 7 | 7.5 | v1 frame 7 as built |
+
+## Footage to record (user)
+
+- **A — camera bubble (frame 4).** Record with the extension itself (Chrome, camera on, bubble size M, mic
+  optional) over a clean, non-private page, e.g. https://clickup-uploader.macawshub.com/. 12–15 s: look at
+  the camera and wave or say a line, drag the bubble from one corner to another about halfway through, then
+  stop. Keep the window at least 1280×800. Open the recording in the viewer tab, download it, and save it as
+  `store/promo-video/assets/footage/bubble.webm`.
+- **B — Clips Hub (frame 3).** Save footage A to Clips (that's also a real test of 0.6.0), open it in the Clips
+  Hub once ClickUp has transcribed it, and take a full-window screenshot (or a 5 s screen recording) with the
+  clip and its transcript visible. Use a workspace where no private clip titles show in the list (your own
+  workspace's list currently shows meeting names). Save as `assets/footage/clips-hub.png` (or `.webm`).
+
+Until A and B exist, frames 3 and 4 build with labelled placeholders.
+
+## Build notes (v2)
+
+- Root `index.html` is now the v2 cut. The v1 root is `index.html` at git commit 815c4d0: keeping both at the root is
+  a lint error (`multiple_root_compositions`). v1 frame files are untouched; v2 reuses 03-annotate, 06-private, 07-cta.
+- Timeline (s): ask 0 · clips 6.443 · hub 14.336 · bubble 19.861 · annotate 25.728 · task 31.339 · private 40.832 ·
+  CTA 47.936 → 55.436. Transitions: cut, zoom-through, push x4, crossfade x2.
+- Cues come from the pauses in each WAV (ffmpeg silencedetect; no ASR model installed). Times are in each frame script.
+- Footage: `footage/` holds the raw files as recorded. `assets/footage/bubble.mp4` is bubble.webm as H.264 30 fps with
+  no audio (the source had a variable frame rate and no duration). The frame plays it from 9.4 s so the drag
+  (11.6–12.6 s in the source) lands on "drag it to any corner". `hub-grid.png` and `hub-clip.png` are the two Hub
+  screenshots with the app's top bar cropped off.
+- `v2-06-task.html` is 04-task with every cue after Scene 1 moved by 1.6 s for the "Filing a bug instead?" lead-in.
+- `assets/screenshot-5-clips.png` was re-rendered from the 0.6.0 UI (`npm run render`): the 0.5.0 one said
+  "Videos up to 45 MB", which contradicted "No size limit". The toggle highlight moved up to match.

@@ -1,0 +1,206 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2");
+      font-weight: 200 800;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #1F1F29;
+    }
+
+    #root [class~="v2-01-ask-bg"] { position: absolute; inset: 0; background: #FFFFFF; }
+    #root [class~="v2-01-ask-stage"] { position: absolute; inset: 0; }
+
+    /* the promise line: centred, later lifts above the request card */
+    #root [class~="v2-01-ask-h1"] {
+      position: absolute;
+      left: 0;
+      top: 470px;
+      width: 1920px;
+      text-align: center;
+      font-size: 4.2cqw;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+    #root [class~="v2-01-ask-word"] { display: inline-block; will-change: transform, opacity; }
+    #root [class~="v2-01-ask-accent"] { color: #7B68EE; }
+
+    /* the request card — our own styling, not ClickUp's UI */
+    #root [class~="v2-01-ask-card"] {
+      position: absolute;
+      left: 460px;
+      top: 470px;
+      width: 1000px;
+      height: 300px;
+      border-radius: 18px;
+      border: 1.5px solid rgba(123, 104, 238, 0.22);
+      background: #FFFFFF;
+      box-shadow: 0 0 0 rgba(123, 104, 238, 0);
+      will-change: transform, opacity;
+    }
+    #root [class~="v2-01-ask-label"] {
+      position: absolute;
+      left: 56px;
+      top: 46px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #6B6B7B;
+    }
+    #root [class~="v2-01-ask-title"] {
+      position: absolute;
+      left: 56px;
+      top: 88px;
+      width: 700px;
+      font-size: 46px;
+      font-weight: 700;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+    }
+    #root [class~="v2-01-ask-since"] {
+      position: absolute;
+      left: 56px;
+      top: 222px;
+      font-size: 26px;
+      font-weight: 600;
+      color: #6B6B7B;
+    }
+    #root [class~="v2-01-ask-year"] { position: relative; color: #1F1F29; }
+    #root [class~="v2-01-ask-mark"] {
+      position: absolute;
+      left: -4px;
+      right: -4px;
+      bottom: -6px;
+      height: 6px;
+      border-radius: 3px;
+      background: #7B68EE;
+      transform: scaleX(0);
+      transform-origin: 0 50%;
+    }
+
+    /* status pill: "Requested" → "Available now" */
+    #root [class~="v2-01-ask-status"] {
+      position: absolute;
+      right: 56px;
+      top: 50px;
+      width: 230px;
+      height: 56px;
+    }
+    #root [class~="v2-01-ask-pill"] {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 56px;
+      padding: 0 26px;
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 22px;
+      font-weight: 700;
+      white-space: nowrap;
+      transform-origin: 100% 50%;
+    }
+    #root [class~="v2-01-ask-pill-old"] { background: #F0F0F4; color: #6B6B7B; }
+    #root [class~="v2-01-ask-pill-new"] { background: #7B68EE; color: #FFFFFF; }
+    #root [class~="v2-01-ask-pill-new"] svg { width: 22px; height: 22px; display: block; }
+
+    #root [class~="v2-01-ask-ring"] {
+      position: absolute;
+      left: 460px;
+      top: 470px;
+      width: 1000px;
+      height: 300px;
+      border-radius: 18px;
+      border: 3px solid #7B68EE;
+      opacity: 0;
+      transform-origin: 50% 50%;
+      pointer-events: none;
+    }
+  </style>
+
+  <div data-hf-id="hf-fi46" id="root" data-composition-id="v2-01-ask" data-width="1920" data-height="1080" data-duration="6.843">
+    <div data-hf-id="hf-hvl1" class="v2-01-ask-bg clip" data-start="0" data-duration="6.843" data-track-index="0"></div>
+
+    <div data-hf-id="hf-nyhz" class="v2-01-ask-stage clip" data-start="0" data-duration="6.843" data-track-index="1">
+      <div data-hf-id="hf-3vfi" class="v2-01-ask-h1" id="v2-01-ask-h1">
+        <span data-hf-id="hf-2o4p" class="v2-01-ask-word">Record</span> <span data-hf-id="hf-47nb" class="v2-01-ask-word">a</span>
+        <span data-hf-id="hf-c58c" class="v2-01-ask-word v2-01-ask-accent">ClickUp</span> <span data-hf-id="hf-t7dd" class="v2-01-ask-word v2-01-ask-accent">Clip</span>
+        <span data-hf-id="hf-vhis" class="v2-01-ask-word">from</span> <span data-hf-id="hf-yvgm" class="v2-01-ask-word">any</span> <span data-hf-id="hf-of2j" class="v2-01-ask-word">page.</span>
+      </div>
+
+      <div data-hf-id="hf-652e" class="v2-01-ask-ring" id="v2-01-ask-ring"></div>
+      <div data-hf-id="hf-80ai" class="v2-01-ask-card" id="v2-01-ask-card">
+        <div data-hf-id="hf-1bec" class="v2-01-ask-label">Feature request</div>
+        <div data-hf-id="hf-10ef" class="v2-01-ask-title">Record Clips from the browser extension</div>
+        <div data-hf-id="hf-16tx" class="v2-01-ask-since" id="v2-01-ask-since">Asked for since <span data-hf-id="hf-rr6s" class="v2-01-ask-year">2021<span data-hf-id="hf-f217" class="v2-01-ask-mark" id="v2-01-ask-mark"></span></span></div>
+        <div data-hf-id="hf-vxy7" class="v2-01-ask-status">
+          <div data-hf-id="hf-lewu" class="v2-01-ask-pill v2-01-ask-pill-old" id="v2-01-ask-old">Requested</div>
+          <div data-hf-id="hf-e0cc" class="v2-01-ask-pill v2-01-ask-pill-new" id="v2-01-ask-new">
+            <svg data-hf-id="hf-z81v" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path data-hf-id="hf-my67" d="M4 10.5 L8.2 14.5 L16 6.5" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span data-hf-id="hf-wmqy">Now you can</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var FRAME_ID = "v2-01-ask";
+      var R = document.querySelector('[data-composition-id="' + FRAME_ID + '"]');
+      var $ = function (id) { return R.querySelector('[id="' + FRAME_ID + "-" + id + '"]'); };
+      var words = R.querySelectorAll('[class~="v2-01-ask-word"]');
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* Scene 1 (0.0–2.0s): "Record a ClickUp Clip from any page." word by word, centred */
+      tl.fromTo(words,
+        { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.2 },
+        0.05);
+
+      /* Scene 2 (2.3–5.1s): the line lifts; the request card rises under it */
+      tl.to($("h1"), { y: -250, scale: 0.78, duration: 0.7, ease: "power3.inOut" }, 2.25);
+      tl.fromTo($("card"),
+        { opacity: 0, y: 70 },
+        { opacity: 1, y: -60, duration: 0.8, ease: "power3.out" },
+        2.4);
+      tl.set($("ring"), { y: -60 }, 0);
+      tl.fromTo($("since"), { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 3.55);
+      tl.to($("mark"), { scaleX: 1, duration: 0.45, ease: "power2.out" }, 4.45); // on "2021"
+      tl.fromTo($("old"), { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "none" }, 2.9);
+
+      /* Scene 3 (5.6s): "Now you can." — the film's one full-register pop */
+      tl.set($("new"), { opacity: 0, scale: 0 }, 0);
+      tl.to($("old"), { opacity: 0, scale: 0.6, duration: 0.2, ease: "power2.in" }, 5.55);
+      tl.to($("new"), { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(2.6)" }, 5.6);
+      tl.to($("card"), { borderColor: "rgba(123,104,238,1)", boxShadow: "0 0 48px rgba(123,104,238,0.28)", duration: 0.4, ease: "power2.out" }, 5.6);
+      tl.fromTo($("ring"),
+        { opacity: 0.9, scale: 1 },
+        { opacity: 0, scale: 1.12, duration: 0.8, ease: "power2.out", immediateRender: false },
+        5.62);
+
+      /* held read to the end */
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[FRAME_ID] = tl;
+      tl.seek(0);
+    })();
+  </script>
+</template>

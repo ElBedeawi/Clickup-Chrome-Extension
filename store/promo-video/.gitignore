@@ -10,3 +10,10 @@ capture/extracted/page.html
 capture/assets/
 audio_request.json
 audio_engine_meta.json
+# Recorded footage: the user's own camera/screen recording and Clips Hub screenshots (footage/ raw, assets/footage/
+# prepared). Kept local, published only inside the YouTube video. Without them frames v2-02/03/04 render empty
+# windows; see STORYBOARD.md v2 for the shot list.
+footage/
+# Studio preview caches
+.thumbnails/
+.waveform-cache/
