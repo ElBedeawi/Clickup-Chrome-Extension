@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-19
+
 ### Changed
 
 - **Clips**: no more 45 MB limit, and Save to Clips now shows real upload progress. The recording is uploaded straight from the panel; the ClickUp tab is only used to get a short-lived session token from your sign-in.
@@ -61,7 +63,8 @@ First public release.
 - Automatic retry when ClickUp rate-limits requests (HTTP 429).
 - Settings page with token test and revoke, and a Buy Me a Coffee link.
 
-[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.2.0...v0.3.0
