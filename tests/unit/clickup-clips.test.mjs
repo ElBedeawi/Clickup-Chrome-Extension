@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installChrome } from '../helpers/chrome-stub.mjs';
 import { getPrefs } from '../../lib/storage.js';
-import { clipFormFields, parseHandshake, clipsHubUrl, clipError, clipsEligible, setClipsPrefs, clearShard, MAX_CLIP_BYTES } from '../../lib/clickup-clips.js';
+import { clipFormFields, parseHandshake, clipsHubUrl, clipError, clipsEligible, setClipsPrefs, clearShard } from '../../lib/clickup-clips.js';
 
 beforeEach(() => {
   installChrome();
@@ -24,13 +24,12 @@ test('clipsHubUrl points at the workspace Clips Hub', () => {
   assert.equal(clipsHubUrl('42'), 'https://app.clickup.com/42/hubs/clips');
 });
 
-test('clipsEligible accepts videos under the size cap and explains refusals', () => {
+test('clipsEligible accepts any video and explains refusals', () => {
   const file = (type, size) => ({ type, size, name: 'f' });
   assert.deepEqual(clipsEligible(file('video/webm', 1024)), { ok: true });
   assert.match(clipsEligible(file('image/png', 1024)).reason, /Only videos/);
   assert.match(clipsEligible(file('', 1024)).reason, /Only videos/);
-  assert.match(clipsEligible(file('video/webm', MAX_CLIP_BYTES + 1)).reason, /over 45 MB/);
-  assert.deepEqual(clipsEligible(file('video/webm', 10), { maxBytes: 100 }), { ok: true });
+  assert.deepEqual(clipsEligible(file('video/webm', 2 * 1024 ** 3)), { ok: true }); // no size cap of our own
   assert.equal(clipsEligible(undefined).ok, false);
 });
 

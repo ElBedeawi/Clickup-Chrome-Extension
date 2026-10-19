@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- **Clips**: no more 45 MB limit, and Save to Clips now shows real upload progress. The recording is uploaded straight from the panel; the ClickUp tab is only used to get a short-lived session token from your sign-in.
+
 ## [0.5.0] - 2026-10-19
 
 ### Added

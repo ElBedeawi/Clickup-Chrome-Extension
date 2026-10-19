@@ -1,5 +1,5 @@
 import * as api from '../lib/clickup-api.js';
-import { clipsHubUrl, clipsEligible, setClipsPrefs, MAX_CLIP_BYTES } from '../lib/clickup-clips.js';
+import { clipsHubUrl, clipsEligible, setClipsPrefs } from '../lib/clickup-clips.js';
 import { uploadAsClip as uploadClipViaTab } from './clips-host.js';
 import { getToken, getPrefs, setPrefs, onTokenChanged } from '../lib/storage.js';
 import { listAttachments, deleteAttachment } from '../lib/attachments-db.js';
@@ -26,7 +26,6 @@ const el = {
   panelExisting: $('panel-existing'),
   panelClips: $('panel-clips'),
   clipsAutoSave: $('clips-auto-save'),
-  clipsLimit: $('clips-limit'),
   targetBanner: $('target-banner'),
 
   location: $('location'),
@@ -661,8 +660,19 @@ function clipStateEl(a) {
 
 function updateClipProgress(a) {
   if (typeof a.clip.progress !== 'number') return;
-  const fill = el.attachmentList.querySelector(`[data-id="${a.id}"] .clip-progress > div`);
-  if (fill) fill.style.width = `${Math.round(a.clip.progress * 100)}%`;
+  const card = el.attachmentList.querySelector(`[data-id="${a.id}"]`);
+  let fill = card?.querySelector('.clip-progress > div');
+  if (!fill) {
+    // The card was rendered while the progress was still indeterminate (minting the token): add the bar.
+    const box = card?.querySelector('.clip-state.uploading');
+    if (!box) return;
+    const bar = document.createElement('div');
+    bar.className = 'progress clip-progress';
+    fill = document.createElement('div');
+    bar.append(fill);
+    box.append(bar);
+  }
+  fill.style.width = `${Math.round(a.clip.progress * 100)}%`;
 }
 
 /** Attachments the Clips tab would save: eligible videos not yet in the Clips Hub. */
@@ -1337,7 +1347,6 @@ applyRecordingState((await chrome.storage.session.get('recording')).recording);
   const prefs = await getPrefs();
   state.clipsAutoSave = !!prefs.clips?.autoSave;
   el.clipsAutoSave.checked = state.clipsAutoSave;
-  el.clipsLimit.textContent = `${Math.round(MAX_CLIP_BYTES / 1024 ** 2)} MB`;
   setMode(['existing', 'clips'].includes(prefs.mode) ? prefs.mode : 'new', { persist: false });
 }
 if (isSidebar()) await recoverAfterSidebarClosed();

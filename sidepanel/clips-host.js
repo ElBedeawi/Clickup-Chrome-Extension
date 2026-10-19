@@ -1,12 +1,9 @@
-// Side-panel glue for "Upload as ClickUp Clip". Both steps that touch ClickUp's web-app API must run
-// inside a *.clickup.com page, where the browser is first-party: the session cookies travel (to mint
-// a token) and the frontdoor accepts the Authorization header (a cross-origin request from the
-// extension reaches it stripped). So we find (or open) an app.clickup.com tab and run two
-// self-contained functions in it via chrome.scripting (world:'MAIN'): mintTokenInPage, then
-// uploadInPage. The extension only resolves the shard host (a public handshake) and moves the file
-// in as a data: URL. See lib/clickup-clips.js.
+// Side-panel glue for "Save to Clips". Minting the workspace token needs the user's ClickUp session
+// cookies, which only travel from a *.clickup.com page, so we find (or open) an app.clickup.com tab and
+// run mintTokenInPage in it via chrome.scripting (world:'MAIN'). Everything else (the shard handshake
+// and the upload itself) happens here in the panel. See lib/clickup-clips.js.
 
-import { mintTokenInPage, uploadInPage, resolveShard, clipError, ClipError, MAX_CLIP_BYTES } from '../lib/clickup-clips.js';
+import { mintTokenInPage, uploadClip, resolveShard, ClipError } from '../lib/clickup-clips.js';
 
 const APP_MATCH = 'https://app.clickup.com/*';
 
@@ -57,31 +54,21 @@ async function mintWithRetry(tabId, attempts = 8) {
   return last;
 }
 
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new ClipError('Could not read the recording.', { status: 0 }));
-    reader.readAsDataURL(file);
-  });
-}
-
 async function runInTab(tabId, func, args) {
   const [res] = await chrome.scripting.executeScript({ target: { tabId }, world: 'MAIN', func, args });
   return res?.result;
 }
 
 /**
- * Uploads a file as a workspace Clip through an app.clickup.com tab.
+ * Uploads a file as a workspace Clip (token minted in an app.clickup.com tab, upload from here).
  * @param {File} file
- * @param {(fraction:number|null)=>void} [onProgress]  called with null (indeterminate; no progress event)
+ * @param {(fraction:number|null)=>void} [onProgress]  null while the token is minted, then 0–1
  * @returns {Promise<{ id:string, url:string, openUrl:string, workspaceId:string }>}
  */
 export async function uploadAsClip(file, onProgress) {
-  if (file.size > MAX_CLIP_BYTES) {
-    throw new ClipError(`This recording is too large to save as a Clip (over ${Math.round(MAX_CLIP_BYTES / 1024 ** 2)} MB). Attach it to a task instead.`, { status: 0 });
-  }
-
+  onProgress?.(null);
+  let workspaceId;
+  let token;
   let tabId = await findClickUpTab();
   let opened = false;
   if (!tabId) {
@@ -102,21 +89,16 @@ export async function uploadAsClip(file, onProgress) {
       }
       throw new ClipError('Could not get a ClickUp session. Make sure you are signed in to ClickUp.', { status: minted?.status || 0 });
     }
-    const workspaceId = minted.workspaceId;
-
-    // 2. Resolve the workspace's API host (public handshake, from the extension) and upload in-page.
-    const base = await resolveShard(workspaceId);
-    onProgress?.(null);
-    const dataUrl = await fileToDataUrl(file);
-    const result = await runInTab(tabId, uploadInPage, [{ base, token: minted.token, workspaceId, dataUrl, name: file.name, mime: file.type }]);
-
-    if (!result?.ok) {
-      // Kept (failure-only) so a future ClickUp change to this undocumented flow is easy to diagnose.
-      console.warn('[clip] upload rejected', { status: result?.status, code: result?.payload?.ECODE, err: result?.payload?.err, jsError: result?.error });
-      throw clipError(result?.status || 0, result?.payload);
-    }
-    return { id: result.id, url: result.url, openUrl: result.openUrl, workspaceId };
+    workspaceId = minted.workspaceId;
+    token = minted.token;
   } finally {
+    // The tab is only needed for the token; close one we opened before the (possibly long) upload.
     if (opened) chrome.tabs.remove(tabId).catch(() => {});
   }
+
+  // 2. Resolve the workspace's API host (public handshake) and upload straight from the panel.
+  const base = await resolveShard(workspaceId);
+  onProgress?.(0);
+  const result = await uploadClip({ base, token, workspaceId, file, onProgress });
+  return { ...result, workspaceId };
 }

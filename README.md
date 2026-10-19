@@ -90,7 +90,7 @@ The token is kept in the extension's local storage on this machine only. **Revok
 
 **Existing task:** open a task in ClickUp and the panel picks it up from the current tab. You can also paste a task URL, a task ID, or a custom ID like `DEV-123`, then press **Check**. **Add a comment** (collapsed) posts a comment after the upload. You can also post just a comment.
 
-**Clips:** no task at all. Record (or attach) videos and press **Save to Clips** to put them in your workspace's Clips Hub, where ClickUp transcribes them. Tick **Save to Clips when recording stops** and a recording you start in this tab is saved the moment you stop it. This tab is video-only (the Screenshot tool is hidden and Attach takes videos), needs you signed in to ClickUp in this browser (a ClickUp tab is opened in the background if none is open) and takes videos up to 45 MB. The tab you used last is the one the panel opens on.
+**Clips:** no task at all. Record (or attach) videos and press **Save to Clips** to put them in your workspace's Clips Hub, where ClickUp transcribes them. Tick **Save to Clips when recording stops** and a recording you start in this tab is saved the moment you stop it. This tab is video-only (the Screenshot tool is hidden and Attach takes videos), needs you signed in to ClickUp in this browser (a ClickUp tab is opened in the background if none is open). The tab you used last is the one the panel opens on.
 
 **Attachments**: a toolbar with three tools.
 - **🎥 Record clip** opens the recording card:
