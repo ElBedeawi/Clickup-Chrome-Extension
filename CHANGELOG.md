@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-23
+
 ### Added
 
 - **Pause and resume** a recording from the recording strip. The paused stretch is left out of the clip, the timer stops, and the toolbar badge shows **II** while paused.
@@ -70,7 +72,8 @@ First public release.
 - Automatic retry when ClickUp rate-limits requests (HTTP 429).
 - Settings page with token test and revoke, and a Buy Me a Coffee link.
 
-[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.3.0...v0.4.0

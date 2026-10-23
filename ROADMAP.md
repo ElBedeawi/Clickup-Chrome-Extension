@@ -21,7 +21,7 @@ Things people ask ClickUp for that this extension already does.
 | [Firefox, pretty please!](https://feedback.clickup.com/integrations/p/firefox-pretty-please) | 834 | Firefox 128+ add-on on addons.mozilla.org (0.2.0) |
 | [Edge Browser Extension](https://feedback.clickup.com/browser-extension/p/edge-browser-extension) | 53 | Installs in Edge, Brave, Opera and Vivaldi from the Chrome Web Store |
 | [Choose Microphone for Voice Clips](https://feedback.clickup.com/feature-requests/p/choose-microphone-for-voice-clips) | 10 | Microphone picker with a live level meter |
-| [Pause video recording and resume](https://feedback.clickup.com/feature-requests/p/pause-video-recording-and-resume) | 29 | Pause/Resume in the recording strip; the paused part is left out of the clip (next release) |
+| [Pause video recording and resume](https://feedback.clickup.com/feature-requests/p/pause-video-recording-and-resume) | 29 | Pause/Resume in the recording strip; the paused part is left out of the clip (0.7.0) |
 
 In the task tabs, recordings and screenshots are uploaded as **task attachments** through the ClickUp API: they
 don't appear in the Clips library and get no Clip transcript. The **Clips tab** (0.5.0) saves a recording to
