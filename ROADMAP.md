@@ -21,6 +21,7 @@ Things people ask ClickUp for that this extension already does.
 | [Firefox, pretty please!](https://feedback.clickup.com/integrations/p/firefox-pretty-please) | 834 | Firefox 128+ add-on on addons.mozilla.org (0.2.0) |
 | [Edge Browser Extension](https://feedback.clickup.com/browser-extension/p/edge-browser-extension) | 53 | Installs in Edge, Brave, Opera and Vivaldi from the Chrome Web Store |
 | [Choose Microphone for Voice Clips](https://feedback.clickup.com/feature-requests/p/choose-microphone-for-voice-clips) | 10 | Microphone picker with a live level meter |
+| [Pause video recording and resume](https://feedback.clickup.com/feature-requests/p/pause-video-recording-and-resume) | 29 | Pause/Resume in the recording strip; the paused part is left out of the clip (next release) |
 
 In the task tabs, recordings and screenshots are uploaded as **task attachments** through the ClickUp API: they
 don't appear in the Clips library and get no Clip transcript. The **Clips tab** (0.5.0) saves a recording to
@@ -31,17 +32,6 @@ Clip (see "Investigating" below).
 
 Small changes with clear demand. Roughly in the order we expect to do them.
 
-- **Pause and resume a recording.** Asked for in
-  [Pause video recording and resume](https://feedback.clickup.com/feature-requests/p/pause-video-recording-and-resume)
-  (29 votes) and in several Loom comparisons. Feasible: `MediaRecorder.pause()` / `resume()` work in Chrome and
-  Firefox, keep the share session alive, and the paused stretch is simply left out of the file (no gap, no
-  re-encoding). Work needed: `rec:pause` / `rec:resume` messages, a `pausedAt` field in the session state so the
-  elapsed time and the badge (REC → paused) stay right, a Pause button in the recording strip, pausing the
-  compositor's tick while paused, and `isRecording()` treating `'paused'` as still active so a closed panel
-  doesn't recover the clip as interrupted. Same recorder on both hosts, so one change covers both browsers.
-- **Playback speed in the attachment viewer tab** (1×, 1.5×, 2×), for checking a long clip before uploading.
-  Speed *after* upload depends on ClickUp's own attachment player, which we can't change; the file itself
-  carries no speed setting.
 - **Arrows, rectangles, ellipses and numbered steps in the screenshot editor.** The most common annotation
   tools after free drawing; speech bubbles were asked for in
   [Screenshot Annotations Speech Bubbles](https://feedback.clickup.com/feature-requests/p/screenshot-annotations-speech-bubbles).
@@ -54,8 +44,6 @@ Small changes with clear demand. Roughly in the order we expect to do them.
   (`commands` in the manifest, no new permission). The one-keystroke workflow is a recurring theme in the
   screenshot threads.
 - **Copy to clipboard and Download in the editor**, so a screenshot can go into a chat or a doc without a task.
-- **Countdown before a recording starts** (3 seconds, optional), so the picker and the panel are out of the way.
-- **Mute the microphone while recording**, from the recording strip.
 - **Warn before ClickUp's 1 GB per-file limit** with the current size shown while recording.
 
 ## Later
@@ -68,6 +56,13 @@ Useful, but each needs real design or engineering time.
 - **Camera-only recording** (no screen), for a quick video message. Asked for by sign-language users in
   [Video messaging/screen recorder with video](https://feedback.clickup.com/integrations/p/video-messagingscreen-recorder-with-video-webcam).
   The compositor already draws the camera; this is a fourth source.
+- **Blur the background in the camera bubble** (optional toggle next to the camera picker). First choice is the
+  platform's own effect: where the camera track reports a `backgroundBlur` capability (Chrome with OS-level camera
+  effects, e.g. Windows Studio Effects or macOS), `applyConstraints({ backgroundBlur: true })` on the track in
+  `lib/recorder.js` costs nothing and needs no new code in the compositor. Elsewhere (and on Firefox) blurring
+  needs person segmentation on every frame, i.e. a segmentation model shipped in the extension and run in the
+  compositor before the bubble is drawn. That clashes with the no-dependencies rule and adds megabytes, so the
+  open question is whether to offer the toggle only where the platform supports it.
 - **Record a region of the screen** instead of the whole surface. Crop in the compositor after capture.
 - **Cursor highlight and click ripple** in recordings
   ([Screen Recording - Mouse click animation](https://feedback.clickup.com/feature-requests/p/screen-recording-mouse-click-animation)).
@@ -105,6 +100,16 @@ Wanted, but no good approach yet.
 - **Clip in a task comment.** ClickUp's "record in a comment" flow is the same upload with `parent=<task>`, a
   comment carrying a `link_preview` video block and a re-parent of the attachment to the comment. A natural
   follow-up to the workspace Clip, once that has proven stable.
+- **ClickUp Brain from the side panel**: for example, drafting the new task's title and description from a
+  recording or a screenshot, or asking Brain about the selected task without switching tabs. This fits the
+  "data goes only to ClickUp" rule, because Brain is ClickUp's own AI. State of play (October 2026): **the public
+  API has no Brain endpoint.**
+  [Make ClickUp Brain available via API](https://feedback.clickup.com/public-api/p/make-clickup-brain-available-via-api)
+  (10 votes) got an answer from ClickUp on 2026-09-29: they are "actively working on providing access to Brain via
+  our MCP Server". Next step: wait for that, then check whether a browser extension can call ClickUp's MCP server
+  directly (HTTPS + OAuth, no new dependency). Calling it would be a new ClickUp endpoint, so it would need a
+  privacy policy and store listing update and would stay opt-in. Reverse-engineering Brain's private web-app API,
+  the way the Clips tab does, is a fallback only: it would be even more fragile than Clips.
 - **View tracking** from the Loom thread is a ClickUp-side feature and out of our hands.
 
 ## Not planned

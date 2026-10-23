@@ -5,6 +5,7 @@ import { getToken, getPrefs, setPrefs, onTokenChanged } from '../lib/storage.js'
 import { listAttachments, deleteAttachment } from '../lib/attachments-db.js';
 import { captureScreenshot, openEditor } from '../lib/screenshot.js';
 import { createCaptureSession, recoverInterruptedRecording } from '../lib/capture-session.js';
+import { elapsedMs, countdownLeft, recordingPhase } from '../lib/recording-state.js';
 import { isSidebar, canRecordTab, browserName, keepPanelOpenHint } from '../lib/platform.js';
 import { createDetails } from './details.js';
 import { createRecorderCard } from './recorder-card.js';
@@ -56,7 +57,10 @@ const el = {
   commentDetails: $('comment-details'),
   commentText: $('comment-text'),
   recording: $('recording'),
+  recLabel: $('rec-label'),
   recTime: $('rec-time'),
+  btnPause: $('btn-pause'),
+  btnMute: $('btn-mute'),
   btnStop: $('btn-stop'),
   recBubble: $('rec-bubble'),
   micNotice: $('mic-notice'),
@@ -100,7 +104,10 @@ const state = {
    * @type {{ id: number, file: File, url: string, dbId?: number, createdAt?: number, status: 'pending'|'uploading'|'done'|'failed', progress: number, error?: string, clip?: { status: 'uploading'|'done'|'failed', progress?: number|null, hubUrl?: string, error?: string } }[]}
    */
   attachments: [],
-  /** Mirrors chrome.storage.session `recording`: { startedAt, camera } while the recorder runs. */
+  /**
+   * Mirrors chrome.storage.session `recording` while the recorder runs:
+   * { id, startedAt, camera, mic, pausedAt, pausedMs, micMuted } (see lib/recording-state.js).
+   */
   recording: null,
   /** Existing-task comment: posted once per submit, even across retries. */
   commentPosted: false,
@@ -809,6 +816,9 @@ const backgroundHost = {
   start: (options) => sendToBackground({ type: 'rec:start', ...options }),
   stop: () => sendToBackground({ type: 'rec:stop' }),
   setBubble: (bubble) => sendToBackground({ type: 'rec:bubble', bubble }),
+  pause: () => sendToBackground({ type: 'rec:pause' }),
+  resume: () => sendToBackground({ type: 'rec:resume' }),
+  setMicMuted: (muted) => sendToBackground({ type: 'rec:mute', muted }),
   screenshot: () => sendToBackground({ type: 'shot:screen' }),
   // The offscreen recorder is shared by every panel of this profile; Stop from any of them counts.
   ownsSession: () => true,
@@ -818,8 +828,20 @@ function createLocalHost() {
   const session = createCaptureSession({
     // The user ended sharing from the browser's own indicator.
     onFinished: ({ error }) => sendToBackground({ type: 'rec:state', recording: null, error }),
+    // The countdown ran out, or the recording was paused, resumed, muted (from here or from
+    // another window's sidebar): this sidebar runs the recorder, so it reports the new state.
+    onChange: (recording) => sendToBackground({ type: 'rec:state', recording, update: true }).catch(console.error),
   });
   const failure = (err) => ({ ok: false, name: err?.name, error: err?.message ?? String(err ?? 'unknown error') });
+
+  /** A pause/resume/mute command: ours to run, or for the recording sidebar in another window. */
+  function control(msg) {
+    if (session.isRecording()) return session.handle(msg).catch(failure);
+    return chrome.runtime.sendMessage({ target: 'host', ...msg }).then(
+      (res) => res ?? { ok: false, error: 'No sidebar is recording.' },
+      failure,
+    );
+  }
 
   // Sidebars in other windows ask "is anyone recording?" before recovering chunks from disk.
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -837,7 +859,10 @@ function createLocalHost() {
     sendToBackground({
       type: 'rec:state',
       recording: null,
-      error: 'Recording stopped because the sidebar was closed. The part recorded so far was kept.',
+      error:
+        session.state() === 'countdown'
+          ? 'Recording cancelled because the sidebar was closed.'
+          : 'Recording stopped because the sidebar was closed. The part recorded so far was kept.',
     }).catch(() => {});
   });
 
@@ -853,7 +878,7 @@ function createLocalHost() {
       } catch (err) {
         return failure(err);
       }
-      await sendToBackground({ type: 'rec:state', recording: { startedAt: Date.now(), camera: !!res.camera } });
+      await sendToBackground({ type: 'rec:state', recording: res.recording });
       return res;
     },
     setBubble(bubble) {
@@ -861,6 +886,9 @@ function createLocalHost() {
       if (session.isRecording()) return session.setBubble(bubble);
       return chrome.runtime.sendMessage({ target: 'host', type: 'rec:bubble', bubble }).catch(() => ({ ok: false }));
     },
+    pause: () => control({ type: 'rec:pause' }),
+    resume: () => control({ type: 'rec:resume' }),
+    setMicMuted: (muted) => control({ type: 'rec:mute', muted }),
     async stop() {
       if (!session.isRecording()) {
         // The recorder lives in another window's sidebar (or died with one): ask it to stop,
@@ -947,14 +975,66 @@ function applyRecordingState(recording) {
   el.recBubble.hidden = !state.recording?.camera;
   if (state.recording?.camera) recBubbleStage.setValue(recorderCard.options().bubble);
   if (state.recording) {
-    const tick = () => {
-      el.recTime.textContent = formatDuration(Date.now() - state.recording.startedAt);
-    };
-    tick();
-    recTimer = setInterval(tick, 500);
+    renderRecordingStrip();
+    recTimer = setInterval(renderRecordingStrip, 250); // 250 ms: the countdown's 3-2-1 shouldn't lag
   }
   render();
 }
+
+/** Recording strip: "Starting in 3" → "Recording 00:12" ⇄ "Paused 00:12", plus Pause and Mute. */
+let recControlBusy = false; // a pause/resume/mute is on its way to the recorder
+function renderRecordingStrip() {
+  const recording = state.recording;
+  if (!recording) return;
+  const now = Date.now();
+  const phase = recordingPhase(recording, now);
+  el.recording.dataset.phase = phase;
+  el.recLabel.textContent = { countdown: 'Starting in', paused: 'Paused', recording: 'Recording' }[phase];
+  el.recTime.textContent = phase === 'countdown' ? String(countdownLeft(recording, now)) : formatDuration(elapsedMs(recording, now));
+
+  const paused = phase === 'paused';
+  el.btnPause.disabled = phase === 'countdown' || recControlBusy;
+  setToggle(el.btnPause, paused, paused ? 'play' : 'pause', paused ? 'Resume recording' : 'Pause recording');
+
+  el.btnMute.hidden = !recording.mic;
+  el.btnMute.disabled = recControlBusy;
+  const muted = !!recording.micMuted;
+  setToggle(el.btnMute, muted, muted ? 'micOff' : 'mic', muted ? 'Unmute microphone' : 'Mute microphone');
+}
+
+/** An icon-only toggle button: pressed state, icon and accessible name (only touched on change). */
+function setToggle(button, pressed, iconName, label) {
+  if (button.dataset.icon === iconName && button.getAttribute('aria-pressed') === String(pressed)) return;
+  button.dataset.icon = iconName;
+  button.innerHTML = icon(iconName);
+  button.setAttribute('aria-pressed', String(pressed));
+  button.setAttribute('aria-label', label);
+  button.title = label;
+}
+
+async function recControl(run, what) {
+  recControlBusy = true;
+  renderRecordingStrip();
+  try {
+    const res = await run();
+    if (!res?.ok) showError(`Could not ${what}: ${res?.error || 'unknown error'}`);
+  } catch (err) {
+    showError(`Could not ${what}: ${err.message}`);
+  } finally {
+    recControlBusy = false;
+    renderRecordingStrip();
+  }
+}
+
+el.btnPause.addEventListener('click', () => {
+  if (state.recording?.pausedAt) recControl(() => host.resume(), 'resume the recording');
+  else recControl(() => host.pause(), 'pause the recording');
+});
+
+el.btnMute.addEventListener('click', () => {
+  const muted = !state.recording?.micMuted;
+  recControl(() => host.setMicMuted(muted), muted ? 'mute the microphone' : 'unmute the microphone');
+});
 
 /**
  * A recording ended while this panel was open (the file is in IndexedDB before the state flips):
@@ -1036,6 +1116,7 @@ el.btnStop.addEventListener('click', async () => {
   try {
     const res = await host.stop();
     if (!res?.ok) showError(`Recording stopped with an error: ${res?.error || 'unknown error'}`);
+    else if (res.cancelled) el.recordHint.textContent = 'Recording cancelled.';
   } catch (err) {
     showError(err.message);
   } finally {

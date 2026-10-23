@@ -23,11 +23,13 @@ if (chrome.sidePanel) {
 // On Chrome the recorder runs in an offscreen document so it keeps going when the side panel
 // is closed. On Firefox (no offscreen documents) the sidebar hosts the recorder itself and
 // reports state changes here with `rec:state`. Either way the recording state lives in
-// chrome.storage.session ({ recording: { startedAt, camera } }) so the panel can pick it up whenever
-// it (re)opens, and this worker can be suspended mid-recording without losing anything.
+// chrome.storage.session ({ recording: { id, startedAt, camera, mic, pausedAt, pausedMs, micMuted } })
+// so the panel can pick it up whenever it (re)opens, and this worker can be suspended
+// mid-recording without losing anything. The host that runs the recorder reports a full
+// snapshot on every change (`rec:state` with `update: true`); this script only stores it.
 // ---------------------------------------------------------------------------
 
-const NEEDS_OFFSCREEN = new Set(['rec:start', 'rec:stop', 'rec:bubble', 'shot:screen']);
+const NEEDS_OFFSCREEN = new Set(['rec:start', 'rec:stop', 'rec:bubble', 'rec:pause', 'rec:resume', 'rec:mute', 'shot:screen']);
 
 const OFFSCREEN_URL = 'offscreen/offscreen.html';
 let creatingOffscreen = null;
@@ -59,10 +61,19 @@ async function closeOffscreen() {
   }
 }
 
+/** Toolbar badge: '…' during the countdown, 'REC' while recording, 'II' while paused. */
+function badgeFor(recording) {
+  if (!recording) return null;
+  if (recording.pausedAt) return { text: 'II', color: '#80838d' };
+  if (recording.startedAt > Date.now()) return { text: '…', color: '#f5a524' };
+  return { text: 'REC', color: '#e5484d' };
+}
+
 async function setRecording(recording) {
   await chrome.storage.session.set({ recording, recordingError: null });
-  await chrome.action.setBadgeText({ text: recording ? 'REC' : '' });
-  if (recording) await chrome.action.setBadgeBackgroundColor({ color: '#e5484d' });
+  const badge = badgeFor(recording);
+  await chrome.action.setBadgeText({ text: badge?.text ?? '' });
+  if (badge) await chrome.action.setBadgeBackgroundColor({ color: badge.color });
 }
 
 async function handle(msg) {
@@ -83,8 +94,9 @@ async function handle(msg) {
         micDeviceId: msg.micDeviceId,
         cameraDeviceId: msg.cameraDeviceId,
         bubble: msg.bubble,
+        delayMs: msg.delayMs,
       });
-      if (res?.ok) await setRecording({ startedAt: Date.now(), camera: !!res.camera });
+      if (res?.ok) await setRecording(res.recording ?? { startedAt: Date.now(), camera: !!res.camera });
       else await closeOffscreen();
       return res ?? { ok: false, error: 'The recorder did not respond.' };
     }
@@ -102,10 +114,15 @@ async function handle(msg) {
       return res;
     }
 
-    // Move/resize the camera bubble of the running recording.
-    case 'rec:bubble': {
+    // Move/resize the camera bubble, pause/resume, mute/unmute the mic of the running recording.
+    // The offscreen document reports the new state itself (`rec:state` with `update: true`).
+    case 'rec:bubble':
+    case 'rec:pause':
+    case 'rec:resume':
+    case 'rec:mute': {
       try {
-        return (await chrome.runtime.sendMessage({ target: 'offscreen', type: 'rec:bubble', bubble: msg.bubble })) ?? { ok: false };
+        const { type, bubble, muted } = msg;
+        return (await chrome.runtime.sendMessage({ target: 'offscreen', type, bubble, muted })) ?? { ok: false };
       } catch (err) {
         return { ok: false, error: err.message };
       }
@@ -133,9 +150,18 @@ async function handle(msg) {
       return { ok: true };
     }
 
-    // Firefox: the sidebar hosts the recorder and reports { recording: { startedAt } | null, error? }
-    // so this script stays the single owner of the session state and the REC badge.
+    // The recorder's host reports its state so this script stays the single owner of the session
+    // state and the REC badge. Firefox: the sidebar sets it on start and clears it on stop
+    // ({ recording | null, error? }). Both browsers: { recording, update: true } after the
+    // countdown, a pause/resume or a mute. An update only applies to the recording it is about,
+    // so a late one can't bring back a recording that was just stopped.
     case 'rec:state': {
+      if (msg.update) {
+        const { recording } = await chrome.storage.session.get('recording');
+        if (!recording || !msg.recording || recording.id !== msg.recording.id) return { ok: false, stale: true };
+        await setRecording(msg.recording);
+        return { ok: true };
+      }
       await setRecording(msg.recording ?? null);
       if (msg.error) await chrome.storage.session.set({ recordingError: msg.error });
       return { ok: true };

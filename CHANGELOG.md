@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **Pause and resume** a recording from the recording strip. The paused stretch is left out of the clip, the timer stops, and the toolbar badge shows **II** while paused.
+- **Mute the microphone** mid-recording from the recording strip, and unmute it again. The muted part of the clip is silent; system audio keeps recording.
+- **3-second countdown** after you pick what to share, so you have time to switch to what you want to record. The strip counts down and the badge shows **…**; pressing Stop during the countdown cancels without saving anything. It's on by default: untick **3-second countdown** in the Record clip card to start recording right away.
+- **Playback speed** (1×, 1.5×, 2×) in the full-size tab for a recording, to check a long clip before uploading it. The last speed you picked is remembered.
+
 ## [0.6.0] - 2026-10-19
 
 ### Changed

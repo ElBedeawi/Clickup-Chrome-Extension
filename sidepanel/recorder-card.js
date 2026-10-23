@@ -27,7 +27,17 @@ const NO_CAMERA = 'none';
 const ALLOW = '__allow__'; // pseudo-item shown until the extension has mic permission
 const ALLOW_CAMERA = '__allow-camera__';
 
-const DEFAULTS = { source: 'screen', resolution: '1080', mic: 'default', camera: NO_CAMERA, bubble: { x: 0, y: 1, size: 'md' } };
+/** Length of the optional "3-second countdown" between the share picker and the recording. */
+export const COUNTDOWN_MS = 3000;
+
+const DEFAULTS = {
+  source: 'screen',
+  resolution: '1080',
+  mic: 'default',
+  camera: NO_CAMERA,
+  bubble: { x: 0, y: 1, size: 'md' },
+  countdown: true,
+};
 
 const $ = (id) => document.getElementById(id);
 
@@ -106,6 +116,10 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
       if (final) save({ bubble });
     },
   });
+
+  const countdown = $('rc-countdown');
+  countdown.checked = settings.countdown !== false;
+  countdown.addEventListener('change', () => save({ countdown: countdown.checked }));
 
   function updateIcons() {
     sourceIcon.innerHTML = icon(SOURCES.find((s) => s.value === source.value)?.icon || 'monitor');
@@ -349,6 +363,7 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
       micDeviceId: settings.mic === NO_MIC ? null : settings.mic,
       cameraDeviceId: settings.camera === NO_CAMERA ? null : settings.camera,
       bubble: { ...settings.bubble },
+      delayMs: settings.countdown !== false ? COUNTDOWN_MS : 0,
     }),
   };
 }

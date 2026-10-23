@@ -7,6 +7,21 @@
   const params = new URLSearchParams(location.search);
   const scene = params.get('demo');
   const browser = params.get('browser') || 'chrome';
+  // The `existing` scene is mid-recording; &rec=paused (mic muted) or &rec=countdown shows the
+  // other states of the recording strip.
+  const rec = params.get('rec');
+  const now = Date.now();
+  const recording = {
+    id: 1,
+    startedAt: now - 83_000,
+    camera: true,
+    mic: true,
+    pausedAt: null,
+    pausedMs: 0,
+    micMuted: false,
+    ...(rec === 'paused' ? { pausedAt: now - 9_000, micMuted: true } : {}),
+    ...(rec === 'countdown' ? { startedAt: now + 60_000 } : {}), // far enough ahead to stay put during a test
+  };
 
   // ---------------------------------------------------------------------------
   // chrome.* stub
@@ -21,7 +36,7 @@
         recorder: { camera: 'cam-webcam', bubble: { x: 0, y: 1, size: 'md' } },
       },
     },
-    session: scene === 'existing' ? { recording: { startedAt: Date.now() - 83_000, camera: true } } : {},
+    session: scene === 'existing' ? { recording } : {},
   };
   const pick = (obj, keys) => {
     if (keys == null) return { ...obj };

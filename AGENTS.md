@@ -40,17 +40,19 @@ sidepanel/  UI. sidepanel.js (form, uploads, wiring, recorder host selection), r
             card), bubble-stage.js (camera bubble position/size control, used in the card and the recording
             strip), details.js ("More details"), menu.js (custom dropdowns)
 background.js   classic script (Chrome: service worker; Firefox: event page). Opens the panel / toggles the
-                sidebar on icon click; owns the recording state + REC badge; on Chrome drives the offscreen recorder
+                sidebar on icon click; stores the recording state its host reports and sets the badge ('…' countdown,
+                REC, II paused); on Chrome drives the offscreen recorder
 offscreen/      Chrome only: hidden document hosting the capture session (survives the panel closing)
 editor/         screenshot annotation tab (draw/text/blur/crop); edits are an op list in image pixels,
                 replayed on the original image, so undo is cheap and export is full resolution
-viewer/         full-size view of a pending attachment in a tab (side panels can't go fullscreen)
+viewer/         full-size view of a pending attachment in a tab (side panels can't go fullscreen); 1×/1.5×/2× for videos
 options/        settings page: token save/test/revoke, Buy Me a Coffee box
 permissions/    one-time microphone/camera permission page (`?device=`; side panels can't show the prompt)
 lib/            clickup-api.js (API client, 429 retry, XHR uploads for progress), recorder.js,
                 compositor.js (draws the screen + the camera bubble on a canvas whose captureStream() is what
                 gets recorded; clocked by tick-worker.js), capture-session.js (recorder + IndexedDB glue shared by
                 the offscreen doc and the Firefox sidebar, plus recovery of a recording whose sidebar was closed),
+                recording-state.js (elapsed time / countdown / phase of the session `recording` snapshot),
                 platform.js (Chrome/Firefox detection and wording), screenshot.js (tab/area capture + injected
                 area overlay), attachments-db.js (IndexedDB), storage.js, geometry.js (pure helpers, incl. the
                 bubble placement), icons.js, links.js
@@ -69,21 +71,26 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
 
 | type | from → to | purpose |
 |---|---|---|
-| `rec:start` `{source, resolution, micDeviceId, cameraDeviceId, bubble}` | panel → background → offscreen | Chrome: start recording (offscreen shows the picker); answers `{ok, micError?, cameraError?, camera}` |
-| `rec:stop` | panel → background → offscreen | Chrome: stop; offscreen saves the file to IndexedDB first |
+| `rec:start` `{source, resolution, micDeviceId, cameraDeviceId, bubble, delayMs}` | panel → background → offscreen | Chrome: start recording (offscreen shows the picker; `delayMs` is the countdown after it); answers `{ok, micError?, cameraError?, camera, recording}` (`recording` = the session snapshot) |
+| `rec:stop` | panel → background → offscreen | Chrome: stop; offscreen saves the file to IndexedDB first. During the countdown it cancels: `{ok, cancelled: true}`, no file |
 | `rec:bubble` `{bubble}` | panel → background → offscreen (Chrome); sidebar → own session, or `target: 'host'` to the recording sidebar (Firefox) | move/resize the camera bubble of the running recording |
-| `rec:finished` `{error?}` | offscreen → background | Chrome: user ended sharing from the browser's own bar |
+| `rec:pause` / `rec:resume` / `rec:mute` `{muted}` | same routes as `rec:bubble` | pause/resume the recording, mute/unmute its mic; the recorder's host then reports the new state with `rec:state` `update` |
+| `rec:finished` `{error?}` | offscreen → background | Chrome: user ended sharing from the browser's own bar (or ended the countdown) |
 | `shot:screen` | panel → background → offscreen | Chrome: "Entire screen" screenshot → returns `draftId` |
-| `rec:state` `{recording, error?}` | sidebar → background | Firefox: the sidebar started/stopped recording; background updates session state + badge |
-| `rec:ping` / `rec:stop` (`target: 'host'`) | sidebar → recording sidebar | Firefox: "is anyone recording?" (answered only while recording) / stop it from another window |
+| `rec:state` `{recording, error?, update?}` | sidebar → background (Firefox); offscreen → background (Chrome, `update` only) | the recorder's host reports a full snapshot: Firefox sets it on start and clears it on stop; both send `update: true` when the countdown runs out and on pause/resume/mute, applied only if the stored `recording.id` matches. Background stores it and sets the badge |
+| `rec:ping` / `rec:stop` (`target: 'host'`) | sidebar → recording sidebar | Firefox: "is anyone recording?" (answered while counting down, recording or paused) / stop it from another window |
 
 **State**
-- `chrome.storage.local`: `clickupToken`; `prefs` = `{ mode, last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}}, clips: {autoSave, shards} }`
+- `chrome.storage.local`: `clickupToken`; `prefs` = `{ mode, last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}, countdown}, clips: {autoSave, shards}, viewer: {speed} }`
   (`mode` is the destination tab used last, `new|existing|clips`; `camera` is `'none'` or a device id; `bubble.x/y`
   are 0–1 fractions of the area the bubble may occupy, so the corners are exactly 0/1 pairs; `size` is `sm|md|lg`;
-  `clips.autoSave` is the "Save to Clips when recording stops" toggle and `clips.shards` the per-workspace API host
-  cache, written only through `setClipsPrefs()` because `setPrefs` merges one level deep).
-- `chrome.storage.session`: `recording` (`{startedAt, camera}` while recording; the panel mirrors it), `recordingError`,
+  `countdown` is the "3-second countdown" checkbox, on unless `false`, and is written with the rest of `recorder` by
+  `recorder-card.js`; `clips.autoSave` is the "Save to Clips when recording stops" toggle and `clips.shards` the
+  per-workspace API host cache, written only through `setClipsPrefs()` because `setPrefs` merges one level deep;
+  `viewer.speed` is the viewer tab's last playback speed, `1|1.5|2`).
+- `chrome.storage.session`: `recording` while recording, the panel mirrors it: `{id, startedAt, camera, mic, pausedAt,
+  pausedMs, micMuted}` as reported by the recorder's host (`startedAt` is in the future during the countdown;
+  `pausedAt` is set while paused; `pausedMs` sums the earlier pauses; read it with `lib/recording-state.js`), `recordingError`,
   `attachmentsChangedAt` (bumped to make an open panel re-read IndexedDB), `micGrantedAt` / `cameraGrantedAt` (bumped by
   the permission helper page so an open panel re-reads the device list).
 - IndexedDB `clickup-video-upload` v2: store `recordings` (any pending attachment: `{id, file, createdAt, draft?, crop?}`;
@@ -141,7 +148,8 @@ files and `.hyperframes/` are git-ignored.
 Headless scripts find Chrome/Edge and Firefox automatically (set `CHROME=/path` / `FIREFOX=/path` otherwise). Demo
 pages: any URL with `?demo=<scene>` gets `store/src/demo-shared.js` + `demo-stub.js` injected, which fake `chrome.*`
 and the ClickUp API (scenes: `new`, `details`, `existing`, `clips`, `menu&menu=<source|resolution|mic|shot>`, `editor`);
-add `&browser=firefox` to fake Firefox's `chrome.sidebarAction` and get the sidebar variant of the UI.
+add `&browser=firefox` to fake Firefox's `chrome.sidebarAction` and get the sidebar variant of the UI, and
+`&rec=paused` / `&rec=countdown` to `existing` for the other recording-strip states.
 
 ## Making changes
 

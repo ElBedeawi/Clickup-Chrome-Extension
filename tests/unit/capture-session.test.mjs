@@ -4,24 +4,45 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCaptureSession, recoverInterruptedRecording } from '../../lib/capture-session.js';
 
-function fakeRecorder({ micError, cameraError } = {}) {
-  let recording = false;
+/** What the fake recorder reports while recording (pause/mute change it). */
+const STATUS = { id: 7, state: 'recording', startedAt: 1000, pausedAt: null, pausedMs: 0, mic: true, micMuted: false, camera: false };
+const SNAPSHOT = { id: 7, startedAt: 1000, camera: false, mic: true, pausedAt: null, pausedMs: 0, micMuted: false };
+
+function fakeRecorder({ micError, cameraError, cancelled = false } = {}) {
+  let status = { ...STATUS, state: 'idle' };
   const recorder = {
     calls: [],
     onAutoStop: null,
-    isRecording: () => recording,
+    onChange: null,
+    isRecording: () => status.state !== 'idle',
+    status: () => ({ ...status }),
     async start(opts) {
       recorder.calls.push(['start', opts]);
-      recording = true;
+      status = { ...STATUS };
       return { micError, cameraError };
     },
     setBubble(bubble) {
       recorder.calls.push(['setBubble', bubble]);
-      return recording;
+      return recorder.isRecording();
+    },
+    pause() {
+      if (status.state !== 'recording') throw new Error('Not recording.');
+      status = { ...status, state: 'paused', pausedAt: 5000 };
+      recorder.onChange?.(recorder.status());
+    },
+    resume() {
+      status = { ...status, state: 'recording', pausedAt: null, pausedMs: 2000 };
+      recorder.onChange?.(recorder.status());
+    },
+    setMicMuted(muted) {
+      status = { ...status, micMuted: muted };
+      recorder.onChange?.(recorder.status());
+      return true;
     },
     async stop() {
       recorder.calls.push(['stop']);
-      recording = false;
+      status = { ...status, state: 'idle' };
+      if (cancelled) return { file: null, durationMs: 0, cancelled: true };
       return { file: new File(['webm'], 'recording.webm', { type: 'video/webm' }), durationMs: 1234 };
     },
   };
@@ -63,11 +84,12 @@ test('start passes only the recorder options through and reports a mic failure b
     micDeviceId: 'mic-1',
     cameraDeviceId: 'cam-1',
     bubble,
+    delayMs: 3000,
   });
 
-  assert.deepEqual(res, { ok: true, micError: 'NotAllowedError', cameraError: undefined, camera: true });
+  assert.deepEqual(res, { ok: true, micError: 'NotAllowedError', cameraError: undefined, camera: true, recording: SNAPSHOT });
   assert.deepEqual(recorder.calls, [
-    ['start', { source: 'window', resolution: '720', micDeviceId: 'mic-1', cameraDeviceId: 'cam-1', bubble }],
+    ['start', { source: 'window', resolution: '720', micDeviceId: 'mic-1', cameraDeviceId: 'cam-1', bubble, delayMs: 3000 }],
   ]);
   assert.equal(session.isRecording(), true);
 });
@@ -79,7 +101,7 @@ test('start reports a camera failure by name and that the clip has no bubble', a
 
   const res = await session.start({ source: 'screen', cameraDeviceId: 'cam-1' });
 
-  assert.deepEqual(res, { ok: true, micError: undefined, cameraError: 'NotReadableError', camera: false });
+  assert.deepEqual(res, { ok: true, micError: undefined, cameraError: 'NotReadableError', camera: false, recording: SNAPSHOT });
 });
 
 test('without a camera the result says so', async () => {
@@ -162,16 +184,73 @@ test('handle routes messages and answers rec:ping only while recording', async (
 
   assert.equal(session.handle({ type: 'rec:ping' }), null, 'an idle host must leave the channel to a recording one');
   assert.equal(session.handle({ type: 'rec:bubble', bubble: { x: 0 } }), null, 'same for moving a bubble it does not own');
+  for (const type of ['rec:pause', 'rec:resume', 'rec:mute']) {
+    assert.equal(session.handle({ type, muted: true }), null, `same for ${type}`);
+  }
   assert.deepEqual(await session.handle({ type: 'rec:start', source: 'screen' }), {
     ok: true,
     micError: undefined,
     cameraError: undefined,
     camera: false,
+    recording: SNAPSHOT,
   });
   assert.deepEqual(await session.handle({ type: 'rec:ping' }), { ok: true, recording: true });
   assert.deepEqual(await session.handle({ type: 'rec:bubble', bubble: { x: 0.5, y: 0.5 } }), { ok: true });
+  assert.deepEqual(await session.handle({ type: 'rec:pause' }), { ok: true });
+  assert.deepEqual(await session.handle({ type: 'rec:ping' }), { ok: true, recording: true }, 'paused still counts as recording');
+  assert.deepEqual(await session.handle({ type: 'rec:resume' }), { ok: true });
+  assert.deepEqual(await session.handle({ type: 'rec:mute', muted: true }), { ok: true });
   assert.deepEqual(await session.handle({ type: 'rec:stop' }), { ok: true });
   assert.deepEqual(await session.handle({ type: 'nope' }), { ok: false, error: 'Unknown message nope' });
+});
+
+test('pause, resume and mute report a full snapshot of the new state', async () => {
+  const changes = [];
+  const save = fakeSave();
+  const session = createCaptureSession({ recorder: fakeRecorder(), save, sink: fakeSink(save), onChange: (r) => changes.push(r) });
+  await session.start({});
+
+  await session.handle({ type: 'rec:pause' });
+  await session.handle({ type: 'rec:resume' });
+  await session.handle({ type: 'rec:mute', muted: true });
+
+  assert.deepEqual(changes, [
+    { ...SNAPSHOT, pausedAt: 5000 },
+    { ...SNAPSHOT, pausedMs: 2000 },
+    { ...SNAPSHOT, pausedMs: 2000, micMuted: true },
+  ]);
+});
+
+test('a pause the recorder refuses (e.g. during the countdown) comes back as an error', async () => {
+  const save = fakeSave();
+  const recorder = fakeRecorder();
+  const session = createCaptureSession({ recorder, save, sink: fakeSink(save) });
+  await session.start({});
+  await session.pause();
+  await assert.rejects(session.handle({ type: 'rec:pause' }), /Not recording/);
+});
+
+test('stopping during the countdown saves nothing and says it was cancelled', async () => {
+  const save = fakeSave();
+  const sink = fakeSink(save);
+  const session = createCaptureSession({ recorder: fakeRecorder({ cancelled: true }), save, sink });
+  await session.start({ delayMs: 3000 });
+
+  assert.deepEqual(await session.stop(), { ok: true, cancelled: true });
+  assert.equal(save.saved.length, 0);
+  assert.equal(sink.released, 0);
+});
+
+test('the browser bar ending a countdown reports back without saving or an error', async () => {
+  const recorder = fakeRecorder();
+  const save = fakeSave();
+  const finished = [];
+  createCaptureSession({ recorder, save, sink: fakeSink(save), onFinished: (r) => finished.push(r) });
+
+  await recorder.onAutoStop({ file: null, durationMs: 0, cancelled: true });
+
+  assert.equal(save.saved.length, 0);
+  assert.deepEqual(finished, [{ error: undefined }]);
 });
 
 // ---- Interrupted-recording recovery (Firefox: the sidebar hosting the recorder was closed) ----

@@ -54,9 +54,26 @@ class FakeMediaRecorder {
     this.options = options;
     this.mimeType = options.mimeType;
     this.state = 'inactive';
+    this.log = [];
     recorders.push(this);
   }
   start() {
+    this.log.push('start');
+    this.state = 'recording';
+  }
+  requestData() {
+    if (this.state === 'inactive') throw new DOMException('inactive', 'InvalidStateError');
+    this.log.push('requestData');
+    this.ondataavailable?.({ data: new Blob(['flush']) });
+  }
+  pause() {
+    if (this.state === 'inactive') throw new DOMException('inactive', 'InvalidStateError');
+    this.log.push('pause');
+    this.state = 'paused';
+  }
+  resume() {
+    if (this.state === 'inactive') throw new DOMException('inactive', 'InvalidStateError');
+    this.log.push('resume');
     this.state = 'recording';
   }
   stop() {
@@ -75,6 +92,8 @@ class FakeMediaRecorder {
 let videoTrack;
 let cameraTrack;
 let cameraAvailable; // getUserMedia({ video }) succeeds (true) or is denied (false)
+let micTrack;
+let micAvailable; // getUserMedia({ audio }) succeeds (true) or finds no mic (false)
 let userMediaCalls;
 // Node ships a read-only `navigator` global, so swap it with a property definition.
 const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
@@ -83,6 +102,8 @@ beforeEach(() => {
   videoTrack = new FakeTrack('video');
   cameraTrack = new FakeTrack('video');
   cameraAvailable = true;
+  micTrack = Object.assign(new FakeTrack('audio'), { enabled: true });
+  micAvailable = false;
   userMediaCalls = [];
   globalThis.MediaRecorder = FakeMediaRecorder;
   globalThis.MediaStream = FakeStream;
@@ -97,6 +118,7 @@ beforeEach(() => {
             if (cameraAvailable) return new FakeStream([cameraTrack]);
             throw Object.assign(new Error('camera denied'), { name: 'NotAllowedError' });
           }
+          if (micAvailable) return new FakeStream([micTrack]);
           throw Object.assign(new Error('no mic in tests'), { name: 'NotFoundError' });
         },
       },
@@ -298,4 +320,146 @@ test('"Stop sharing" while compositing still ends the recording once and stops t
   assert.equal(comp.stops, 1);
   assert.equal(cameraTrack.readyState, 'ended');
   assert.equal(recorder.setBubble({ x: 0 }), false);
+});
+
+// ---- Pause / resume ----
+
+test('pause and resume keep the recording going; paused still counts as recording', async () => {
+  const recorder = createRecorder({ sink: sinkSpy() });
+  const changes = [];
+  recorder.onChange = (s) => changes.push(s);
+  await recorder.start({ micDeviceId: null });
+
+  recorder.pause();
+  assert.equal(recorder.status().state, 'paused');
+  assert.equal(recorder.isRecording(), true, 'a paused clip must not be recovered as interrupted, nor routed elsewhere');
+  assert.ok(recorder.status().pausedAt > 0);
+  recorder.pause(); // idempotent: two panels clicking at once
+  assert.deepEqual(recorders[0].log, ['start', 'requestData', 'pause'], 'the last timeslice is flushed to disk first');
+
+  recorder.resume();
+  recorder.resume();
+  const status = recorder.status();
+  assert.equal(status.state, 'recording');
+  assert.equal(status.pausedAt, null);
+  assert.ok(status.pausedMs >= 0);
+  assert.deepEqual(recorders[0].log, ['start', 'requestData', 'pause', 'resume']);
+  assert.deepEqual(changes.map((s) => s.state), ['paused', 'recording'], 'one change per real transition');
+  await recorder.stop();
+});
+
+test('pause and resume refuse when nothing is recording', async () => {
+  const recorder = createRecorder({ sink: sinkSpy() });
+  assert.throws(() => recorder.pause(), /Not recording/);
+  assert.throws(() => recorder.resume(), /Not paused/);
+});
+
+test('stopping while paused saves the clip, including the flushed chunk', async () => {
+  const sink = sinkSpy();
+  const recorder = createRecorder({ sink });
+  await recorder.start({ micDeviceId: null });
+  recorder.pause();
+
+  const { file } = await recorder.stop();
+  assert.equal(await file.text(), 'flushlast');
+  assert.equal(recorder.isRecording(), false);
+});
+
+test('"Stop sharing" while paused still ends and saves the recording once', async () => {
+  const recorder = createRecorder({ sink: sinkSpy() });
+  const auto = [];
+  recorder.onAutoStop = (r) => auto.push(r);
+  await recorder.start({ micDeviceId: null });
+  recorder.pause();
+
+  videoTrack.end();
+  await tick();
+
+  assert.equal(auto.length, 1);
+  assert.ok(auto[0].file instanceof File);
+  assert.equal(recorder.isRecording(), false);
+});
+
+// ---- Countdown ----
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+test('with a countdown, sharing is set up at once but recording starts when it runs out', async () => {
+  const recorder = createRecorder({ sink: sinkSpy() });
+  const changes = [];
+  recorder.onChange = (s) => changes.push(s);
+  const before = Date.now();
+  await recorder.start({ micDeviceId: null, delayMs: 30 });
+
+  const status = recorder.status();
+  assert.equal(status.state, 'countdown');
+  assert.ok(status.startedAt >= before + 30, 'startedAt is the planned start, in the future');
+  assert.equal(recorder.isRecording(), true, 'a second start must be refused during the countdown');
+  await assert.rejects(recorder.start({ micDeviceId: null }), /Already recording/);
+  assert.deepEqual(recorders[0].log, [], 'nothing recorded yet');
+  assert.throws(() => recorder.pause(), /Not recording/, 'no pausing a clip that has not started');
+
+  await wait(60);
+  assert.deepEqual(recorders[0].log, ['start']);
+  assert.equal(recorder.status().state, 'recording');
+  assert.equal(changes.length, 1, 'the host is told when the countdown ran out');
+  assert.equal(changes[0].state, 'recording');
+  await recorder.stop();
+});
+
+test('stop() during the countdown cancels: no file, nothing recorded, devices released', async () => {
+  const recorder = createRecorder({ sink: sinkSpy() });
+  const auto = [];
+  recorder.onAutoStop = (r) => auto.push(r);
+  await recorder.start({ micDeviceId: null, delayMs: 30 });
+
+  assert.deepEqual(await recorder.stop(), { file: null, durationMs: 0, cancelled: true });
+  assert.equal(recorder.isRecording(), false);
+  assert.equal(videoTrack.readyState, 'ended');
+  await wait(60);
+  assert.deepEqual(recorders[0].log, [], 'the cancelled timer must not start the recorder later');
+  assert.deepEqual(auto, []);
+});
+
+test('"Stop sharing" during the countdown reports a cancelled clip once', async () => {
+  const recorder = createRecorder({ sink: sinkSpy() });
+  const auto = [];
+  recorder.onAutoStop = (r) => auto.push(r);
+  await recorder.start({ micDeviceId: null, delayMs: 30 });
+
+  videoTrack.end();
+  await wait(60);
+
+  assert.deepEqual(auto, [{ file: null, durationMs: 0, cancelled: true }]);
+  assert.deepEqual(recorders[0].log, []);
+  assert.equal(recorder.isRecording(), false);
+});
+
+// ---- Mute ----
+
+test('muting disables the mic track (silence) without ending it, and reports the change', async () => {
+  micAvailable = true;
+  const recorder = createRecorder({ sink: sinkSpy() });
+  const changes = [];
+  recorder.onChange = (s) => changes.push(s);
+  await recorder.start({ micDeviceId: 'default' });
+  assert.equal(recorder.status().mic, true);
+  assert.ok(recorders[0].stream.getAudioTracks().includes(micTrack));
+
+  assert.equal(recorder.setMicMuted(true), true);
+  assert.equal(micTrack.enabled, false);
+  assert.equal(micTrack.readyState, 'live');
+  assert.equal(recorder.status().micMuted, true);
+  assert.equal(recorder.setMicMuted(false), true);
+  assert.equal(micTrack.enabled, true);
+  assert.deepEqual(changes.map((s) => s.micMuted), [true, false]);
+  await recorder.stop();
+});
+
+test('without a mic there is nothing to mute', async () => {
+  const recorder = createRecorder({ sink: sinkSpy() });
+  await recorder.start({ micDeviceId: 'default' }); // no mic in this test
+  assert.equal(recorder.status().mic, false);
+  assert.equal(recorder.setMicMuted(true), false);
+  await recorder.stop();
 });

@@ -170,6 +170,65 @@ await withBrowser(async ({ openPage }) => {
       assert.equal(await page.evaluate(`document.getElementById('tool-record').disabled`), true);
       // The running clip has a camera bubble, so the strip offers to move it.
       assert.equal(await page.evaluate(`document.getElementById('rec-bubble').hidden`), false);
+      const strip = JSON.parse(
+        await page.evaluate(`JSON.stringify({
+          label: document.getElementById('rec-label').textContent,
+          time: document.getElementById('rec-time').textContent,
+          pause: document.getElementById('btn-pause').getAttribute('aria-label'),
+          pauseDisabled: document.getElementById('btn-pause').disabled,
+          muteHidden: document.getElementById('btn-mute').hidden,
+          mute: document.getElementById('btn-mute').getAttribute('aria-pressed'),
+        })`),
+      );
+      assert.deepEqual(
+        { ...strip, time: undefined },
+        { label: 'Recording', time: undefined, pause: 'Pause recording', pauseDisabled: false, muteHidden: false, mute: 'false' },
+      );
+      assert.match(strip.time, /^01:2\d$/);
+    }));
+
+  await test('side panel: a paused recording with the mic muted', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=existing&rec=paused', async (page) => {
+      const strip = JSON.parse(
+        await page.evaluate(`JSON.stringify({
+          phase: document.getElementById('recording').dataset.phase,
+          label: document.getElementById('rec-label').textContent,
+          time: document.getElementById('rec-time').textContent,
+          pause: document.getElementById('btn-pause').getAttribute('aria-label'),
+          pressed: document.getElementById('btn-pause').getAttribute('aria-pressed'),
+          mute: document.getElementById('btn-mute').getAttribute('aria-label'),
+        })`),
+      );
+      // Paused 9 s ago, 83 s after the start: the time is frozen at 01:14.
+      assert.deepEqual(strip, {
+        phase: 'paused',
+        label: 'Paused',
+        time: '01:14',
+        pause: 'Resume recording',
+        pressed: 'true',
+        mute: 'Unmute microphone',
+      });
+    }));
+
+  await test('side panel: the countdown before a recording starts', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=existing&rec=countdown', async (page) => {
+      const strip = JSON.parse(
+        await page.evaluate(`JSON.stringify({
+          phase: document.getElementById('recording').dataset.phase,
+          label: document.getElementById('rec-label').textContent,
+          time: document.getElementById('rec-time').textContent,
+          pauseDisabled: document.getElementById('btn-pause').disabled,
+        })`),
+      );
+      assert.equal(strip.phase, 'countdown');
+      assert.equal(strip.label, 'Starting in');
+      assert.match(strip.time, /^\d+$/);
+      assert.equal(strip.pauseDisabled, true, 'nothing to pause before the clip starts');
+    }));
+
+  await test('side panel: the countdown is on by default in the Record clip card', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=new', async (page) => {
+      assert.equal(await page.evaluate(`document.getElementById('rc-countdown').checked`), true);
     }));
 
   await test('side panel: the bubble stage drags and snaps, and the size buttons work', () =>
@@ -232,7 +291,8 @@ await withBrowser(async ({ openPage }) => {
   // a deliberately wide font, so it stands in for the widest system font on any OS.
   // The Firefox mid-recording scene adds the "keep this sidebar open" note and drops a source;
   // the Clips scene has the three-tab row with its third tab selected and the explainer.
-  const LAYOUT_SCENES = ['new', 'existing&browser=firefox', 'clips'];
+  // The paused and countdown strips have the widest labels and both icon buttons.
+  const LAYOUT_SCENES = ['new', 'existing&browser=firefox', 'existing&rec=paused', 'existing&rec=countdown', 'clips'];
   for (const font of ['system', 'wide (Verdana)']) {
     for (const demo of LAYOUT_SCENES) {
     await test(`side panel: nothing overflows or gets clipped at narrow widths — ${font} font, ${demo}`, async () => {
@@ -258,7 +318,7 @@ await withBrowser(async ({ openPage }) => {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, .rte, .rte-btn, .rte-block')]
+        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, #rec-time, .rec-ctl, #btn-stop, .rc-countdown, .rte, .rte-btn, .rte-block')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)
@@ -353,6 +413,38 @@ await withBrowser(async ({ openPage }) => {
           { name: state.name, img: state.img, error: state.error, download: state.download },
           { name: 'shot.png', img: true, error: '', download: 'shot.png' },
         );
+
+        // A video gets the 1× / 1.5× / 2× speed buttons (an image doesn't). The bytes needn't
+        // decode: playbackRate is set on the element either way.
+        const speed = JSON.parse(
+          await page.evaluate(`(async () => {
+            const db = await import('/lib/attachments-db.js');
+            const id = await db.saveAttachment(new File(['not really webm'], 'clip.webm', { type: 'video/webm' }));
+            const frame = document.createElement('iframe');
+            frame.src = '/viewer/viewer.html?id=' + id;
+            document.body.append(frame);
+            const doc = await new Promise((resolve, reject) => {
+              const end = Date.now() + 8000;
+              const poll = () => {
+                const w = frame.contentWindow;
+                if (w && w.__ready) return resolve(w.document);
+                if (Date.now() > end) return reject(new Error('viewer iframe never got ready'));
+                setTimeout(poll, 50);
+              };
+              frame.addEventListener('load', poll);
+            });
+            const before = doc.querySelector('#speed button[aria-pressed="true"]')?.textContent;
+            doc.querySelector('#speed button[data-speed="2"]').click();
+            await new Promise((r) => setTimeout(r, 50)); // ratechange is async
+            return JSON.stringify({
+              shown: !doc.getElementById('speed').hidden,
+              before,
+              rate: doc.querySelector('#main video').playbackRate,
+              pressed: [...doc.querySelectorAll('#speed button[aria-pressed="true"]')].map((b) => b.textContent),
+            });
+          })()`),
+        );
+        assert.deepEqual(speed, { shown: true, before: '1×', rate: 2, pressed: ['2×'] });
       },
       { width: 900, height: 700 },
     ));

@@ -2,6 +2,7 @@
 // fullscreen (the browser refuses the Fullscreen API there), so the panel sends the user here.
 // Opened as viewer.html?id=<IndexedDB record id>; the file is read back from IndexedDB.
 import { getAttachment } from '../lib/attachments-db.js';
+import { getPrefs, setPrefs } from '../lib/storage.js';
 import { hydrateLinks } from '../lib/links.js';
 
 hydrateLinks();
@@ -21,6 +22,43 @@ function formatBytes(bytes) {
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(0)} KB`;
   if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
   return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+}
+
+const SPEEDS = [1, 1.5, 2];
+
+/**
+ * 1× / 1.5× / 2× for checking a long clip before uploading. The last choice is remembered in
+ * prefs.viewer.speed. The browser's own controls can change the speed too, so the buttons follow
+ * `ratechange`. Reading the saved speed never holds up the page (or fails it, without storage).
+ */
+function setUpSpeed(video) {
+  const group = document.getElementById('speed');
+  const buttons = [...group.querySelectorAll('button')];
+  const show = () => {
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === video.playbackRate)));
+  };
+  const apply = (speed) => {
+    video.defaultPlaybackRate = speed;
+    video.playbackRate = speed;
+  };
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      const speed = Number(b.dataset.speed);
+      apply(speed);
+      setPrefs({ viewer: { speed } }).catch(() => {});
+    }),
+  );
+  video.addEventListener('ratechange', show);
+  group.hidden = false;
+  show();
+  (async () => {
+    try {
+      const speed = (await getPrefs()).viewer?.speed;
+      if (SPEEDS.includes(speed) && speed !== 1) apply(speed);
+    } catch {
+      // No extension storage (e.g. the smoke test's plain page): stay at 1×.
+    }
+  })();
 }
 
 const id = Number(new URLSearchParams(location.search).get('id'));
@@ -47,6 +85,7 @@ if (record?.file) {
     video.controls = true;
     video.autoplay = true;
     main.replaceChildren(video);
+    setUpSpeed(video);
   } else if (file.type.startsWith('image/')) {
     const img = document.createElement('img');
     img.src = url;

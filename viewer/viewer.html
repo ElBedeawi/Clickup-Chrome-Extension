@@ -30,11 +30,27 @@
     .stage video, .stage img { max-width: 100%; max-height: 100%; min-height: 0; object-fit: contain; background: #000; border-radius: 6px; }
     .stage .notice { max-width: 520px; }
     .hint { margin: 10px 0 0; text-align: center; }
+    /* Playback speed (videos only): a small segmented control. */
+    .speed { display: inline-flex; flex: none; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .speed button {
+      padding: 4px 9px;
+      border: 0;
+      border-radius: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .speed button + button { border-left: 1px solid var(--border); }
+    .speed button:hover:not(:disabled) { background: var(--surface); }
+    .speed button[aria-pressed='true'] { background: var(--accent); color: var(--accent-text); }
     .app-footer a { color: inherit; }
     .app-footer .sep { margin: 0 6px; }
     @media (max-width: 600px) {
       body { padding: 0 14px 16px; }
       .header-links .site-link { display: none; }
+      .file-head { flex-wrap: wrap; }
+      .file-head h2 { flex-basis: 100%; }
     }
   </style>
 </head>
@@ -57,6 +73,11 @@
     <div class="file-head">
       <h2 id="name">Attachment</h2>
       <span id="size" class="size"></span>
+      <div id="speed" class="speed" role="group" aria-label="Playback speed" hidden>
+        <button type="button" data-speed="1" aria-pressed="true">1×</button>
+        <button type="button" data-speed="1.5" aria-pressed="false">1.5×</button>
+        <button type="button" data-speed="2" aria-pressed="false">2×</button>
+      </div>
       <a id="download" class="bmc-button small" style="background: var(--bg); color: var(--text); border-color: var(--border); font: inherit; font-weight: 600; padding: 5px 12px;" hidden>Download</a>
     </div>
     <div id="main" class="stage"></div>

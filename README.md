@@ -28,7 +28,7 @@ The official ClickUp Chrome extension can't attach videos to tasks. This one can
 
 ## Features
 
-- **Record clip:** your entire screen, a window or a tab, at 720p–4K or native resolution, with your choice of microphone and system audio. Optionally add yourself as a movable **camera bubble**. Keeps recording with the side panel closed (Chrome).
+- **Record clip:** your entire screen, a window or a tab, at 720p–4K or native resolution, with your choice of microphone and system audio. Optionally add yourself as a movable **camera bubble**. Pause, resume and mute the mic while recording, with a 3-second countdown to get ready. Keeps recording with the side panel closed (Chrome).
 - **Screenshots:** visible tab, a selected area or the entire screen, then draw, add text, blur sensitive details or crop.
 - **Create a task** with title, a rich-text description (headings, bold, lists, checklists, links, code), status, priority, plus optional assignees, due date, tags and custom fields.
 - **Add to an existing task:** paste a link or open the task and it's detected automatically, with an optional comment.
@@ -99,7 +99,9 @@ The token is kept in the extension's local storage on this machine only. **Revok
   - **Microphone:** "No microphone" or any of your devices, with a live level meter. Until the extension has mic permission, the list shows "Default microphone" and an option to allow access.
   - **Camera bubble:** "No camera" (the default) or one of your cameras. You then appear in the clip as a round, mirrored bubble. A small preview of the recording shows where it goes: drag it anywhere (it snaps to the corners) and pick S, M or L. The same control appears while recording, so you can move the bubble off something it covers. If the camera can't be opened, the clip is recorded without it.
 
-  Choices are remembered. Press **Record Clip** to start. In Chrome you can **close the side panel while recording**: a red **REC** badge shows it's running. Stop with the browser's "Stop sharing" bar, or reopen the panel and press **Stop**. Recordings are written to disk as they go, so long ones don't fill memory.
+  - **3-second countdown** (on by default): after you pick what to share, the recording starts 3 seconds later, so you can switch to what you want to show. Stop during the countdown cancels.
+
+  Choices are remembered. Press **Record Clip** to start. While recording, the strip in the panel has **Pause / Resume** (the paused part is left out of the clip) and **Mute / Unmute** for the microphone. In Chrome you can **close the side panel while recording**: a red **REC** badge shows it's running (**II** while paused). Stop with the browser's "Stop sharing" bar, or reopen the panel and press **Stop**. Recordings are written to disk as they go, so long ones don't fill memory.
 
   In Firefox the recorder lives in the sidebar itself, so **keep the sidebar open while recording** (switching tabs is fine) and stop it with the panel's **Stop** button: the "Stop Sharing" button in Firefox's sharing indicator has no effect on sidebar pages. If the sidebar does get closed, the part recorded so far is kept and shows up as an attachment the next time the sidebar opens.
 - **📷 Screenshot ▾** has three modes:
@@ -109,7 +111,7 @@ The token is kept in the extension's local storage on this machine only. **Revok
 
   Each screenshot opens in an editor tab with **Draw**, **Text**, **Blur** (pixelates, safe for passwords and emails) and **Crop**. There are 8 colors, 3 sizes and undo/redo (Ctrl+Z / Ctrl+Shift+Z), with shortcuts P, T, B and C. An area selection opens already cropped; undo brings back the full screenshot.
 - **📎 Attach** picks files. You can also drop or paste files (Ctrl+V) anywhere in the panel.
-- Recordings and screenshots you haven't uploaded are kept, even if you close the panel, until you upload or remove them. The **↗** button on an attachment opens it full size in a tab (the side panel itself can't go fullscreen).
+- Recordings and screenshots you haven't uploaded are kept, even if you close the panel, until you upload or remove them. The **↗** button on an attachment opens it full size in a tab (the side panel itself can't go fullscreen), where recordings play at 1×, 1.5× or 2×.
 - Recordings are WebM (VP9/Opus in Chrome, VP8 or VP9/Opus in Firefox), which plays in ClickUp's viewer. ClickUp's limit is 1 GB per file.
 
 If the task is created but an upload or the comment fails, the task link stays on screen and the button turns into **Retry**, so nothing is duplicated. Rate-limit responses (HTTP 429) are retried automatically.

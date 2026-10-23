@@ -7,6 +7,9 @@ import { createCaptureSession } from '../lib/capture-session.js';
 const session = createCaptureSession({
   // User clicked Chrome's "Stop sharing" bar — nobody asked us to stop, so tell the background.
   onFinished: ({ error }) => chrome.runtime.sendMessage({ target: 'background', type: 'rec:finished', error }),
+  // The countdown ran out, or the recording was paused, resumed, muted: report the new state.
+  onChange: (recording) =>
+    chrome.runtime.sendMessage({ target: 'background', type: 'rec:state', recording, update: true }).catch(console.error),
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

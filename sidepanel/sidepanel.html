@@ -208,14 +208,20 @@
             <span class="rc-icon" data-icon="bubble"></span>
             <div id="rc-bubble" class="rc-select"></div>
           </div>
+          <label class="checkbox rc-countdown">
+            <input id="rc-countdown" type="checkbox" checked />
+            3-second countdown
+          </label>
           <button id="btn-record" class="record-btn"><span data-icon="record"></span>Record Clip</button>
         </div>
         <p id="record-hint" class="muted small"></p>
 
-        <div id="recording" class="recording" hidden>
+        <div id="recording" class="recording" data-phase="recording" hidden>
           <span class="rec-dot"></span>
-          <span>Recording</span>
+          <span id="rec-label" class="rec-label">Recording</span>
           <span id="rec-time" class="rec-time">00:00</span>
+          <button id="btn-pause" class="secondary rec-ctl" type="button" aria-pressed="false" aria-label="Pause recording" title="Pause recording" data-icon="pause"></button>
+          <button id="btn-mute" class="secondary rec-ctl" type="button" aria-pressed="false" aria-label="Mute microphone" title="Mute microphone" data-icon="mic" hidden></button>
           <button id="btn-stop" class="danger">Stop</button>
           <!-- Move/resize the camera bubble of the running recording (only when it has one). -->
           <div id="rec-bubble" class="rec-bubble" hidden>
