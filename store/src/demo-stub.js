@@ -33,7 +33,7 @@
       prefs: {
         last: { workspace: '1', 'space:1': '10', 'folder:10': '100', 'list:10/100': '1000' },
         // A camera picked, so the Record clip card shows the bubble control.
-        recorder: { camera: 'cam-webcam', bubble: { x: 0, y: 1, size: 'md' } },
+        recorder: { camera: 'cam-webcam', bubble: { x: 0, y: 1, size: 'md' }, blur: 'medium' },
       },
     },
     session: scene === 'existing' ? { recording } : {},
@@ -94,7 +94,54 @@
     { kind: 'videoinput', deviceId: 'cam-usb', label: 'USB Camera (046d:0825)' },
   ];
   if (navigator.mediaDevices) navigator.mediaDevices.enumerateDevices = async () => fakeDevices;
-  navigator.permissions.query = async () => ({ state: 'prompt', onchange: null });
+  // &cam=1: camera and mic access granted, with a fake camera (a drawn figure in a room), so the
+  // bubble preview and the Camera check dialog have something to show.
+  const fakeCamera = params.get('cam') === '1';
+  navigator.permissions.query = async () => ({ state: fakeCamera ? 'granted' : 'prompt', onchange: null });
+  if (fakeCamera && navigator.mediaDevices) {
+    navigator.mediaDevices.getUserMedia = async (constraints) => {
+      if (constraints.audio && !constraints.video) return new AudioContext().createMediaStreamDestination().stream;
+      const c = document.createElement('canvas');
+      c.width = 640;
+      c.height = 480;
+      const x = c.getContext('2d');
+      const paint = (t = performance.now()) => {
+        // A room: wall, shelf with books, a plant, a window.
+        x.fillStyle = '#d9cbb5';
+        x.fillRect(0, 0, 640, 480);
+        x.fillStyle = '#a8c8e8';
+        x.fillRect(430, 40, 170, 150);
+        x.fillStyle = '#7a5a3c';
+        x.fillRect(20, 150, 230, 12);
+        ['#c0392b', '#2e86de', '#27ae60', '#f39c12', '#8e44ad', '#16a085'].forEach((col, i) => {
+          x.fillStyle = col;
+          x.fillRect(30 + i * 34, 80 + (i % 2) * 12, 26, 70 - (i % 2) * 12);
+        });
+        x.fillStyle = '#2d6a4f';
+        x.beginPath();
+        x.ellipse(560, 330, 50, 80, 0, 0, Math.PI * 2);
+        x.fill();
+        // The person: shoulders and head, swaying a little.
+        const sway = Math.sin(t / 700) * 8;
+        x.fillStyle = '#3b4a6b';
+        x.beginPath();
+        x.ellipse(320 + sway, 480, 170, 120, 0, Math.PI, 0);
+        x.fill();
+        x.fillStyle = '#c99a78';
+        x.fillRect(296 + sway, 300, 48, 60);
+        x.beginPath();
+        x.ellipse(320 + sway, 250, 72, 90, 0, 0, Math.PI * 2);
+        x.fill();
+        x.fillStyle = '#2b2018';
+        x.beginPath();
+        x.ellipse(320 + sway, 190, 76, 42, 0, Math.PI, 0);
+        x.fill();
+      };
+      paint();
+      setInterval(paint, 66);
+      return c.captureStream(15);
+    };
+  }
 
   // ---------------------------------------------------------------------------
   // ClickUp API stub
@@ -272,6 +319,17 @@
       Element.prototype.setPointerCapture = function () {};
       await sleep(300);
       await scenes[scene]?.();
+      // &open=camera-check: open the Camera check dialog from the Record clip card.
+      if (params.get('open') === 'camera-check') {
+        if ($('record-card').hidden) $('tool-record').click();
+        await sleep(300);
+        $('rc-preview-open').click();
+        // With a fake camera and blur on, wait for the segmenter (the loading pill goes away).
+        const stage = document.querySelector('.cc-stage');
+        const shown = () => !fakeCamera || (stage.classList.contains('has-view') && $('cc-loading').hidden);
+        await until(() => $('camera-check').open && shown(), 15_000).catch(() => {});
+        await sleep(300);
+      }
     } catch (err) {
       console.error(err);
     }

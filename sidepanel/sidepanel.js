@@ -66,6 +66,7 @@ const el = {
   micNotice: $('mic-notice'),
   btnGrantMic: $('btn-grant-mic'),
   cameraNotice: $('camera-notice'),
+  blurNotice: $('blur-notice'),
   btnGrantCamera: $('btn-grant-camera'),
   btnAddFiles: $('btn-add-files'),
   fileInput: $('file-input'),
@@ -1085,6 +1086,7 @@ el.btnRecord.addEventListener('click', async () => {
   showError('');
   el.micNotice.hidden = true;
   el.cameraNotice.hidden = true;
+  el.blurNotice.hidden = true;
   el.btnRecord.disabled = true;
   el.recordHint.textContent = `Choose what to share in ${browserName()}’s picker…`;
   recorderCard.releaseDevices(); // the level meter and the preview hold the mic/camera; the recorder needs them
@@ -1095,6 +1097,10 @@ el.btnRecord.addEventListener('click', async () => {
       state.recordingOwned = true;
       if (res.micError) el.micNotice.hidden = false;
       if (res.cameraError) el.cameraNotice.hidden = false;
+      if (res.blurError) {
+        console.warn('Background blur:', res.blurError);
+        el.blurNotice.hidden = false;
+      }
     } else if (res?.name === 'NotAllowedError') {
       // The user cancelled the screen picker.
       el.recordHint.textContent = 'Recording cancelled.';

@@ -98,6 +98,13 @@
       The camera is used only during a recording you start with a camera selected (the default is “No camera”).
       Its picture is drawn into that recording as a small bubble; it is never stored or sent on its own.
     </li>
+    <li>
+      If you turn on <strong>background blur</strong> for the camera bubble (off by default), each camera frame is
+      analysed <strong>on your device</strong> to tell you apart from your background, using Google’s open-source
+      MediaPipe library, which is packaged inside the extension. Frames and results never leave your browser. That
+      library has built-in usage logging to Google; the extension blocks it, and the browser itself only lets the
+      extension connect to ClickUp.
+    </li>
   </ul>
 
   <h2>What we do not do</h2>
@@ -106,7 +113,7 @@
     <li>We do not use analytics, telemetry, tracking pixels or advertising in the extension.</li>
     <li>We do not sell, rent or share your data with anyone, and do not use it for any purpose other than the feature you are using.</li>
     <li>We do not use your data to determine creditworthiness or for lending purposes.</li>
-    <li>We do not load or run code from remote servers.</li>
+    <li>We do not load or run code from remote servers. Everything the extension runs is packaged inside it.</li>
     <li>
       The optional “Buy me a coffee” link simply opens the Buy Me a Coffee website in a new tab. The extension sends
       no data to it; anything you do there is covered by that site’s own privacy policy.

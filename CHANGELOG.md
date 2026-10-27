@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **Background blur for the camera bubble**: pick **Medium blur** or **High blur** under the camera in the Record clip card, and the background behind you is blurred while you stay sharp. The card's bubble preview shows it live, and the **⤢** button next to the blur picker opens a large **Camera check** preview where you can switch between No blur, Medium and High to compare them. It runs entirely on your device using Google's open-source MediaPipe, packaged inside the extension (which is now about 14 MB). Nothing is sent anywhere: the library's built-in usage logging is blocked. Off by default. If blur can't start on a computer (it needs WebGL), the card says so, and a recording that asked for blur leaves the camera out rather than show your background.
+
+### Changed
+
+- The extension's security policy now only lets it connect to ClickUp (`*.clickup.com`), so the browser itself enforces that nothing goes anywhere else.
+
 ## [0.7.0] - 2026-10-23
 
 ### Added

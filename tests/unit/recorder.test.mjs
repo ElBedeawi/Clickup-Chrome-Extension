@@ -456,6 +456,78 @@ test('muting disables the mic track (silence) without ending it, and reports the
   await recorder.stop();
 });
 
+// ---- Background blur ----
+
+/** Stands in for lib/background-blur.js createBlurrer: records its life, can fail to load. */
+function fakeBlurrers({ fail = false, events = [] } = {}) {
+  const made = [];
+  const factory = ({ level }) => {
+    events.push(`blurrer:${level}`);
+    const b = {
+      level,
+      closed: 0,
+      ready: fail ? Promise.reject(new Error('no WebGL here')) : Promise.resolve(),
+      close: () => b.closed++,
+    };
+    b.ready.catch(() => {});
+    made.push(b);
+    return b;
+  };
+  return { factory, made, events };
+}
+
+test('blur: the segmenter starts loading before the picker and goes to the compositor', async () => {
+  const comp = fakeCompositor();
+  const blur = fakeBlurrers();
+  const pick = navigator.mediaDevices.getDisplayMedia;
+  navigator.mediaDevices.getDisplayMedia = async (...a) => (blur.events.push('picker'), pick(...a));
+  const recorder = createRecorder({ sink: sinkSpy(), compositor: comp.factory, blurrer: blur.factory });
+
+  const res = await recorder.start({ micDeviceId: null, cameraDeviceId: 'cam-1', blur: 'medium' });
+
+  assert.equal(res.blurError, undefined);
+  assert.deepEqual(blur.events, ['blurrer:medium', 'picker'], 'loads while the user is in the picker');
+  assert.equal(comp.calls[0].blurrer, blur.made[0]);
+  assert.equal(recorder.status().blur, 'medium');
+  await recorder.stop();
+  assert.equal(blur.made[0].closed, 1, 'freed with the recording');
+});
+
+test('blur that cannot start leaves the camera out instead of recording the background (fail closed)', async () => {
+  const comp = fakeCompositor();
+  const blur = fakeBlurrers({ fail: true });
+  const recorder = createRecorder({ sink: sinkSpy(), compositor: comp.factory, blurrer: blur.factory });
+
+  const res = await recorder.start({ micDeviceId: null, cameraDeviceId: 'cam-1', blur: 'high' });
+
+  assert.match(res.blurError.message, /no WebGL/);
+  assert.deepEqual(comp.calls, [], 'no bubble at all');
+  assert.equal(cameraTrack.readyState, 'ended', 'the camera is released');
+  assert.equal(recorders[0].stream.getVideoTracks()[0], videoTrack, 'the screen alone is recorded');
+  assert.equal(recorder.status().blur, 'none');
+  assert.equal(recorder.isRecording(), true, 'the recording itself goes on');
+  assert.equal(blur.made[0].closed, 1);
+  await recorder.stop();
+});
+
+test('blur is not loaded without a camera or at "none", and is freed if the picker is cancelled', async () => {
+  const blur = fakeBlurrers();
+  const recorder = createRecorder({ sink: sinkSpy(), compositor: fakeCompositor().factory, blurrer: blur.factory });
+  await recorder.start({ micDeviceId: null, blur: 'medium' });
+  await recorder.stop();
+  videoTrack = new FakeTrack('video');
+  await recorder.start({ micDeviceId: null, cameraDeviceId: 'cam-1', blur: 'none' });
+  await recorder.stop();
+  assert.deepEqual(blur.made, []);
+
+  navigator.mediaDevices.getDisplayMedia = async () => {
+    throw Object.assign(new Error('cancelled'), { name: 'NotAllowedError' });
+  };
+  await assert.rejects(recorder.start({ micDeviceId: null, cameraDeviceId: 'cam-1', blur: 'high' }), /cancelled/);
+  assert.equal(blur.made.length, 1);
+  assert.equal(blur.made[0].closed, 1);
+});
+
 test('without a mic there is nothing to mute', async () => {
   const recorder = createRecorder({ sink: sinkSpy() });
   await recorder.start({ micDeviceId: 'default' }); // no mic in this test

@@ -15,7 +15,7 @@ Things people ask ClickUp for that this extension already does.
 | Ask on ClickUp's board | Votes | What we do |
 |---|---|---|
 | [Chrome Extension: Ability to Record using Clip](https://feedback.clickup.com/browser-extension/p/chrome-extension-ability-to-record-using-clip) | 48 | Record from the side panel on any page and attach to a new or existing task |
-| [Webcam in Clips](https://feedback.clickup.com/feature-requests/p/webcam-in-clips) | 321 | Camera bubble, movable and resizable while recording (0.4.0) |
+| [Webcam in Clips](https://feedback.clickup.com/feature-requests/p/webcam-in-clips) | 321 | Camera bubble, movable and resizable while recording (0.4.0), with optional background blur (next release) |
 | [Record computer audio with Clip as well as mic audio](https://feedback.clickup.com/feature-requests/p/record-computer-audio-with-clip-as-well-as-mic-audio) | 124 | "Share audio" in the picker mixes system or tab audio with the microphone (Chrome) |
 | [Screenshot & Image Markup on Desktop App](https://feedback.clickup.com/feature-requests/p/screenshot-image-markup-on-desktop-app) | 169 | "Entire screen" screenshot captures any app, then draw, text, blur and crop |
 | [Firefox, pretty please!](https://feedback.clickup.com/integrations/p/firefox-pretty-please) | 834 | Firefox 128+ add-on on addons.mozilla.org (0.2.0) |
@@ -45,6 +45,13 @@ Small changes with clear demand. Roughly in the order we expect to do them.
   screenshot threads.
 - **Copy to clipboard and Download in the editor**, so a screenshot can go into a chat or a doc without a task.
 - **Warn before ClickUp's 1 GB per-file limit** with the current size shown while recording.
+- **Countdown beeps**: a short beep on 3, 2 and 1, and a higher one as recording starts, like ClickUp's own
+  recorder. The tones are generated in code (Web Audio oscillator), not ClickUp's sound: their audio isn't ours
+  to ship, and fetching it would break the "only ClickUp's API" rule. They play from the recorder's host, which
+  owns the countdown timer (the Firefox sidebar, or Chrome's offscreen document; check in a real Chrome whether
+  the offscreen document needs the `AUDIO_PLAYBACK` reason to play sound, otherwise play them from the panel).
+  The last beep must end before `MediaRecorder` starts, so neither the mic nor "Share audio" puts it in the clip.
+  Optional, with a sound toggle next to the countdown checkbox. No new permission.
 
 ## Later
 
@@ -56,14 +63,15 @@ Useful, but each needs real design or engineering time.
 - **Camera-only recording** (no screen), for a quick video message. Asked for by sign-language users in
   [Video messaging/screen recorder with video](https://feedback.clickup.com/integrations/p/video-messagingscreen-recorder-with-video-webcam).
   The compositor already draws the camera; this is a fourth source.
-- **Blur the background in the camera bubble** (optional toggle next to the camera picker). First choice is the
-  platform's own effect: where the camera track reports a `backgroundBlur` capability (Chrome with OS-level camera
-  effects, e.g. Windows Studio Effects or macOS), `applyConstraints({ backgroundBlur: true })` on the track in
-  `lib/recorder.js` costs nothing and needs no new code in the compositor. Elsewhere (and on Firefox) blurring
-  needs person segmentation on every frame, i.e. a segmentation model shipped in the extension and run in the
-  compositor before the bubble is drawn. That clashes with the no-dependencies rule and adds megabytes, so the
-  open question is whether to offer the toggle only where the platform supports it.
 - **Record a region of the screen** instead of the whole surface. Crop in the compositor after capture.
+- **Show a frame around the recorded area**, so it's clear what is being captured. Only possible for the "Current
+  tab" source: an extension can't draw outside the browser, so "Entire screen" and "Window" get whatever outline
+  the OS shows, if any. For a tab, a content script (injected the way the "Select area" overlay in
+  `lib/screenshot.js` is; `scripting` and `<all_urls>` are already granted) draws a thin frame on the page. What's
+  drawn in the page is recorded too, so the compositor has to crop the frame off the video edges, meaning tab
+  recordings always go through the compositor, not only with a camera. The picker doesn't say which tab was
+  picked, so the frame goes on the active tab. Shares the overlay and the cropping with region recording above.
+  Check first whether Chrome's own marking of a shared tab is enough.
 - **Cursor highlight and click ripple** in recordings
   ([Screen Recording - Mouse click animation](https://feedback.clickup.com/feature-requests/p/screen-recording-mouse-click-animation)).
   Only possible for the "Current tab" source, where a content script can report the pointer.

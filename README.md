@@ -98,6 +98,7 @@ The token is kept in the extension's local storage on this machine only. **Revok
   - **Resolution:** 720p (HD), 1080p (Full HD), 1440p (2K), 2160p (4K) or Native (Auto). The capture is scaled down to fit; bitrate follows the real size.
   - **Microphone:** "No microphone" or any of your devices, with a live level meter. Until the extension has mic permission, the list shows "Default microphone" and an option to allow access.
   - **Camera bubble:** "No camera" (the default) or one of your cameras. You then appear in the clip as a round, mirrored bubble. A small preview of the recording shows where it goes: drag it anywhere (it snaps to the corners) and pick S, M or L. The same control appears while recording, so you can move the bubble off something it covers. If the camera can't be opened, the clip is recorded without it.
+  - **Background blur:** with a camera picked, choose No blur (the default), Medium blur or High blur. The background behind you is blurred and you stay sharp, in the bubble preview and in the clip. The **⤢** button next to it opens a large **Camera check** preview with a No blur / Medium / High switch, to compare the levels before recording. It runs on your device with Google's open-source MediaPipe, packaged in the extension; no frame is sent anywhere. It needs WebGL: if it can't start, the card says so, and a recording that asked for blur leaves the camera out rather than show your background.
 
   - **3-second countdown** (on by default): after you pick what to share, the recording starts 3 seconds later, so you can switch to what you want to show. Stop during the countdown cancels.
 
@@ -174,6 +175,8 @@ lib/geometry.js         pure helpers (selection rects, due dates)
 store/                  Web Store + AMO listings, images and their HTML sources
 docs/                   GitHub Pages site: landing page + privacy policy
 fonts/                  Cookie font for the Buy Me a Coffee button (SIL OFL)
+vendor/mediapipe/       Google MediaPipe (Apache-2.0), unmodified, for the camera-bubble background blur
+lib/background-blur.js  the blur itself: segmenter loading, drawing, the telemetry guard
 scripts/                asset renderer, zip packager (+ Firefox manifest), headless Chrome/Firefox helper (Node 22+, no deps)
 tests/                  unit/ (node:test) and smoke/ (headless Chrome and Firefox against demo data)
 AGENTS.md               architecture notes for contributors and AI agents (CLAUDE.md imports it)
@@ -188,4 +191,4 @@ No build step: edit a file, then click the reload icon on `chrome://extensions`.
 
 ## License
 
-[MIT](LICENSE) © Wagih Elbedeawi. The bundled Cookie font (`fonts/`) is licensed under the [SIL Open Font License 1.1](fonts/OFL.txt).
+[MIT](LICENSE) © Wagih Elbedeawi. The bundled Cookie font (`fonts/`) is licensed under the [SIL Open Font License 1.1](fonts/OFL.txt). The background blur uses [Google MediaPipe](https://github.com/google-ai-edge/mediapipe) (`vendor/mediapipe/`, unmodified), licensed under the [Apache License 2.0](vendor/mediapipe/LICENSE).

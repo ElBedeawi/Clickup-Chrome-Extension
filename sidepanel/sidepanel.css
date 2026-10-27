@@ -829,6 +829,117 @@ body.clips-mode.dragging::after { content: "Drop a video to save to Clips"; }
 .bubble-dot video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 .bubble-dot-icon { display: grid; }
 .bubble-dot video:not([hidden]) + .bubble-dot-icon { display: none; }
+/* Blurred-background preview: drawn on a canvas instead of the <video>, mirrored the same way. */
+.bubble-dot canvas { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+.bubble-dot.has-canvas .bubble-dot-icon { display: none; }
+.rc-blur-status { margin: 4px 0 0; }
+
+/* ---- Camera check: the big camera preview (⤢ in the Background row) ---- */
+.rc-icon-btn {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.rc-icon-btn:hover:not(:disabled) { background: var(--surface); color: var(--accent); border-color: var(--accent); }
+
+.camera-check {
+  width: min(100% - 24px, 360px);
+  max-height: calc(100% - 24px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.3);
+  overflow: auto;
+}
+.camera-check::backdrop { background: rgb(0 0 0 / 0.45); backdrop-filter: blur(2px); }
+.camera-check[open] { animation: cc-in 140ms ease-out; }
+@keyframes cc-in { from { opacity: 0; transform: scale(0.97); } }
+@media (prefers-reduced-motion: reduce) { .camera-check[open] { animation: none; } }
+.cc-body { display: grid; gap: 12px; padding: 14px 16px 16px; }
+.cc-body:focus { outline: none; }
+.camera-check button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cc-head { display: flex; align-items: center; gap: 8px; }
+.cc-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 15px; }
+.cc-x {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-radius: 6px;
+}
+.cc-x:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+.cc-stage {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--muted);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 18px rgb(0 0 0 / 0.25);
+}
+/* Mirrored like the clip, so moving feels natural. */
+.cc-stage video,
+.cc-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.cc-stage.has-view .cc-placeholder { display: none; }
+.cc-placeholder { display: grid; }
+.cc-loading {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.cc-camera { margin: -4px 0 0; text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-grant { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.cc-grant p { margin: 0; }
+.cc-seg {
+  display: flex;
+  padding: 3px;
+  gap: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.cc-seg button {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.cc-seg button:hover:not(:disabled) { background: var(--bg); color: var(--text); }
+.cc-seg button[aria-pressed="true"] { background: var(--bg); color: var(--accent); box-shadow: 0 1px 3px rgb(0 0 0 / 0.15); }
+.cc-status { margin: -4px 0 0; text-align: center; }
+.cc-foot { display: flex; justify-content: flex-end; }
+.cc-foot button { min-width: 88px; }
 .bubble-size { display: flex; gap: 4px; }
 .bubble-size button {
   flex: 1;

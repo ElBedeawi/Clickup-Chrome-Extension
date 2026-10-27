@@ -12,7 +12,12 @@ attaches them to a new or existing ClickUp task via the ClickUp API v2, using th
 ## Hard rules
 
 - **No build step, no runtime dependencies.** Plain ES modules, HTML and CSS, loaded unpacked as-is. Dev tooling
-  in `scripts/` and `tests/` uses only Node built-ins (Node 22+). Don't add npm packages.
+  in `scripts/` and `tests/` uses only Node built-ins (Node 22+). Don't add npm packages. **One agreed exception:**
+  Google MediaPipe `@mediapipe/tasks-vision` (Apache-2.0) for the camera-bubble background blur, vendored unmodified
+  in `vendor/mediapipe/` (~14 MB: one SIMD wasm, its loader, `vision_bundle.mjs`, the selfie segmenter model). Never
+  edit those files (AMO checks them; `.gitattributes` keeps them byte-exact); update them only with
+  `node scripts/vendor-mediapipe.mjs` (pinned version, sha256s in `VENDOR.json`, verified by a unit test). Load it
+  only when blur is on (`lib/background-blur.js`), never at startup.
 - **No remote code.** MV3 and the Chrome Web Store forbid loading scripts from other sites. Bundle assets
   locally (e.g. the Cookie font in `fonts/`, OFL-licensed).
 - **Network goes only to ClickUp.** Everything uses the public API at `https://api.clickup.com`, with one
@@ -21,6 +26,10 @@ attaches them to a new or existing ClickUp task via the ClickUp API v2, using th
   for the upload, found via the public shard handshake), because the public API cannot create Clips. Keep that
   code isolated and failing soft; never route anything else through it. No analytics, tracking or new endpoints. If the data
   handled changes, update `docs/privacy-policy.html` and the data-usage answers in `store/listing.md`.
+  **The browser enforces it:** the manifest CSP is `script-src 'self' 'wasm-unsafe-eval'; object-src 'self';
+  connect-src 'self' data: blob: https://*.clickup.com` (a unit test pins it). Any new host needs a CSP change, and
+  that is a red flag. MediaPipe's bundle has hard-wired usage logging to `odml.pa.googleapis.com`: besides the CSP,
+  `installTelemetryGuard()` in `lib/background-blur.js` refuses those fetches before they are made. Keep both.
 - **Permissions are minimal and justified.** Every permission in `manifest.json` must have a justification in
   `store/listing.md`, and every one in the derived Firefox manifest in `store/firefox-listing.md` (unit tests
   enforce both). Adding one slows store review.
@@ -53,9 +62,13 @@ lib/            clickup-api.js (API client, 429 retry, XHR uploads for progress)
                 gets recorded; clocked by tick-worker.js), capture-session.js (recorder + IndexedDB glue shared by
                 the offscreen doc and the Firefox sidebar, plus recovery of a recording whose sidebar was closed),
                 recording-state.js (elapsed time / countdown / phase of the session `recording` snapshot),
+                background-blur.js (camera-bubble background blur on MediaPipe's selfie segmenter: loads it GPU→CPU,
+                segments the bubble crop at ≤15 Hz, draws blurred background + sharp person; fails closed: fully
+                blurred until a mask exists, camera left out if it can't start) + blur-math.js (its pure helpers),
                 platform.js (Chrome/Firefox detection and wording), screenshot.js (tab/area capture + injected
                 area overlay), attachments-db.js (IndexedDB), storage.js, geometry.js (pure helpers, incl. the
                 bubble placement), icons.js, links.js
+vendor/         mediapipe/: the vendored MediaPipe files (see Hard rules), VENDOR.json (sources + sha256), LICENSE
 scripts/lib/    firefox-manifest.mjs (Chrome manifest → Firefox manifest), headless.mjs (Chrome via CDP, Firefox via
                 WebDriver BiDi, same openPage() contract)
 ```
@@ -71,7 +84,7 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
 
 | type | from → to | purpose |
 |---|---|---|
-| `rec:start` `{source, resolution, micDeviceId, cameraDeviceId, bubble, delayMs}` | panel → background → offscreen | Chrome: start recording (offscreen shows the picker; `delayMs` is the countdown after it); answers `{ok, micError?, cameraError?, camera, recording}` (`recording` = the session snapshot) |
+| `rec:start` `{source, resolution, micDeviceId, cameraDeviceId, bubble, delayMs, blur}` | panel → background → offscreen | Chrome: start recording (offscreen shows the picker; `delayMs` is the countdown after it; `blur` is `none\|medium\|high`); answers `{ok, micError?, cameraError?, blurError?, camera, recording}` (`recording` = the session snapshot; `blurError` = blur couldn't start, so the camera was left out) |
 | `rec:stop` | panel → background → offscreen | Chrome: stop; offscreen saves the file to IndexedDB first. During the countdown it cancels: `{ok, cancelled: true}`, no file |
 | `rec:bubble` `{bubble}` | panel → background → offscreen (Chrome); sidebar → own session, or `target: 'host'` to the recording sidebar (Firefox) | move/resize the camera bubble of the running recording |
 | `rec:pause` / `rec:resume` / `rec:mute` `{muted}` | same routes as `rec:bubble` | pause/resume the recording, mute/unmute its mic; the recorder's host then reports the new state with `rec:state` `update` |
@@ -81,15 +94,16 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
 | `rec:ping` / `rec:stop` (`target: 'host'`) | sidebar → recording sidebar | Firefox: "is anyone recording?" (answered while counting down, recording or paused) / stop it from another window |
 
 **State**
-- `chrome.storage.local`: `clickupToken`; `prefs` = `{ mode, last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}, countdown}, clips: {autoSave, shards}, viewer: {speed} }`
+- `chrome.storage.local`: `clickupToken`; `prefs` = `{ mode, last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}, countdown, blur}, clips: {autoSave, shards}, viewer: {speed} }`
   (`mode` is the destination tab used last, `new|existing|clips`; `camera` is `'none'` or a device id; `bubble.x/y`
   are 0–1 fractions of the area the bubble may occupy, so the corners are exactly 0/1 pairs; `size` is `sm|md|lg`;
   `countdown` is the "3-second countdown" checkbox, on unless `false`, and is written with the rest of `recorder` by
-  `recorder-card.js`; `clips.autoSave` is the "Save to Clips when recording stops" toggle and `clips.shards` the
+  `recorder-card.js`; `blur` is the camera bubble's background blur, `none|medium|high` (default `none`; the card
+  resets it to `none` if the segmenter can't load on this device); `clips.autoSave` is the "Save to Clips when recording stops" toggle and `clips.shards` the
   per-workspace API host cache, written only through `setClipsPrefs()` because `setPrefs` merges one level deep;
   `viewer.speed` is the viewer tab's last playback speed, `1|1.5|2`).
 - `chrome.storage.session`: `recording` while recording, the panel mirrors it: `{id, startedAt, camera, mic, pausedAt,
-  pausedMs, micMuted}` as reported by the recorder's host (`startedAt` is in the future during the countdown;
+  pausedMs, micMuted, blur}` as reported by the recorder's host (`startedAt` is in the future during the countdown;
   `pausedAt` is set while paused; `pausedMs` sums the earlier pauses; read it with `lib/recording-state.js`), `recordingError`,
   `attachmentsChangedAt` (bumped to make an open panel re-read IndexedDB), `micGrantedAt` / `cameraGrantedAt` (bumped by
   the permission helper page so an open panel re-reads the device list).
@@ -125,6 +139,13 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
   submissions since Nov 2025); every build must be signed by AMO, even for self-distribution.
 - **ClickUp personal tokens go in `Authorization` as-is** (no `Bearer`). Custom task IDs need
   `custom_task_ids=true&team_id=…`. Custom field value formats: see `sidepanel/details.js` and ClickUp's docs.
+- **MediaPipe needs WebGL even with its CPU delegate** (it uploads frames as textures). Headless Chrome only has it
+  with `--enable-unsafe-swiftshader` (set in `scripts/lib/headless.mjs`); without WebGL, blur is unavailable and the
+  card says so. Its VIDEO mode wants strictly increasing timestamps; `segmentForVideo` is synchronous (main thread,
+  ≤15 Hz). The bundle reads, then clears, `self.Module`: `loadSegmenter()` sets `print`/`printErr` to
+  `console.debug` so its log lines aren't console errors (the smoke harness fails on those). Browser built-in blur
+  (`backgroundBlur` constraint) wasn't an option: only Windows with Studio Effects lets a page toggle it, macOS and
+  ChromeOS are read-only, Firefox has none, and it has no levels.
 - **Google blocks sign-in in automated browsers**, so automating the Web Store dashboard needs the user's real
   Chrome (chrome-devtools-mcp `--autoConnect` with remote debugging enabled at `chrome://inspect/#remote-debugging`).
 
@@ -149,7 +170,9 @@ Headless scripts find Chrome/Edge and Firefox automatically (set `CHROME=/path` 
 pages: any URL with `?demo=<scene>` gets `store/src/demo-shared.js` + `demo-stub.js` injected, which fake `chrome.*`
 and the ClickUp API (scenes: `new`, `details`, `existing`, `clips`, `menu&menu=<source|resolution|mic|shot>`, `editor`);
 add `&browser=firefox` to fake Firefox's `chrome.sidebarAction` and get the sidebar variant of the UI, and
-`&rec=paused` / `&rec=countdown` to `existing` for the other recording-strip states.
+`&rec=paused` / `&rec=countdown` to `existing` for the other recording-strip states, `&cam=1` for a fake camera with
+camera/mic access granted (the bubble preview runs, blur included), and `&open=camera-check` to open the Camera check
+dialog (the big preview, `#camera-check` in `sidepanel.html`, driven by `recorder-card.js`).
 
 ## Making changes
 

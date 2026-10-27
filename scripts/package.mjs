@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { toFirefoxManifest } from './lib/firefox-manifest.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const INCLUDE = ['manifest.json', 'background.js', 'icons', 'sidepanel', 'options', 'offscreen', 'editor', 'viewer', 'permissions', 'lib', 'fonts'];
+const INCLUDE = ['manifest.json', 'background.js', 'icons', 'sidepanel', 'options', 'offscreen', 'editor', 'viewer', 'permissions', 'lib', 'fonts', 'vendor'];
 
 function walk(rel) {
   const abs = path.join(ROOT, rel);

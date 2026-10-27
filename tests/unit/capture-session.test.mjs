@@ -6,9 +6,9 @@ import { createCaptureSession, recoverInterruptedRecording } from '../../lib/cap
 
 /** What the fake recorder reports while recording (pause/mute change it). */
 const STATUS = { id: 7, state: 'recording', startedAt: 1000, pausedAt: null, pausedMs: 0, mic: true, micMuted: false, camera: false };
-const SNAPSHOT = { id: 7, startedAt: 1000, camera: false, mic: true, pausedAt: null, pausedMs: 0, micMuted: false };
+const SNAPSHOT = { id: 7, startedAt: 1000, camera: false, mic: true, pausedAt: null, pausedMs: 0, micMuted: false, blur: 'none' };
 
-function fakeRecorder({ micError, cameraError, cancelled = false } = {}) {
+function fakeRecorder({ micError, cameraError, blurError, cancelled = false } = {}) {
   let status = { ...STATUS, state: 'idle' };
   const recorder = {
     calls: [],
@@ -19,7 +19,7 @@ function fakeRecorder({ micError, cameraError, cancelled = false } = {}) {
     async start(opts) {
       recorder.calls.push(['start', opts]);
       status = { ...STATUS };
-      return { micError, cameraError };
+      return { micError, cameraError, ...(blurError ? { blurError } : {}) };
     },
     setBubble(bubble) {
       recorder.calls.push(['setBubble', bubble]);
@@ -85,11 +85,12 @@ test('start passes only the recorder options through and reports a mic failure b
     cameraDeviceId: 'cam-1',
     bubble,
     delayMs: 3000,
+    blur: 'medium',
   });
 
   assert.deepEqual(res, { ok: true, micError: 'NotAllowedError', cameraError: undefined, camera: true, recording: SNAPSHOT });
   assert.deepEqual(recorder.calls, [
-    ['start', { source: 'window', resolution: '720', micDeviceId: 'mic-1', cameraDeviceId: 'cam-1', bubble, delayMs: 3000 }],
+    ['start', { source: 'window', resolution: '720', micDeviceId: 'mic-1', cameraDeviceId: 'cam-1', bubble, delayMs: 3000, blur: 'medium' }],
   ]);
   assert.equal(session.isRecording(), true);
 });
@@ -102,6 +103,17 @@ test('start reports a camera failure by name and that the clip has no bubble', a
   const res = await session.start({ source: 'screen', cameraDeviceId: 'cam-1' });
 
   assert.deepEqual(res, { ok: true, micError: undefined, cameraError: 'NotReadableError', camera: false, recording: SNAPSHOT });
+});
+
+test('blur that could not start is reported with its reason, and the clip has no camera', async () => {
+  const recorder = fakeRecorder({ blurError: new Error('Background blur isn’t available on this device (no WebGL).') });
+  const save = fakeSave();
+  const session = createCaptureSession({ recorder, save, sink: fakeSink(save) });
+
+  const res = await session.start({ cameraDeviceId: 'cam-1', blur: 'high' });
+
+  assert.equal(res.camera, false);
+  assert.match(res.blurError, /no WebGL/);
 });
 
 test('without a camera the result says so', async () => {

@@ -260,7 +260,60 @@ await withBrowser(async ({ openPage }) => {
       assert.equal(state.grew, true);
     }));
 
-  for (const menu of ['source', 'resolution', 'mic', 'camera', 'shot']) {
+  await test('side panel: the Background blur row shows with a camera, set to the saved level', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=new', async (page) => {
+      assert.equal(await page.evaluate(`document.getElementById('rc-blur-row').hidden`), false);
+      assert.match(await page.evaluate(`document.querySelector('#rc-blur button').textContent`), /Medium blur/);
+    }));
+
+  // Camera check: ⤢ in the Background row opens a big live preview (a fake camera here) with a
+  // No blur / Medium / High switch that drives the same setting as the card's dropdown.
+  await test('side panel: Camera check shows the camera big and switches the blur level', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=new&cam=1&open=camera-check', async (page) => {
+      const state = JSON.parse(
+        await page.evaluate(`(async () => {
+          const dlg = document.getElementById('camera-check');
+          const opened = dlg.open;
+          const view = !!document.querySelector('.cc-stage canvas, .cc-stage video');
+          const pressedBefore = document.querySelector('#cc-blur [aria-pressed="true"]')?.dataset.level;
+          document.querySelector('#cc-blur [data-level="high"]').click();
+          await new Promise((r) => setTimeout(r, 100));
+          const { prefs } = await chrome.storage.local.get('prefs');
+          const menuLabel = document.querySelector('#rc-blur button').textContent.trim();
+          document.getElementById('cc-close').click();
+          await new Promise((r) => setTimeout(r, 100));
+          return JSON.stringify({
+            opened,
+            view,
+            pressedBefore,
+            saved: prefs.recorder.blur,
+            menuLabel,
+            closed: !dlg.open,
+            backInDot: !!document.querySelector('#rc-bubble .bubble-dot canvas'),
+            dialogEmpty: !document.querySelector('.cc-stage canvas, .cc-stage video'),
+          });
+        })()`),
+      );
+      assert.deepEqual(state, {
+        opened: true,
+        view: true,
+        pressedBefore: 'medium',
+        saved: 'high',
+        menuLabel: 'High blur',
+        closed: true,
+        backInDot: true,
+        dialogEmpty: true,
+      });
+    }));
+
+  await test('side panel: Camera check without camera access offers to grant it', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=new&open=camera-check', async (page) => {
+      assert.equal(await page.evaluate(`document.getElementById('camera-check').open`), true);
+      assert.equal(await page.evaluate(`document.getElementById('cc-grant').hidden`), false);
+      assert.equal(await page.evaluate(`!!document.querySelector('.cc-stage canvas, .cc-stage video')`), false);
+    }));
+
+  for (const menu of ['source', 'resolution', 'mic', 'camera', 'blur', 'shot']) {
     await test(`side panel: "${menu}" dropdown opens with options`, () =>
       scene(openPage, `/sidepanel/sidepanel.html?demo=menu&menu=${menu}`, async (page) => {
         const items = await page.evaluate(`document.querySelectorAll('.ms-menu:not([hidden]) li').length`);
@@ -292,7 +345,8 @@ await withBrowser(async ({ openPage }) => {
   // The Firefox mid-recording scene adds the "keep this sidebar open" note and drops a source;
   // the Clips scene has the three-tab row with its third tab selected and the explainer.
   // The paused and countdown strips have the widest labels and both icon buttons.
-  const LAYOUT_SCENES = ['new', 'existing&browser=firefox', 'existing&rec=paused', 'existing&rec=countdown', 'clips'];
+  // The Camera check dialog has to fit the narrowest panel too.
+  const LAYOUT_SCENES = ['new', 'existing&browser=firefox', 'existing&rec=paused', 'existing&rec=countdown', 'clips', 'new&open=camera-check'];
   for (const font of ['system', 'wide (Verdana)']) {
     for (const demo of LAYOUT_SCENES) {
     await test(`side panel: nothing overflows or gets clipped at narrow widths — ${font} font, ${demo}`, async () => {
@@ -318,7 +372,7 @@ await withBrowser(async ({ openPage }) => {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, #rec-time, .rec-ctl, #btn-stop, .rc-countdown, .rte, .rte-btn, .rte-block')]
+        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, #rec-time, .rec-ctl, #btn-stop, .rc-countdown, .rc-icon-btn, #camera-check, .cc-stage, .cc-seg, .cc-foot, .rte, .rte-btn, .rte-block')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)
@@ -355,6 +409,30 @@ await withBrowser(async ({ openPage }) => {
         assert.ok(isBlue(r.bottomRight), `screen expected where the bubble used to be, got ${r.bottomRight}`);
       },
       { width: 800, height: 600 },
+    ));
+
+  // Background blur with the real vendored MediaPipe segmenter on a synthetic camera (no person
+  // in it, so the whole bubble must come out blurred), plus a segmenter that can't load (fail
+  // closed: still fully blurred, never sharp). Needs WebGL: Chrome gets software WebGL
+  // (SwiftShader); where a headless browser has none, the blurrer must say so cleanly.
+  await test('background blur: blurs with the real segmenter, and fails closed', () =>
+    scene(
+      openPage,
+      '/tests/smoke/blur.html',
+      async (page) => {
+        const r = JSON.parse(await page.evaluate(`JSON.stringify(window.__result)`));
+        assert.ok(r.sharp > 20, `the test camera should be high-contrast, got ${r.sharp}`);
+        if (r.unavailable) {
+          assert.notEqual(process.env.SMOKE_BROWSER ?? 'chrome', 'chrome', `Chrome must run the segmenter: ${r.unavailable}`);
+          assert.match(r.unavailable, /isn't available on this device/);
+        } else {
+          assert.ok(['GPU', 'CPU'].includes(r.delegate), `delegate: ${r.delegate}`);
+          assert.ok(r.blurred < r.sharp * 0.2, `expected a blurred bubble, contrast ${r.blurred} vs ${r.sharp}`);
+        }
+        assert.equal(r.failedFlag, true);
+        assert.ok(r.failClosed < r.sharp * 0.2, `a broken segmenter must still blur everything, contrast ${r.failClosed}`);
+      },
+      { width: 400, height: 400 },
     ));
 
   // The full-size attachment tab: reads IndexedDB and shows the file, or says it is gone.

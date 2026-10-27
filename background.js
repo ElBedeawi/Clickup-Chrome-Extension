@@ -95,6 +95,7 @@ async function handle(msg) {
         cameraDeviceId: msg.cameraDeviceId,
         bubble: msg.bubble,
         delayMs: msg.delayMs,
+        blur: msg.blur,
       });
       if (res?.ok) await setRecording(res.recording ?? { startedAt: Date.now(), camera: !!res.camera });
       else await closeOffscreen();

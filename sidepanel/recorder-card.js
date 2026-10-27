@@ -6,6 +6,9 @@ import { createBubbleStage } from './bubble-stage.js';
 import { icon } from '../lib/icons.js';
 import { getPrefs, setPrefs } from '../lib/storage.js';
 import { canRecordTab, isSidebar } from '../lib/platform.js';
+import { coverFitSource } from '../lib/geometry.js';
+import { isBlurLevel } from '../lib/blur-math.js';
+import { createBlurrer } from '../lib/background-blur.js';
 
 const SOURCES = [
   { value: 'screen', label: 'Entire screen', icon: 'monitor' },
@@ -37,7 +40,18 @@ const DEFAULTS = {
   camera: NO_CAMERA,
   bubble: { x: 0, y: 1, size: 'md' },
   countdown: true,
+  blur: 'none',
 };
+
+const BLURS = [
+  { value: 'none', label: 'No blur' },
+  { value: 'medium', label: 'Medium blur' },
+  { value: 'high', label: 'High blur' },
+];
+
+/** Size of the blurred preview canvas: sharp in the Camera check dialog, CSS scales it into the dot. */
+const PREVIEW_PX = 320;
+const LOADING_BLUR = 'Loading blur…';
 
 const $ = (id) => document.getElementById(id);
 
@@ -49,10 +63,22 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
   const micIcon = $('rc-mic-icon');
   const cameraIcon = $('rc-camera-icon');
   const bubbleRow = $('rc-bubble-row');
+  const blurRow = $('rc-blur-row');
+  const blurStatus = $('rc-blur-status');
   const meterFill = $('rc-meter-fill');
+  // Camera check dialog (a big live preview; see "Camera check" below)
+  const previewOpen = $('rc-preview-open');
+  const check = $('camera-check');
+  const checkStage = check.querySelector('.cc-stage');
+  const checkLoading = $('cc-loading');
+  const checkName = $('cc-camera-name');
+  const checkGrant = $('cc-grant');
+  const checkSeg = $('cc-blur');
+  const checkStatus = $('cc-status');
 
   const { recorder: saved = {} } = await getPrefs();
   const settings = { ...DEFAULTS, ...saved, bubble: { ...DEFAULTS.bubble, ...(saved.bubble || {}) } };
+  if (!isBlurLevel(settings.blur)) settings.blur = DEFAULTS.blur;
   const save = (patch) => {
     Object.assign(settings, patch);
     return setPrefs({ recorder: { ...settings } });
@@ -117,6 +143,28 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
     },
   });
 
+  const blurMenu = createMenuSelect($('rc-blur'), {
+    items: BLURS,
+    value: settings.blur,
+    label: 'Background blur',
+    onChange: (value) => setBlurLevel(value),
+  });
+
+  /** One way to change the blur level, from the dropdown or the Camera check dialog. */
+  function setBlurLevel(level) {
+    if (!isBlurLevel(level)) return;
+    save({ blur: level });
+    blurMenu.setValue(level);
+    syncBlurControls();
+    applyPreviewBlur();
+  }
+
+  function syncBlurControls() {
+    for (const b of checkSeg.querySelectorAll('button')) {
+      b.setAttribute('aria-pressed', String(b.dataset.level === settings.blur));
+    }
+  }
+
   const countdown = $('rc-countdown');
   countdown.checked = settings.countdown !== false;
   countdown.addEventListener('change', () => save({ countdown: countdown.checked }));
@@ -126,6 +174,7 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
     micIcon.innerHTML = icon(settings.mic === NO_MIC ? 'micOff' : 'mic');
     cameraIcon.innerHTML = icon(settings.camera === NO_CAMERA ? 'webcamOff' : 'webcam');
     bubbleRow.hidden = settings.camera === NO_CAMERA;
+    blurRow.hidden = settings.camera === NO_CAMERA;
   }
 
   // ---- Devices ----
@@ -144,6 +193,8 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
       }
     }
   }
+
+  let cameraItems = []; // the camera menu's items (the Camera check dialog shows the picked one's name)
 
   async function enumerate() {
     try {
@@ -205,6 +256,7 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
     // Without permission the browser hides names/ids (Firefox lists nothing at all), so offer a way to allow.
     if (namedCams.length) namedCams.forEach((d) => camItems.push({ value: d.deviceId, label: d.label, icon: 'webcam' }));
     else camItems.push({ value: ALLOW_CAMERA, label: 'Allow access to pick a camera…' });
+    cameraItems = camItems;
     if (!camItems.some((i) => i.value === settings.camera && i.value !== ALLOW_CAMERA)) settings.camera = NO_CAMERA;
     camera.setItems(camItems);
     camera.setValue(settings.camera);
@@ -288,27 +340,144 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
     tick();
   }
 
-  // ---- Camera preview inside the bubble (only while the card is open) ----
+  // ---- Camera preview (only while the card is open) ----
+  // Shown in the bubble dot, or, while the Camera check dialog is open, large in the dialog.
+  // With blur on, one canvas is drawn (lib/background-blur.js, the same segmenter and drawing as
+  // the recording) and moved to wherever the preview is shown: the panel never runs a second
+  // segmenter, nor one alongside the recorder (everything stops with the preview).
 
   let preview = null; // MediaStream
   let previewToken = 0; // ignores a camera that opens after a newer restart/stop
+  let cameraPermission = 'prompt';
+  let blurPreview = null; // { blurrer, video, canvas, raf }
+  let checkVideo = null; // the dialog's own <video> when blur is off
 
   function stopPreview() {
     previewToken++;
+    stopBlurPreview();
     preview?.getTracks().forEach((t) => t.stop());
     preview = null;
     stage.attachPreview(null);
+    mountPreview();
+  }
+
+  function setBlurStatus(text) {
+    blurStatus.textContent = text;
+    blurStatus.hidden = !text;
+    // In the dialog, loading is a pill over the preview; anything else is a line under it.
+    checkLoading.hidden = text !== LOADING_BLUR;
+    checkStatus.textContent = text === LOADING_BLUR ? '' : text;
+    checkStatus.hidden = !checkStatus.textContent;
+  }
+
+  /** Puts the live preview where it is seen: the bubble dot, or the open Camera check dialog. */
+  function mountPreview() {
+    const inDialog = check.open;
+    const canvas = blurPreview?.canvas;
+    if (canvas) {
+      if (inDialog) {
+        stage.attachCanvas(null);
+        checkStage.prepend(canvas);
+      } else {
+        stage.attachCanvas(canvas);
+      }
+    }
+    if (inDialog && preview && !canvas) {
+      if (!checkVideo) {
+        checkVideo = document.createElement('video');
+        checkVideo.muted = true;
+        checkVideo.playsInline = true;
+        checkStage.prepend(checkVideo);
+      }
+      if (checkVideo.srcObject !== preview) {
+        checkVideo.srcObject = preview;
+        checkVideo.play().catch(() => {});
+      }
+    } else if (checkVideo) {
+      checkVideo.srcObject = null;
+      checkVideo.remove();
+      checkVideo = null;
+    }
+    checkStage.classList.toggle('has-view', inDialog && !!preview);
+    checkGrant.hidden = !inDialog || !!preview || cameraPermission === 'granted';
+  }
+
+  function stopBlurPreview() {
+    if (!blurPreview) return;
+    cancelAnimationFrame(blurPreview.raf);
+    blurPreview.blurrer.close();
+    blurPreview.video.srcObject = null;
+    blurPreview.canvas.remove();
+    blurPreview = null;
+    stage.attachCanvas(null);
+  }
+
+  function applyPreviewBlur() {
+    if (!preview || settings.camera === NO_CAMERA || settings.blur === 'none') {
+      stopBlurPreview();
+      if (preview) stage.attachPreview(preview);
+      if (settings.blur === 'none') setBlurStatus('');
+      mountPreview();
+      return;
+    }
+    if (blurPreview) {
+      blurPreview.blurrer.setLevel(settings.blur);
+      return;
+    }
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.srcObject = preview;
+    video.play().catch(() => {});
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = PREVIEW_PX;
+    const ctx = canvas.getContext('2d');
+    const blurrer = createBlurrer({ level: settings.blur });
+    const mine = { blurrer, video, canvas, raf: 0 };
+    blurPreview = mine;
+    stage.attachPreview(null);
+    mountPreview();
+    setBlurStatus(LOADING_BLUR);
+    blurrer.ready.then(
+      () => {
+        if (blurPreview === mine) setBlurStatus('');
+      },
+      (err) => {
+        if (blurPreview !== mine) return;
+        console.warn(err);
+        stopBlurPreview();
+        // Recording with it would leave the camera out (fail closed), so switch it off here.
+        save({ blur: 'none' });
+        blurMenu.setValue('none');
+        syncBlurControls();
+        if (preview) stage.attachPreview(preview);
+        mountPreview();
+        setBlurStatus('Background blur isn’t available on this device.');
+      },
+    );
+    const tick = () => {
+      if (video.videoWidth) {
+        const crop = coverFitSource(video.videoWidth, video.videoHeight, PREVIEW_PX, PREVIEW_PX);
+        blurrer.update(video, crop);
+        blurrer.draw(ctx, video, crop, PREVIEW_PX);
+      }
+      mine.raf = requestAnimationFrame(tick);
+    };
+    tick();
   }
 
   async function restartPreview() {
     stopPreview();
     if (!active || settings.camera === NO_CAMERA) return;
-    if ((await devicePermission('camera', 'videoinput')) !== 'granted') return; // a side panel / sidebar can't show the prompt
+    cameraPermission = await devicePermission('camera', 'videoinput');
+    mountPreview();
+    if (cameraPermission !== 'granted') return; // a side panel / sidebar can't show the prompt
     const token = previewToken;
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: settings.camera }, width: { ideal: 320 }, height: { ideal: 240 } },
+        // Big enough for the Camera check dialog; the dot just scales it down.
+        video: { deviceId: { exact: settings.camera }, width: { ideal: 640 }, height: { ideal: 480 } },
       });
     } catch {
       return;
@@ -319,9 +488,42 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
     }
     preview = stream;
     stage.attachPreview(stream);
+    applyPreviewBlur();
+  }
+
+  // ---- Camera check: a big live preview in a dialog, to try the blur levels ----
+
+  async function openCameraCheck() {
+    if (check.open) return;
+    checkName.textContent = cameraItems.find((i) => i.value === settings.camera)?.label || '';
+    syncBlurControls();
+    cameraPermission = await devicePermission('camera', 'videoinput');
+    check.showModal(); // focuses .cc-body (autofocus): the dialog is announced, Tab reaches the controls
+    mountPreview();
+  }
+
+  function closeCameraCheck() {
+    if (check.open) check.close();
+  }
+
+  previewOpen.addEventListener('click', openCameraCheck);
+  $('cc-close').addEventListener('click', closeCameraCheck);
+  $('cc-done').addEventListener('click', closeCameraCheck);
+  $('cc-grant-btn').addEventListener('click', () => onGrantCamera());
+  // A click on the backdrop lands on the <dialog> itself; its content is inside .cc-body.
+  check.addEventListener('click', (e) => {
+    if (e.target === check) closeCameraCheck();
+  });
+  check.addEventListener('close', () => {
+    mountPreview(); // back into the bubble dot
+    if (previewOpen.offsetParent) previewOpen.focus();
+  });
+  for (const b of checkSeg.querySelectorAll('button')) {
+    b.addEventListener('click', () => setBlurLevel(b.dataset.level));
   }
 
   function releaseDevices() {
+    closeCameraCheck();
     stopMeter();
     stopPreview();
   }
@@ -364,6 +566,7 @@ export async function createRecorderCard({ onGrantMic, onGrantCamera }) {
       cameraDeviceId: settings.camera === NO_CAMERA ? null : settings.camera,
       bubble: { ...settings.bubble },
       delayMs: settings.countdown !== false ? COUNTDOWN_MS : 0,
+      blur: settings.camera === NO_CAMERA ? 'none' : settings.blur,
     }),
   };
 }

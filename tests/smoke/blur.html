@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Like the extension's own CSP: nothing may connect anywhere but this origin. MediaPipe's
+       built-in logging to Google must never leave a test run either. -->
+  <meta http-equiv="Content-Security-Policy" content="connect-src 'self'" />
+  <title>background blur smoke</title>
+</head>
+<body>
+  <!-- Runs lib/background-blur.js with the real vendored MediaPipe segmenter on a synthetic camera
+       (a sharp checkerboard: no person in it, so the whole bubble must come out blurred), and a
+       blurrer whose segmenter fails to load (fail closed: still fully blurred, never sharp).
+       Reports local contrast so the test can compare. Driven by tests/smoke/ui.test.mjs. -->
+  <script type="module">
+    import { createBlurrer } from '/lib/background-blur.js';
+
+    const D = 200;
+
+    function checkerboard(w, h, cell) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const x = c.getContext('2d');
+      for (let y = 0; y < h; y += cell) {
+        for (let i = 0; i < w; i += cell) {
+          x.fillStyle = ((i + y) / cell) % 2 ? '#000' : '#fff';
+          x.fillRect(i, y, cell, cell);
+        }
+      }
+      return c;
+    }
+
+    /** Mean absolute difference between horizontal neighbours in the middle of a d×d canvas. */
+    function contrast(canvas) {
+      const ctx = canvas.getContext('2d');
+      const { data } = ctx.getImageData(D / 4, D / 4, D / 2, D / 2);
+      let sum = 0;
+      let n = 0;
+      for (let i = 0; i + 4 < data.length; i += 4) {
+        sum += Math.abs(data[i] - data[i + 4]);
+        n++;
+      }
+      return sum / n;
+    }
+
+    function draw(paint) {
+      const out = document.createElement('canvas');
+      out.width = out.height = D;
+      paint(out.getContext('2d'));
+      return contrast(out);
+    }
+
+    const result = {};
+    try {
+      const camera = checkerboard(320, 240, 8);
+      const crop = { sx: 40, sy: 0, sw: 240, sh: 240 };
+      result.sharp = draw((ctx) => ctx.drawImage(camera, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, D, D));
+
+      try {
+        const blurrer = createBlurrer({ level: 'medium' });
+        await blurrer.ready;
+        result.delegate = blurrer.delegate;
+        for (let i = 0; i < 5; i++) blurrer.update(camera, crop, performance.now() + i * 100);
+        result.blurred = draw((ctx) => blurrer.draw(ctx, camera, crop, D));
+        blurrer.close();
+      } catch (err) {
+        result.unavailable = String(err?.message ?? err);
+      }
+
+      const broken = createBlurrer({ level: 'high', load: () => Promise.reject(new Error('no WebGL here')) });
+      await broken.ready.catch(() => {});
+      broken.update(camera, crop);
+      result.failedFlag = broken.failed;
+      result.failClosed = draw((ctx) => broken.draw(ctx, camera, crop, D));
+    } catch (err) {
+      console.error(err);
+    }
+    window.__result = result;
+    window.__ready = true;
+  </script>
+</body>
+</html>

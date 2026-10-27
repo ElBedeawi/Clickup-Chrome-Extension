@@ -24,6 +24,8 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.woff2': 'font/woff2',
+  '.wasm': 'application/wasm', // WebAssembly.instantiateStreaming insists on it
+  '.tflite': 'application/octet-stream',
 };
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -160,6 +162,7 @@ async function withChrome(fn) {
     [
       '--headless=new',
       '--disable-gpu',
+      '--enable-unsafe-swiftshader', // software WebGL: MediaPipe's segmenter needs it (tests/smoke/blur.html)
       '--hide-scrollbars',
       '--no-first-run',
       '--remote-debugging-port=0', // Chrome picks a free port and writes it to DevToolsActivePort

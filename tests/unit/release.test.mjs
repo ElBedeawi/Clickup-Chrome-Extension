@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { recordingFileName } from '../../lib/recorder.js';
@@ -53,6 +54,7 @@ test('the zip packager includes every top-level runtime path', () => {
       'permissions/microphone.html',
       'lib/storage.js',
       'fonts/cookie-regular.woff2',
+      'vendor/mediapipe/vision_bundle.mjs',
     ].map((f) => f.split('/')[0]),
   );
   for (const dir of topLevel) assert.ok(include.includes(dir), `package.mjs INCLUDE is missing ${dir}`);
@@ -63,6 +65,41 @@ test('the privacy policy is where both listings say it is', () => {
   const url = 'clickup-uploader.macawshub.com/privacy-policy.html';
   assert.ok(read('store/listing.md').includes(url));
   assert.ok(read('store/firefox-listing.md').includes(url));
+});
+
+test('the CSP allows wasm (background blur) but no eval, and connections only to ClickUp', () => {
+  for (const m of [manifest, firefoxManifest]) {
+    const csp = m.content_security_policy?.extension_pages ?? '';
+    const directives = Object.fromEntries(
+      csp
+        .split(';')
+        .map((d) => d.trim().split(/\s+/))
+        .filter((d) => d[0])
+        .map(([name, ...values]) => [name, values]),
+    );
+    assert.deepEqual(directives['script-src'], ["'self'", "'wasm-unsafe-eval'"]);
+    assert.ok(!csp.includes("'unsafe-eval'"), 'no eval');
+    // MediaPipe's bundle has built-in logging to Google: the browser itself must refuse it.
+    assert.deepEqual(directives['connect-src'], ["'self'", 'data:', 'blob:', 'https://*.clickup.com']);
+  }
+});
+
+test('the vendored MediaPipe files are present and unmodified', () => {
+  const vendor = JSON.parse(read('vendor/mediapipe/VENDOR.json'));
+  assert.equal(vendor.license, 'Apache-2.0');
+  const paths = vendor.files.map((f) => f.path).sort();
+  assert.deepEqual(paths, [
+    'LICENSE',
+    'models/selfie_segmenter.tflite',
+    'vision_bundle.mjs',
+    'wasm/vision_wasm_internal.js',
+    'wasm/vision_wasm_internal.wasm',
+  ]);
+  for (const f of vendor.files) {
+    const buf = fs.readFileSync(path.join(ROOT, 'vendor/mediapipe', f.path));
+    assert.equal(buf.length, f.size, `${f.path}: size changed`);
+    assert.equal(crypto.createHash('sha256').update(buf).digest('hex'), f.sha256, `${f.path}: contents changed`);
+  }
 });
 
 test('CHANGELOG mentions the manifest version', () => {

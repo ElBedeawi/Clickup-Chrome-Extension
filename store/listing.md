@@ -26,6 +26,8 @@ Report bugs and share feedback without leaving the page. Record your screen, gra
 RECORD YOUR SCREEN
 • Record a clip of your entire screen, a window or a tab — pick the resolution (720p to 4K) and microphone
 • Add yourself to the clip as a camera bubble (optional): drag it anywhere, resize it, even while recording
+• Blur the background behind you in the camera bubble (medium or high), processed on your device
+• Pause and resume, mute the mic, and a 3-second countdown to get ready
 • Keep recording with the side panel closed — a REC badge shows it's running
 • Preview the recording before it's uploaded
 
@@ -97,7 +99,10 @@ Capture screen recordings and screenshots (with optional annotation) and attach 
 | Host permission `<all_urls>` | The user can take a screenshot of whatever page they are on, so the extension needs access to any site: chrome.tabs.captureVisibleTab requires it for "Screenshot → Visible tab" and "Select area", and chrome.scripting requires it for the area-selection overlay. Pages are only captured when the user explicitly chooses a screenshot option. It is also used to read the active tab's URL locally to detect when the user is viewing a ClickUp task, so it can be prefilled, and it covers ClickUp's own hosts (`app.clickup.com`, `id.app.clickup.com`, the workspace's `*.clickup.com` API host) for the optional Clips tab ("Save to Clips"). No page content is read or sent anywhere otherwise. |
 | Host permission `https://api.clickup.com/*` | All task creation, attachment uploads, comments and workspace lookups go to the ClickUp API. |
 
-**Remote code:** No, I am not using remote code. (All scripts are packaged; no eval or remotely hosted code.)
+**Remote code:** No, I am not using remote code. (All scripts are packaged; no eval or remotely hosted code. The
+optional camera-bubble background blur runs Google's MediaPipe as packaged WebAssembly, `vendor/mediapipe/`, hence
+`'wasm-unsafe-eval'` in the CSP; its model ships in the package too. The library's built-in usage logging is blocked:
+the extension refuses those requests, and the CSP `connect-src` only allows `https://*.clickup.com`.)
 
 **Data usage — what user data is collected** (check these):
 - ☑ **Authentication information** — the user's ClickUp API token (stored locally; sent only to api.clickup.com), and, only when they use the Clips tab ("Save to Clips"), a short-lived ClickUp session token obtained from their existing sign-in (kept in memory; sent only to ClickUp's own hosts).

@@ -140,6 +140,12 @@ export function createBubbleStage(root, { value, onChange, label = 'Camera bubbl
       video.hidden = !stream;
       if (stream) video.play().catch(() => {});
     },
+    /** Shows a canvas the caller draws into (the blurred-background preview); null removes it. */
+    attachCanvas(canvas) {
+      dot.querySelector('canvas')?.remove();
+      if (canvas) dot.prepend(canvas);
+      dot.classList.toggle('has-canvas', !!canvas);
+    },
     get value() {
       return { ...current };
     },
