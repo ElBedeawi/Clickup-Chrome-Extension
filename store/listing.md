@@ -129,14 +129,18 @@ the extension refuses those requests, and the CSP `connect-src` only allows `htt
 ## Test instructions (for the reviewer)
 
 Leave **Username** and **Password** empty: the reviewer uses their own free ClickUp account.
-Paste this into **Additional instructions** (489 of 500 characters):
+Paste this into **Additional instructions** (441 of 500 characters; since 0.8.0 it also walks through the camera
+blur and pause, and points at the packaged MediaPipe that the CSP's `'wasm-unsafe-eval'` is for):
 
 ```
-No credentials needed: use your own free ClickUp account.
-1. Sign up free at https://clickup.com, then open https://app.clickup.com/settings/apps and click Generate to get a personal API token.
-2. Open the side panel (extension icon), click the gear (Settings), paste the token, Save.
-3. Pick Workspace, Space and List, then enter a title.
-4. Screenshot > Visible tab: draw or blur, then Attach.
-5. Record clip > Record Clip, pick what to share, then Stop.
+Use your own free ClickUp account.
+1. Sign up at clickup.com, then get a token at app.clickup.com/settings/apps (Generate).
+2. Open the side panel, click the gear, paste the token, Save.
+3. Pick Workspace, Space and List; enter a title.
+4. Screenshot > Visible tab: draw, then Attach.
+5. Record clip: pick a camera and Medium blur (local, packaged MediaPipe), Record Clip, pick a screen, Pause, Resume, Stop.
 6. Click "Create task & upload".
 ```
+
+The "Remote code" answer above (Privacy practices tab) explains the packaged WebAssembly and the blocked logging;
+there is no separate notes field for it.

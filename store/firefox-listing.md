@@ -13,8 +13,10 @@ test (`tests/unit/firefox-manifest.test.mjs`) checks that every permission below
 - **Homepage:** https://github.com/ElBedeawi/Clickup-Chrome-Extension
 - **Support email:** wagih.elbedeawi+clickupvideo-chrome-ext@gmail.com
 - **License:** MIT
-- **Source code upload:** not needed. The add-on is plain ES modules with no build step or minification;
-  the only generated file is `manifest.json`. Say so in the reviewer notes.
+- **Source code upload:** not needed. Our own code is plain ES modules with no build step or minification;
+  the only generated file is `manifest.json`. The only minified code (since 0.8.0) is Google MediaPipe in
+  `vendor/mediapipe/`, an unmodified third-party release, which AMO accepts with links to its official source:
+  the reviewer notes below give them, with every file's SHA-256.
 
 ---
 
@@ -94,7 +96,7 @@ No credentials needed: use your own free ClickUp account.
 2. Click the toolbar icon to open the sidebar, click the gear (Settings), paste the token, Save.
 3. Pick Workspace, Space and List, then enter a title.
 4. Screenshot > Visible tab: draw or blur, then Attach.
-5. Record clip > Record Clip, pick a screen or window, then press Stop in the sidebar. (Keep the sidebar open while recording; Firefox's own "Stop Sharing" button does not reach sidebar pages.)
+5. Record clip: optionally pick a camera and "Medium blur" (the expand button next to it shows a large preview), then Record Clip, pick a screen or window, wait for the 3-second countdown, try Pause/Resume, then press Stop in the sidebar. (Keep the sidebar open while recording; Firefox's own "Stop Sharing" button does not reach sidebar pages.)
 6. Click "Create task & upload".
 
 Source: https://github.com/ElBedeawi/Clickup-Chrome-Extension — plain ES modules, no build step or
