@@ -15,7 +15,7 @@ Things people ask ClickUp for that this extension already does.
 | Ask on ClickUp's board | Votes | What we do |
 |---|---|---|
 | [Chrome Extension: Ability to Record using Clip](https://feedback.clickup.com/browser-extension/p/chrome-extension-ability-to-record-using-clip) | 48 | Record from the side panel on any page and attach to a new or existing task |
-| [Webcam in Clips](https://feedback.clickup.com/feature-requests/p/webcam-in-clips) | 321 | Camera bubble, movable and resizable while recording (0.4.0), with optional background blur (next release) |
+| [Webcam in Clips](https://feedback.clickup.com/feature-requests/p/webcam-in-clips) | 321 | Camera bubble, movable and resizable while recording (0.4.0), with optional background blur (0.8.0) |
 | [Record computer audio with Clip as well as mic audio](https://feedback.clickup.com/feature-requests/p/record-computer-audio-with-clip-as-well-as-mic-audio) | 124 | "Share audio" in the picker mixes system or tab audio with the microphone (Chrome) |
 | [Screenshot & Image Markup on Desktop App](https://feedback.clickup.com/feature-requests/p/screenshot-image-markup-on-desktop-app) | 169 | "Entire screen" screenshot captures any app, then draw, text, blur and crop |
 | [Firefox, pretty please!](https://feedback.clickup.com/integrations/p/firefox-pretty-please) | 834 | Firefox 128+ add-on on addons.mozilla.org (0.2.0) |

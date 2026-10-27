@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-27
+
 ### Added
 
 - **Background blur for the camera bubble**: pick **Medium blur** or **High blur** under the camera in the Record clip card, and the background behind you is blurred while you stay sharp. The card's bubble preview shows it live, and the **⤢** button next to the blur picker opens a large **Camera check** preview where you can switch between No blur, Medium and High to compare them. It runs entirely on your device using Google's open-source MediaPipe, packaged inside the extension (which is now about 14 MB). Nothing is sent anywhere: the library's built-in usage logging is blocked. Off by default. If blur can't start on a computer (it needs WebGL), the card says so, and a recording that asked for blur leaves the camera out rather than show your background.
@@ -80,7 +82,8 @@ First public release.
 - Automatic retry when ClickUp rate-limits requests (HTTP 429).
 - Settings page with token test and revoke, and a Buy Me a Coffee link.
 
-[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.4.0...v0.5.0
