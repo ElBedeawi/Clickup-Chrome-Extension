@@ -52,6 +52,9 @@
         <button role="tab" id="tab-clips" class="tab" aria-selected="false" data-mode="clips">
           <span class="tab-label">Clips</span>
         </button>
+        <button role="tab" id="tab-brain" class="tab" aria-selected="false" data-mode="brain">
+          <span class="tab-label">Brain</span>
+        </button>
       </nav>
 
       <!-- New task -->
@@ -159,6 +162,30 @@
           <input id="clips-auto-save" type="checkbox" />
           Save to Clips when recording stops
         </label>
+      </section>
+
+      <!-- Brain: a chat with ClickUp Brain (lib/clickup-brain.js, brain-chat.js). No attachments or
+           submit button in this mode (body.brain-mode). -->
+      <section id="panel-brain" class="panel brain" role="tabpanel" hidden>
+        <p id="brain-intro" class="brain-intro muted small">
+          <span class="brain-icon" data-icon="sparkles" data-size="16"></span>
+          <span>Ask <strong>ClickUp Brain</strong> about your work. Your questions go to Brain in your ClickUp
+            workspace and are kept there under AI Chats. Needs you signed in to ClickUp in this browser.</span>
+        </p>
+        <ol id="brain-log" class="brain-log" aria-live="polite"></ol>
+        <div class="brain-compose">
+          <button id="brain-task" class="brain-task" type="button" aria-pressed="false" hidden>
+            <span class="brain-task-icon" data-icon="check" data-size="12"></span>
+            <span class="brain-task-label">About: <span id="brain-task-name"></span></span>
+          </button>
+          <textarea id="brain-input" rows="3" placeholder="Ask Brain anything…" aria-label="Question for ClickUp Brain"></textarea>
+          <div class="brain-actions">
+            <button id="brain-new" class="secondary" type="button">New chat</button>
+            <a id="brain-open" class="brain-open small" target="_blank" rel="noopener" hidden>Open in ClickUp ↗</a>
+            <button id="brain-send" class="primary" type="button">Ask</button>
+          </div>
+          <p id="brain-where" class="muted small brain-where" hidden></p>
+        </div>
       </section>
       </fieldset>
 

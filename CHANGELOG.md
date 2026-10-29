@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **Brain tab**: chat with **ClickUp Brain**, ClickUp's own AI, from the side panel. Ask about your work and follow up in the same chat; **New chat** starts over and **Open in ClickUp** continues the chat there (it is also listed under AI Chats in ClickUp). When a task is found on the Existing task tab (or detected from the page you are on), an **About: …** chip lets you include it, so Brain reads that task with your question. Answers keep their formatting and task links. The public ClickUp API has no Brain access, so like the Clips tab this uses ClickUp's own web-app API: it needs you signed in to ClickUp in this browser, is undocumented, and may stop working after a ClickUp update. Brain answers when it's done rather than word by word.
+
 ## [0.8.0] - 2026-10-27
 
 ### Added

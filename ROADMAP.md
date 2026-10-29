@@ -108,16 +108,19 @@ Wanted, but no good approach yet.
 - **Clip in a task comment.** ClickUp's "record in a comment" flow is the same upload with `parent=<task>`, a
   comment carrying a `link_preview` video block and a re-parent of the attachment to the comment. A natural
   follow-up to the workspace Clip, once that has proven stable.
-- **ClickUp Brain from the side panel**: for example, drafting the new task's title and description from a
-  recording or a screenshot, or asking Brain about the selected task without switching tabs. This fits the
-  "data goes only to ClickUp" rule, because Brain is ClickUp's own AI. State of play (October 2026): **the public
-  API has no Brain endpoint.**
+- **ClickUp Brain through a public API.** The Brain tab (Unreleased) chats with Brain, optionally about the task
+  found on the Existing tab. It works, but on ClickUp's private web-app API (a question is a comment in the user's
+  `ASK_AI` chat room, Brain answers in its thread; see `lib/clickup-brain.js`), so like Clips it can break on any
+  ClickUp deploy. Its answers arrive whole: ClickUp streams them only over a websocket on another domain
+  (`*.clickup-eu.com`), which the CSP doesn't allow. State of play (October 2026): **the public API has no Brain
+  endpoint**, and ClickUp's MCP server (`mcp.clickup.com`, OAuth only) has no Brain tool yet.
   [Make ClickUp Brain available via API](https://feedback.clickup.com/public-api/p/make-clickup-brain-available-via-api)
   (10 votes) got an answer from ClickUp on 2026-09-29: they are "actively working on providing access to Brain via
-  our MCP Server". Next step: wait for that, then check whether a browser extension can call ClickUp's MCP server
-  directly (HTTPS + OAuth, no new dependency). Calling it would be a new ClickUp endpoint, so it would need a
-  privacy policy and store listing update and would stay opt-in. Reverse-engineering Brain's private web-app API,
-  the way the Clips tab does, is a fallback only: it would be even more fragile than Clips.
+  our MCP Server". Next step: when that ships, check whether the panel can call the MCP server directly (HTTPS +
+  OAuth 2.1 with PKCE, no new dependency) and replace the private path.
+- **Draft the new task from a capture with Brain**: title and description from a recording or a screenshot. Builds
+  on the Brain tab; needs the capture uploaded where Brain can read it first (e.g. as a Clip, which ClickUp
+  transcribes).
 - **View tracking** from the Loom thread is a ClickUp-side feature and out of our hands.
 
 ## Not planned
@@ -128,7 +131,7 @@ Wanted, but no good approach yet.
   within seconds; the partial recording is kept and attached on the next open, which is the best the platform allows.
 - **Anything that sends data anywhere but ClickUp.** No analytics, no cloud processing, no AI summaries that need
   a third-party service. (The public API at `api.clickup.com` for everything; ClickUp's web-app hosts only for the
-  optional Clips tab.)
+  optional Clips and Brain tabs.)
 
 ## Distribution
 

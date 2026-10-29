@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installChrome } from '../helpers/chrome-stub.mjs';
 import { getPrefs } from '../../lib/storage.js';
-import { clipFormFields, parseHandshake, clipsHubUrl, clipError, clipsEligible, setClipsPrefs, clearShard } from '../../lib/clickup-clips.js';
+import { clipFormFields, clipsHubUrl, clipError, clipsEligible, setClipsPrefs } from '../../lib/clickup-clips.js';
 
 beforeEach(() => {
   installChrome();
@@ -10,14 +10,6 @@ beforeEach(() => {
 
 test('clipFormFields marks a workspace Clip the way the web app does', () => {
   assert.deepEqual(clipFormFields(37401264), { type: '7', parent: '37401264', permanent: 'true', clip: 'true' });
-});
-
-test('parseHandshake reads the per-workspace API host and rejects odd shapes', () => {
-  const json = { workspaceId: '1', shardId: 'prod-eu-west-1-3', appEnvironment: { apiUrlBase: 'https://frontdoor-prod-eu-west-1-3.clickup.com' } };
-  assert.equal(parseHandshake(json), 'https://frontdoor-prod-eu-west-1-3.clickup.com');
-  assert.equal(parseHandshake({}), null);
-  assert.equal(parseHandshake({ appEnvironment: { apiUrlBase: 'http://insecure' } }), null);
-  assert.equal(parseHandshake(null), null);
 });
 
 test('clipsHubUrl points at the workspace Clips Hub', () => {
@@ -33,12 +25,10 @@ test('clipsEligible accepts any video and explains refusals', () => {
   assert.equal(clipsEligible(undefined).ok, false);
 });
 
-test('setClipsPrefs merges into prefs.clips: autoSave and the shard cache leave each other alone', async () => {
-  await setClipsPrefs({ shards: { 42: { base: 'https://frontdoor-x.clickup.com', at: 1 } } });
+test('setClipsPrefs merges into prefs.clips without clobbering its other keys', async () => {
   await setClipsPrefs({ autoSave: true });
-  assert.deepEqual((await getPrefs()).clips, { autoSave: true, shards: { 42: { base: 'https://frontdoor-x.clickup.com', at: 1 } } });
-  await clearShard('42');
-  assert.deepEqual((await getPrefs()).clips, { autoSave: true, shards: {} });
+  await setClipsPrefs({ other: 1 });
+  assert.deepEqual((await getPrefs()).clips, { autoSave: true, other: 1 });
 });
 
 test('clipError turns private-API failures into actionable messages', () => {

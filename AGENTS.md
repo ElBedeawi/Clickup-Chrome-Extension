@@ -20,11 +20,13 @@ attaches them to a new or existing ClickUp task via the ClickUp API v2, using th
   only when blur is on (`lib/background-blur.js`), never at startup.
 - **No remote code.** MV3 and the Chrome Web Store forbid loading scripts from other sites. Bundle assets
   locally (e.g. the Cookie font in `fonts/`, OFL-licensed).
-- **Network goes only to ClickUp.** Everything uses the public API at `https://api.clickup.com`, with one
-  user-triggered exception: the Clips tab's "Save to Clips" (`lib/clickup-clips.js`, `sidepanel/clips-host.js`) talks to
-  ClickUp's web-app API (`id.app.clickup.com` for a session token, the workspace's `frontdoor-*.clickup.com` host
-  for the upload, found via the public shard handshake), because the public API cannot create Clips. Keep that
-  code isolated and failing soft; never route anything else through it. No analytics, tracking or new endpoints. If the data
+- **Network goes only to ClickUp.** Everything uses the public API at `https://api.clickup.com`, with two
+  user-triggered exceptions that the public API cannot do: the Clips tab's "Save to Clips" (`lib/clickup-clips.js`,
+  `sidepanel/clips-host.js`) and the Brain tab's chat with ClickUp Brain (`lib/clickup-brain.js`,
+  `sidepanel/brain-chat.js`). Both talk to ClickUp's web-app API through the shared session code
+  (`lib/clickup-webapp.js`, `sidepanel/webapp-session.js`): `id.app.clickup.com` for a session token, the
+  workspace's `frontdoor-*.clickup.com` host (found via the public shard handshake) for the rest. Keep that code
+  isolated and failing soft; never route anything else through it. No analytics, tracking or new endpoints. If the data
   handled changes, update `docs/privacy-policy.html` and the data-usage answers in `store/listing.md`.
   **The browser enforces it:** the manifest CSP is `script-src 'self' 'wasm-unsafe-eval'; object-src 'self';
   connect-src 'self' data: blob: https://*.clickup.com` (a unit test pins it). Any new host needs a CSP change, and
@@ -47,7 +49,9 @@ attaches them to a new or existing ClickUp task via the ClickUp API v2, using th
 ```
 sidepanel/  UI. sidepanel.js (form, uploads, wiring, recorder host selection), recorder-card.js ("Record clip"
             card), bubble-stage.js (camera bubble position/size control, used in the card and the recording
-            strip), details.js ("More details"), menu.js (custom dropdowns)
+            strip), details.js ("More details"), menu.js (custom dropdowns), brain-chat.js (the Brain tab),
+            webapp-session.js (web-app token minted in an app.clickup.com tab, cached per workspace in memory;
+            used by clips-host.js and brain-chat.js)
 background.js   classic script (Chrome: service worker; Firefox: event page). Opens the panel / toggles the
                 sidebar on icon click; stores the recording state its host reports and sets the badge ('…' countdown,
                 REC, II paused); on Chrome drives the offscreen recorder
@@ -67,7 +71,10 @@ lib/            clickup-api.js (API client, 429 retry, XHR uploads for progress)
                 blurred until a mask exists, camera left out if it can't start) + blur-math.js (its pure helpers),
                 platform.js (Chrome/Firefox detection and wording), screenshot.js (tab/area capture + injected
                 area overlay), attachments-db.js (IndexedDB), storage.js, geometry.js (pure helpers, incl. the
-                bubble placement), icons.js, links.js
+                bubble placement), icons.js, links.js, clickup-webapp.js (web-app token mint + shard lookup),
+                clickup-clips.js, clickup-brain.js (Brain over the web-app API: a question is a comment in the
+                user's ASK_AI chat room, Brain answers in its thread; polled, not streamed), quill-render.js
+                (ClickUp rich-text ops → DOM nodes, for Brain's answers; never innerHTML)
 vendor/         mediapipe/: the vendored MediaPipe files (see Hard rules), VENDOR.json (sources + sha256), LICENSE
 scripts/lib/    firefox-manifest.mjs (Chrome manifest → Firefox manifest), headless.mjs (Chrome via CDP, Firefox via
                 WebDriver BiDi, same openPage() contract)
@@ -94,13 +101,14 @@ the chunks already on disk are turned into an attachment by `recoverInterruptedR
 | `rec:ping` / `rec:stop` (`target: 'host'`) | sidebar → recording sidebar | Firefox: "is anyone recording?" (answered while counting down, recording or paused) / stop it from another window |
 
 **State**
-- `chrome.storage.local`: `clickupToken`; `prefs` = `{ mode, last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}, countdown, blur}, clips: {autoSave, shards}, viewer: {speed} }`
-  (`mode` is the destination tab used last, `new|existing|clips`; `camera` is `'none'` or a device id; `bubble.x/y`
+- `chrome.storage.local`: `clickupToken`; `prefs` = `{ mode, last: {workspace, 'space:<team>', 'folder:<space>', 'list:<space>/<folder>'}, recorder: {source, resolution, mic, camera, bubble: {x, y, size}, countdown, blur}, clips: {autoSave}, webapp: {shards}, viewer: {speed} }`
+  (`mode` is the tab used last, `new|existing|clips|brain`; `camera` is `'none'` or a device id; `bubble.x/y`
   are 0–1 fractions of the area the bubble may occupy, so the corners are exactly 0/1 pairs; `size` is `sm|md|lg`;
   `countdown` is the "3-second countdown" checkbox, on unless `false`, and is written with the rest of `recorder` by
   `recorder-card.js`; `blur` is the camera bubble's background blur, `none|medium|high` (default `none`; the card
-  resets it to `none` if the segmenter can't load on this device); `clips.autoSave` is the "Save to Clips when recording stops" toggle and `clips.shards` the
-  per-workspace API host cache, written only through `setClipsPrefs()` because `setPrefs` merges one level deep;
+  resets it to `none` if the segmenter can't load on this device); `clips.autoSave` is the "Save to Clips when recording stops" toggle (written through `setClipsPrefs()`) and
+  `webapp.shards` the per-workspace web-app API host cache (written through `setWebappPrefs()`), both because
+  `setPrefs` merges one level deep;
   `viewer.speed` is the viewer tab's last playback speed, `1|1.5|2`).
 - `chrome.storage.session`: `recording` while recording, the panel mirrors it: `{id, startedAt, camera, mic, pausedAt,
   pausedMs, micMuted, blur}` as reported by the recorder's host (`startedAt` is in the future during the countdown;
@@ -168,7 +176,8 @@ files and `.hyperframes/` are git-ignored.
 
 Headless scripts find Chrome/Edge and Firefox automatically (set `CHROME=/path` / `FIREFOX=/path` otherwise). Demo
 pages: any URL with `?demo=<scene>` gets `store/src/demo-shared.js` + `demo-stub.js` injected, which fake `chrome.*`
-and the ClickUp API (scenes: `new`, `details`, `existing`, `clips`, `menu&menu=<source|resolution|mic|shot>`, `editor`);
+and the ClickUp API (scenes: `new`, `details`, `existing`, `clips`, `brain` (a chat about a task; `&ask=0` for the
+empty tab with the task chip), `menu&menu=<source|resolution|mic|shot>`, `editor`);
 add `&browser=firefox` to fake Firefox's `chrome.sidebarAction` and get the sidebar variant of the UI, and
 `&rec=paused` / `&rec=countdown` to `existing` for the other recording-strip states, `&cam=1` for a fake camera with
 camera/mic access granted (the bubble preview runs, blur included), and `&open=camera-check` to open the Camera check

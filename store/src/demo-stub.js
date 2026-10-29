@@ -81,6 +81,10 @@
       openOptionsPage() {},
     },
     permissions: { contains: async () => true },
+    // The web-app token mint (sidepanel/webapp-session.js) runs mintTokenInPage in a ClickUp tab.
+    scripting: {
+      executeScript: async ({ args = [] }) => [{ result: { ok: true, token: 'demo-session', workspaceId: String(args[0] || '1'), expiresAt: now + 3_600_000 } }],
+    },
     // What lib/platform.js sniffs: Chrome has a side panel + offscreen documents, Firefox a sidebar.
     ...(browser === 'firefox' ? { sidebarAction: { toggle() {}, open() {} } } : { sidePanel: {}, offscreen: {} }),
   };
@@ -172,14 +176,67 @@
       ],
     },
     '/space/10/tag': { tags: [{ name: 'checkout', tag_bg: '#f76b15' }, { name: 'frontend', tag_bg: '#7b68ee' }, { name: 'regression', tag_bg: '#e5484d' }] },
-    '/task/86c1x2y3z': { id: '86c1x2y3z', name: 'Pay button overlaps the order summary', url: 'https://app.clickup.com/t/86c1x2y3z' },
+    '/task/86c1x2y3z': { id: '86c1x2y3z', name: 'Pay button overlaps the order summary', url: 'https://app.clickup.com/t/86c1x2y3z', team_id: '1' },
+    '/shard/v1/handshake/1': { appEnvironment: { apiUrlBase: 'https://frontdoor-demo.clickup.com' } },
   };
+
+  // ClickUp Brain over the web-app API (lib/clickup-brain.js): the ASK_AI room, questions posted as
+  // comments, Brain's answer (after one empty poll, with a progress step) in the thread.
+  const BRAIN_REPLY = [
+    { type: 'task_mention', task_mention: { task_id: '86c1x2y3z', team_id: '1' }, text: 'Pay button overlaps the order summary' },
+    { text: ' is ', attributes: {} },
+    { text: 'in review', attributes: { bold: true } },
+    { text: '. Before it can close:', attributes: {} },
+    { text: '\n', attributes: {} },
+    { text: 'Check the fix on Safari: only Chrome and Edge were tested', attributes: {} },
+    { text: '\n', attributes: { list: 'bullet' } },
+    { text: 'Sara Ahmed still has to review the ', attributes: {} },
+    { text: 'checkout.css', attributes: { code: true } },
+    { text: ' change', attributes: {} },
+    { text: '\n', attributes: { list: 'bullet' } },
+    { text: 'Omar Khaled saw the same overlap on the cart page; it may need its own task.', attributes: {} },
+    { text: '\n', attributes: {} },
+  ];
+  const brain = { questions: [], polls: 0 };
+  function brainApi(url, init) {
+    const path = url.pathname;
+    if (path === '/chat/v1/workspaces/1/chat/rooms/delta/0') {
+      return { rooms: [{ status: 'found', data: { id: 'demo-ask-ai', type: 'ASK_AI', members: ['-4', '11'] } }] };
+    }
+    if (/\/comments\/(view|comment)\//.test(path)) {
+      const id = String(9000 + brain.questions.length);
+      brain.questions.push(id);
+      brain.polls = 0;
+      return { id: Number(id) };
+    }
+    const invoke = brain.questions.at(-1);
+    if (path.endsWith('/comments/bulk')) {
+      return { comments: [{ data: { id: invoke, extra: { interaction_log: { '-4': [{ displayText: 'Reading the task' }] } } } }] };
+    }
+    if (path.endsWith('/comments/delta/0')) {
+      if (brain.polls++ < 1) return { comments: [] };
+      const replies = brain.questions.map((q, i) => ({
+        data: {
+          id: `r${q}`,
+          userid: -4,
+          comment_type: 'ai',
+          text_content: 'Answer',
+          comment: i ? [{ text: 'Yes: the cart page uses the same summary card component.', attributes: {} }, { text: '\n', attributes: {} }] : BRAIN_REPLY,
+          extra: { triggered_on: { externalID: `comment:${q}` }, conversation_id: '7000000000000000001' },
+        },
+      }));
+      return { comments: replies };
+    }
+    return {};
+  }
+
   const realFetch = window.fetch.bind(window);
   window.fetch = async (input, init) => {
     const url = new URL(typeof input === 'string' ? input : input.url);
+    const json = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.hostname === 'frontdoor-demo.clickup.com') return json(brainApi(url, init));
     if (url.hostname !== 'api.clickup.com') return realFetch(input, init);
-    const body = API[url.pathname.replace('/api/v2', '')] ?? {};
-    return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return json(API[url.pathname.replace('/api/v2', '')] ?? {});
   };
 
   // ---------------------------------------------------------------------------
@@ -274,6 +331,20 @@
       const video = new File([await DemoShared.mockVideo()], 'recording-2026-10-06-14-31.webm', { type: 'video/webm' });
       await addAttachments([video]);
       await sleep(600); // let the video preview decode its first frame
+      window.scrollTo(0, 0);
+    },
+
+    // &ask=0: just the empty Brain tab with the task offered (no question asked).
+    async brain() {
+      await until(() => $('sel-list').value === '1000');
+      setValue('task-ref', 'https://app.clickup.com/t/86c1x2y3z'); // as if detected from the current tab
+      $('tab-brain').click(); // looks the task up and offers it as context
+      await until(() => !$('brain-task').hidden);
+      if (params.get('ask') === '0') return;
+      $('brain-task').click();
+      setValue('brain-input', "What's left before we can close this bug?");
+      $('brain-send').click();
+      await until(() => document.querySelector('.brain-msg.brain .brain-body'));
       window.scrollTo(0, 0);
     },
 

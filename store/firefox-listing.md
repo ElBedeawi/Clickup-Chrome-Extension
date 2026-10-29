@@ -35,7 +35,7 @@ Record your screen or capture and annotate screenshots, then attach them to a ne
 - "Keep recording with the side panel closed — a REC badge shows it's running" →
   "Keep the sidebar open while recording — a REC badge shows it's running, and Stop in the sidebar ends
   the clip. If the sidebar is closed, what was recorded so far is kept."
-- "Needs you signed in to ClickUp in this browser" (Save to Clips) → "Needs you signed in to ClickUp in Firefox"
+- "Needs you signed in to ClickUp in this browser" (Save to Clips and Ask ClickUp Brain) → "Needs you signed in to ClickUp in Firefox"
 - After the first paragraph, add "Watch the 55-second tour: https://youtu.be/IYCYp5thhZE" (AMO has no promo-video
   field, so the store video is linked from the description instead)
 - Section headings are wrapped in `**…**` (AMO renders that as bold), and the closing credit also links the
@@ -65,8 +65,8 @@ followed by the link, and one sentence explaining the data-collection declaratio
 | Permission | Why |
 |---|---|
 | `storage` | Stores the user's ClickUp API token and last-used Workspace/Space/Folder/List locally, plus the current recording state and small signals between the extension's own pages (`storage.session`). |
-| `scripting` | "Screenshot → Select area": injects a temporary selection overlay into the current tab so the user can drag a rectangle; removed as soon as the selection is made. Only runs when the user picks "Select area". Also, on "Save to Clips" in the optional Clips tab, runs a small packaged function in an open app.clickup.com tab that asks ClickUp for a short-lived session token (using the user's existing sign-in) so the recording can be saved to their Clips Hub, which the public API cannot do. Nothing else is read from that page. |
-| `<all_urls>` (host permission) | The user can screenshot whatever page they are on: `tabs.captureVisibleTab` needs it for "Visible tab" / "Select area" and `scripting` needs it for the overlay. It is also what lets the sidebar read the active tab's URL (there is no `tabs` permission) to detect an open ClickUp task and prefill it, and it covers ClickUp's own hosts (`app.clickup.com`, `id.app.clickup.com`, the workspace's `*.clickup.com` API host) for the optional Clips tab ("Save to Clips"). Pages are captured only on an explicit click; nothing is read or sent otherwise. |
+| `scripting` | "Screenshot → Select area": injects a temporary selection overlay into the current tab so the user can drag a rectangle; removed as soon as the selection is made. Only runs when the user picks "Select area". Also, on "Save to Clips" in the optional Clips tab or a question in the optional Brain tab, runs a small packaged function in an open app.clickup.com tab that asks ClickUp for a short-lived session token (using the user's existing sign-in) so the recording can be saved to their Clips Hub, or the question sent to ClickUp Brain, which the public API cannot do. Nothing else is read from that page. |
+| `<all_urls>` (host permission) | The user can screenshot whatever page they are on: `tabs.captureVisibleTab` needs it for "Visible tab" / "Select area" and `scripting` needs it for the overlay. It is also what lets the sidebar read the active tab's URL (there is no `tabs` permission) to detect an open ClickUp task and prefill it, and it covers ClickUp's own hosts (`app.clickup.com`, `id.app.clickup.com`, the workspace's `*.clickup.com` API host) for the optional Clips tab ("Save to Clips") and Brain tab (chat with ClickUp Brain). Pages are captured only on an explicit click; nothing is read or sent otherwise. |
 | `https://api.clickup.com/*` (host permission) | All task creation, uploads, comments and workspace lookups go to the ClickUp API, authenticated with the user's own token. |
 
 Not requested on Firefox (Chrome-only): `sidePanel`, `offscreen`. The sidebar is declared with `sidebar_action`
@@ -80,7 +80,7 @@ Declared as **required**, matching the Chrome Web Store "data usage" answers and
 
 | Category | What it covers here |
 |---|---|
-| `authenticationInfo` | The user's ClickUp personal API token. Stored in the browser only and sent exclusively to `api.clickup.com` with each request. Also, only when they use the Clips tab ("Save to Clips"), a short-lived ClickUp session token obtained from their existing sign-in (kept in memory; sent only to ClickUp's own hosts). |
+| `authenticationInfo` | The user's ClickUp personal API token. Stored in the browser only and sent exclusively to `api.clickup.com` with each request. Also, only when they use the Clips tab ("Save to Clips") or the Brain tab, a short-lived ClickUp session token obtained from their existing sign-in (kept in memory; sent only to ClickUp's own hosts). |
 | `websiteContent` | Screen recordings and screenshots the user explicitly captures (a recording may include the user's own camera picture as a bubble, if they chose a camera), uploaded to the user's own ClickUp task when they press Create/Upload. |
 
 Nothing is sent to the developer or to any third party; there is no analytics, telemetry or remote code.

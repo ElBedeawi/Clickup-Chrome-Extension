@@ -12,6 +12,7 @@ import { createRecorderCard } from './recorder-card.js';
 import { createBubbleStage } from './bubble-stage.js';
 import { createActionMenu } from './menu.js';
 import { createRichEditor } from './rich-editor.js';
+import { createBrainChat } from './brain-chat.js';
 import { icon, hydrateIcons } from '../lib/icons.js';
 import { hydrateLinks } from '../lib/links.js';
 
@@ -27,6 +28,7 @@ const el = {
   panelExisting: $('panel-existing'),
   panelClips: $('panel-clips'),
   clipsAutoSave: $('clips-auto-save'),
+  panelBrain: $('panel-brain'),
   targetBanner: $('target-banner'),
 
   location: $('location'),
@@ -83,8 +85,10 @@ const el = {
 };
 
 const state = {
-  /** Where the files go (the tabs; remembered in prefs.mode): 'new' | 'existing' | 'clips' */
+  /** Where the files go (the tabs; remembered in prefs.mode): 'new' | 'existing' | 'clips', or the 'brain' chat */
   mode: 'new',
+  /** The task last found on the Existing tab ({ id, url, name, teamId }), offered to the Brain chat. */
+  existingTask: null,
   /** Clips tab: save a recording to the Clips Hub as soon as it stops (prefs.clips.autoSave). */
   clipsAutoSave: false,
   /**
@@ -123,6 +127,16 @@ const descEditor = createRichEditor(el.desc, {
   labelledBy: 'task-desc-label',
 });
 const details = createDetails({ getListId: () => el.list.value, getSpaceId: () => el.space.value });
+const brain = createBrainChat({
+  getWorkspace: () =>
+    el.workspace.value
+      ? {
+          id: el.workspace.value,
+          name: el.workspace.options[el.workspace.selectedIndex]?.text ?? '',
+          many: [...el.workspace.options].filter((o) => o.value).length > 1,
+        }
+      : null,
+});
 
 hydrateIcons();
 hydrateLinks();
@@ -346,6 +360,7 @@ el.list.addEventListener('change', async () => {
 const selectedName = (select) => (select.value ? select.options[select.selectedIndex]?.text ?? '' : '');
 
 function renderLocation() {
+  brain.refresh(); // the Brain tab names the workspace a new chat goes to
   const crumbs = [
     el.workspace.options.length > 1 ? selectedName(el.workspace) : '', // one workspace: not worth a crumb
     selectedName(el.space),
@@ -389,6 +404,9 @@ function setMode(mode, { persist = true } = {}) {
   el.panelNew.hidden = mode !== 'new';
   el.panelExisting.hidden = mode !== 'existing';
   el.panelClips.hidden = mode !== 'clips';
+  el.panelBrain.hidden = mode !== 'brain';
+  // Brain is a chat: no attachments or submit button (CSS), files dropped or pasted are ignored.
+  document.body.classList.toggle('brain-mode', mode === 'brain');
 
   // The Clips tab is video-only: no screenshots, Attach takes videos, and recording is the
   // main action, so its card is open from the start.
@@ -404,6 +422,11 @@ function setMode(mode, { persist = true } = {}) {
   showError('');
   render();
   if (persist) setPrefs({ mode }).catch(console.error);
+  if (persist && mode === 'brain') {
+    // Offer the task in the Existing field (typed there, or detected from the current tab).
+    if (!state.existingTask && el.taskRef.value.trim()) checkExistingTask();
+    brain.focus();
+  }
 }
 
 el.tabs.forEach((tab) => tab.addEventListener('click', () => setMode(tab.dataset.mode)));
@@ -424,11 +447,18 @@ function refFromInput() {
   return ref;
 }
 
+/** The task found on the Existing tab changed (null: none); the Brain chat can offer it as context. */
+function setExistingTask(task) {
+  state.existingTask = task ? { id: task.id, url: task.url, name: task.name, teamId: task.teamId ? String(task.teamId) : null } : null;
+  brain.setTask(state.existingTask);
+}
+
 async function checkExistingTask() {
   el.taskFound.hidden = true;
   const ref = refFromInput();
   if (!ref) {
     el.taskRefHint.textContent = 'Enter a ClickUp task URL or ID.';
+    setExistingTask(null);
     return null;
   }
   el.taskCheck.disabled = true;
@@ -437,9 +467,12 @@ async function checkExistingTask() {
     el.taskFound.textContent = `✓ ${task.name}`;
     el.taskFound.hidden = false;
     showError('');
-    return { id: task.id, url: task.url, name: task.name, customTaskIds: false, teamId: task.team_id };
+    const found = { id: task.id, url: task.url, name: task.name, customTaskIds: false, teamId: task.team_id };
+    setExistingTask(found);
+    return found;
   } catch (err) {
     showError(err.status === 404 || err.status === 400 ? `Task not found: ${err.message}` : err.message);
+    setExistingTask(null);
     return null;
   } finally {
     el.taskCheck.disabled = false;
@@ -464,12 +497,14 @@ async function detectTaskFromActiveTab() {
     el.taskRef.value = tab.url;
     state.autoRef = tab.url;
     el.taskRefHint.textContent = 'Detected from the current tab.';
-    if (state.mode === 'existing') checkExistingTask();
+    // The Brain tab offers the task too, so look it up there as well.
+    if (state.mode === 'existing' || state.mode === 'brain') checkExistingTask();
   } else if (current === state.autoRef) {
     el.taskRef.value = '';
     state.autoRef = '';
     el.taskRefHint.textContent = '';
     el.taskFound.hidden = true;
+    setExistingTask(null);
   }
 }
 
@@ -480,6 +515,7 @@ el.taskRef.addEventListener('keydown', (e) => {
 el.taskRef.addEventListener('input', () => {
   el.taskFound.hidden = true;
   el.taskRefHint.textContent = '';
+  setExistingTask(null);
 });
 
 chrome.tabs.onActivated.addListener(detectTaskFromActiveTab);
@@ -778,13 +814,13 @@ document.addEventListener('drop', (e) => {
   e.preventDefault();
   dragDepth = 0;
   document.body.classList.remove('dragging');
-  if (e.dataTransfer?.files.length && !state.busy) addFiles(e.dataTransfer.files);
+  if (e.dataTransfer?.files.length && !state.busy && state.mode !== 'brain') addFiles(e.dataTransfer.files);
 });
 
 // Paste screenshots anywhere in the panel. Text pastes into inputs are left alone.
 document.addEventListener('paste', (e) => {
   const files = [...(e.clipboardData?.files || [])];
-  if (!files.length || state.busy) return;
+  if (!files.length || state.busy || state.mode === 'brain') return;
   e.preventDefault();
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   addFiles(
@@ -1258,6 +1294,7 @@ async function uploadPending(target) {
 
 async function submit() {
   showError('');
+  if (state.mode === 'brain') return; // the chat has its own Ask button
   if (state.recording) return showError('Stop the recording first.');
   if (state.mode === 'clips') return submitClips();
 
@@ -1434,7 +1471,7 @@ applyRecordingState((await chrome.storage.session.get('recording')).recording);
   const prefs = await getPrefs();
   state.clipsAutoSave = !!prefs.clips?.autoSave;
   el.clipsAutoSave.checked = state.clipsAutoSave;
-  setMode(['existing', 'clips'].includes(prefs.mode) ? prefs.mode : 'new', { persist: false });
+  setMode(['existing', 'clips', 'brain'].includes(prefs.mode) ? prefs.mode : 'new', { persist: false });
 }
 if (isSidebar()) await recoverAfterSidebarClosed();
 await syncPending();

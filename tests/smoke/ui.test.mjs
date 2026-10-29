@@ -27,7 +27,7 @@ await withBrowser(async ({ openPage }) => {
           location: document.getElementById('location').open,
           path: document.getElementById('location-path').textContent,
           attachments: document.querySelectorAll('.attachment').length,
-          tabs: document.querySelectorAll('.tab').length, // New task / Existing task / Clips
+          tabs: document.querySelectorAll('.tab').length, // New task / Existing task / Clips / Brain
           clipsPanel: !document.getElementById('panel-clips').hidden,
           shotTool: !document.getElementById('tool-shot').hidden,
           cardOpen: !document.getElementById('record-card').hidden,
@@ -40,7 +40,7 @@ await withBrowser(async ({ openPage }) => {
         location: false,
         path: 'Web Shop › Storefront › Bugs',
         attachments: 2,
-        tabs: 3,
+        tabs: 4,
         clipsPanel: false,
         shotTool: true,
         cardOpen: true,
@@ -104,6 +104,76 @@ await withBrowser(async ({ openPage }) => {
       assert.equal(state.autoSave, true);
       assert.equal(state.last, '1', 'the other prefs survive the clips merge');
       assert.deepEqual(state.back, { submit: 'Create task & upload', title: 'Attachments', shotTool: true, mode: 'new' });
+    }));
+
+  await test('side panel: the Brain tab chats with ClickUp Brain, with the task as optional context', () =>
+    scene(openPage, '/sidepanel/sidepanel.html?demo=brain', async (page) => {
+      const state = JSON.parse(
+        await page.evaluate(`(async () => {
+          const $ = (id) => document.getElementById(id);
+          const shown = (node) => node.offsetParent !== null;
+          const until = async (fn) => {
+            for (let i = 0; i < 200 && !fn(); i++) await new Promise((r) => setTimeout(r, 50)); // Brain is polled every 1.5 s
+          };
+          const reply = document.querySelector('.brain-msg.brain .brain-body');
+          const before = {
+            selected: $('tab-brain').getAttribute('aria-selected'),
+            brainPanel: !$('panel-brain').hidden,
+            attachments: shown($('att-title')),
+            submit: shown($('btn-submit')),
+            mode: (await chrome.storage.local.get('prefs')).prefs.mode,
+            chip: $('brain-task').getAttribute('aria-pressed'),
+            chipName: $('brain-task-name').textContent,
+            user: document.querySelector('.brain-msg.user').textContent,
+            items: reply.querySelectorAll('ul > li').length,
+            taskLink: reply.querySelector('a').getAttribute('href'),
+            code: reply.querySelector('code').textContent,
+            open: $('brain-open').hidden ? null : $('brain-open').getAttribute('href'),
+            send: $('brain-send').textContent,
+            intro: $('brain-intro').hidden,
+          };
+          // A follow-up goes in the same thread, without the task unless the chip is on.
+          $('brain-task').click();
+          $('brain-input').value = 'Is the cart page affected too?';
+          $('brain-input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          await until(() => document.querySelectorAll('.brain-msg.brain .brain-body, .brain-msg.brain > p').length >= 2);
+          const msgs = [...document.querySelectorAll('.brain-msg')].map((m) => m.className.replace('brain-msg ', '') + ': ' + m.textContent.trim());
+          // New chat clears the screen.
+          $('brain-new').click();
+          const cleared = { log: $('brain-log').children.length, intro: $('brain-intro').hidden, open: $('brain-open').hidden };
+          // Files dropped on the Brain tab are ignored.
+          const dt = new DataTransfer();
+          dt.items.add(new File(['x'], 'shot.png', { type: 'image/png' }));
+          document.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+          await new Promise((r) => setTimeout(r, 50));
+          const dropped = document.querySelectorAll('.attachment').length;
+          $('tab-new').click();
+          const back = { submit: shown($('btn-submit')), attachments: shown($('att-title')), brainPanel: !$('panel-brain').hidden };
+          return JSON.stringify({ before, msgs, cleared, dropped, back });
+        })()`),
+      );
+      assert.deepEqual(state.before, {
+        selected: 'true',
+        brainPanel: true,
+        attachments: false,
+        submit: false,
+        mode: 'brain',
+        chip: 'true',
+        chipName: 'Pay button overlaps the order summary',
+        user: "What's left before we can close this bug?About: Pay button overlaps the order summary",
+        items: 2,
+        taskLink: 'https://app.clickup.com/t/1/86c1x2y3z',
+        code: 'checkout.css',
+        open: 'https://app.clickup.com/1/ai/brain?conversationId=7000000000000000001',
+        send: 'Ask',
+        intro: true,
+      });
+      assert.equal(state.msgs.length, 4);
+      assert.equal(state.msgs[2], 'user: Is the cart page affected too?');
+      assert.match(state.msgs[3], /^brain: Yes: the cart page/);
+      assert.deepEqual(state.cleared, { log: 0, intro: false, open: true });
+      assert.equal(state.dropped, 0);
+      assert.deepEqual(state.back, { submit: true, attachments: true, brainPanel: false });
     }));
 
   await test('side panel: the location row opens when no list is picked and collapses once one is', () =>
@@ -346,7 +416,17 @@ await withBrowser(async ({ openPage }) => {
   // the Clips scene has the three-tab row with its third tab selected and the explainer.
   // The paused and countdown strips have the widest labels and both icon buttons.
   // The Camera check dialog has to fit the narrowest panel too.
-  const LAYOUT_SCENES = ['new', 'existing&browser=firefox', 'existing&rec=paused', 'existing&rec=countdown', 'clips', 'new&open=camera-check'];
+  // The Brain scenes have the four-tab row with its last tab selected, the task chip, and a chat.
+  const LAYOUT_SCENES = [
+    'new',
+    'existing&browser=firefox',
+    'existing&rec=paused',
+    'existing&rec=countdown',
+    'clips',
+    'new&open=camera-check',
+    'brain',
+    'brain&ask=0',
+  ];
   for (const font of ['system', 'wide (Verdana)']) {
     for (const demo of LAYOUT_SCENES) {
     await test(`side panel: nothing overflows or gets clipped at narrow widths — ${font} font, ${demo}`, async () => {
@@ -372,7 +452,7 @@ await withBrowser(async ({ openPage }) => {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, #rec-time, .rec-ctl, #btn-stop, .rc-countdown, .rc-icon-btn, #camera-check, .cc-stage, .cc-seg, .cc-foot, .rte, .rte-btn, .rte-block')]
+        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, #rec-time, .rec-ctl, #btn-stop, .rc-countdown, .rc-icon-btn, #camera-check, .cc-stage, .cc-seg, .cc-foot, .rte, .rte-btn, .rte-block, #panel-brain, .brain-intro, .brain-msg, .brain-body > *, .brain-task, .brain-actions > *, #brain-input')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)

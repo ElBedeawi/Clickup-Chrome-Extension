@@ -195,6 +195,11 @@ button.danger:hover:not(:disabled) { background: var(--danger); filter: brightne
   .tab { padding: 6px 4px; font-size: 12px; }
   .tab-label-extra { display: none; }
 }
+/* Four short labels in ~230px with a wide font: tighten further. */
+@container (max-width: 250px) {
+  .tabs { gap: 2px; }
+  .tab { padding: 6px 2px; font-size: 11.5px; }
+}
 
 /* ---- Clips tab ---- */
 .clips-intro { display: flex; gap: 7px; align-items: flex-start; margin: 10px 0 8px; }
@@ -202,6 +207,81 @@ button.danger:hover:not(:disabled) { background: var(--danger); filter: brightne
 .clips-intro > span:last-child { min-width: 0; }
 .clips-auto { margin: 0 0 4px; font-size: 12px; }
 .clips-auto input { margin: 0; }
+
+/* ---- Brain tab ---- */
+/* A chat, not an upload: no attachments (a running recording's strip stays) and no submit button. */
+body.brain-mode #attachments:not(:has(> #recording:not([hidden]))),
+body.brain-mode #attachments > :not(#recording),
+body.brain-mode #btn-submit,
+body.brain-mode #error,
+body.brain-mode.dragging::after { display: none; }
+.brain-intro { display: flex; gap: 7px; align-items: flex-start; margin: 10px 0 8px; }
+.brain-intro .brain-icon { display: grid; flex: none; margin-top: 1px; color: var(--accent); }
+.brain-intro > span:last-child { min-width: 0; }
+.brain-log { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.brain-log:empty { display: none; }
+.brain-msg {
+  min-width: 0;
+  max-width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+.brain-msg p { margin: 0 0 6px; }
+.brain-msg p:last-child { margin-bottom: 0; }
+.brain-msg.user { align-self: flex-end; max-width: 88%; background: var(--info-bg); color: var(--info-text); white-space: pre-wrap; }
+.brain-msg.user .brain-about { font-size: 11.5px; opacity: 0.8; white-space: normal; }
+.brain-msg.brain { align-self: stretch; background: var(--surface); }
+.brain-msg.pending { color: var(--muted); font-style: italic; }
+.brain-msg.failed { align-self: stretch; background: var(--error-bg); color: var(--error-text); }
+.brain-body > :first-child { margin-top: 0; }
+.brain-body > :last-child { margin-bottom: 0; }
+.brain-body h4 { margin: 8px 0 4px; font-size: 13px; }
+.brain-body ul, .brain-body ol { margin: 4px 0 6px; padding-left: 20px; }
+.brain-body li[data-checked="true"] { text-decoration: line-through; opacity: 0.75; }
+.brain-body blockquote { margin: 4px 0 6px; padding-left: 8px; border-left: 3px solid var(--border); color: var(--muted); }
+.brain-body pre {
+  margin: 4px 0 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow-x: auto; /* code keeps its lines; only the block scrolls */
+  overflow-wrap: normal;
+  font-size: 12px;
+}
+.brain-body code { overflow-wrap: anywhere; }
+.brain-compose { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.brain-task {
+  align-self: flex-start;
+  max-width: 100%;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+}
+.brain-task:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+.brain-task-icon { display: none; flex: none; }
+.brain-task[aria-pressed="true"] {
+  color: var(--info-text);
+  background: var(--info-bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.brain-task[aria-pressed="true"]:hover:not(:disabled) { background: var(--info-bg); }
+.brain-task[aria-pressed="true"] .brain-task-icon { display: grid; }
+.brain-task-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brain-actions { display: flex; align-items: center; gap: 8px; }
+.brain-actions button { flex: none; white-space: nowrap; }
+.brain-actions #brain-send { margin-left: auto; min-width: 64px; }
+.brain-open { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brain-where { margin: 0; }
 
 .panel { margin-top: 4px; }
 

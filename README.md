@@ -33,7 +33,8 @@ The official ClickUp Chrome extension can't attach videos to tasks. This one can
 - **Create a task** with title, a rich-text description (headings, bold, lists, checklists, links, code), status, priority, plus optional assignees, due date, tags and custom fields.
 - **Add to an existing task:** paste a link or open the task and it's detected automatically, with an optional comment.
 - **Save to Clips:** a third tab saves recordings to your workspace's Clips Hub, with ClickUp's automatic transcript, optionally as soon as the recording stops. The public API can't create Clips, so this tab talks to ClickUp's own web-app API and needs you to be signed in to ClickUp in the browser; it is undocumented and may stop working after a ClickUp update. The task upload never depends on it.
-- **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://clickup-uploader.macawshub.com/privacy-policy.html)). Everything goes to ClickUp's API; only the Clips tab also talks to ClickUp's web-app hosts.
+- **Ask ClickUp Brain:** a fourth tab chats with ClickUp Brain, ClickUp's own AI, optionally about the task you're looking at. Like the Clips tab it uses ClickUp's own web-app API (the public API has no Brain access), needs you signed in to ClickUp in the browser, and may stop working after a ClickUp update.
+- **Private by design:** uses your own ClickUp API token, stored only in your browser. No servers, no analytics, no tracking ([privacy policy](https://clickup-uploader.macawshub.com/privacy-policy.html)). Everything goes to ClickUp's API; only the Clips and Brain tabs also talk to ClickUp's web-app hosts.
 
 ## Supported browsers
 
@@ -91,6 +92,8 @@ The token is kept in the extension's local storage on this machine only. **Revok
 **Existing task:** open a task in ClickUp and the panel picks it up from the current tab. You can also paste a task URL, a task ID, or a custom ID like `DEV-123`, then press **Check**. **Add a comment** (collapsed) posts a comment after the upload. You can also post just a comment.
 
 **Clips:** no task at all. Record (or attach) videos and press **Save to Clips** to put them in your workspace's Clips Hub, where ClickUp transcribes them. Tick **Save to Clips when recording stops** and a recording you start in this tab is saved the moment you stop it. This tab is video-only (the Screenshot tool is hidden and Attach takes videos), needs you signed in to ClickUp in this browser (a ClickUp tab is opened in the background if none is open). The tab you used last is the one the panel opens on.
+
+**Brain:** ask ClickUp Brain anything about your work and press **Ask** (or Enter; Shift+Enter for a new line). Follow-up questions continue the same chat; **New chat** starts over, and **Open in ClickUp** continues it in ClickUp, where it is also listed under AI Chats. When a task is found on the Existing task tab (or detected from the page you're on), click the **About: …** chip to include it: Brain then reads that task with your question. A new chat goes to the workspace selected on the New task tab, or the attached task's workspace. Answers arrive when Brain is done (with its progress shown meanwhile); **Stop** stops waiting, though Brain may still finish the answer in ClickUp. Needs you signed in to ClickUp in this browser and Brain available in your workspace. Note that Brain can act on your workspace (for example, edit a task) if you ask it to, just as in ClickUp.
 
 **Attachments**: a toolbar with three tools.
 - **🎥 Record clip** opens the recording card:
