@@ -1,0 +1,402 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+  <style>
+    @font-face { font-family: "Bricolage Grotesque"; src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2"); font-weight: 200 800; font-display: block; }
+    @font-face { font-family: "UI Sans"; src: local("Segoe UI"); font-weight: 400; }
+    @font-face { font-family: "UI Sans"; src: local("Segoe UI Semibold"); font-weight: 600; }
+    @font-face { font-family: "UI Sans"; src: local("Segoe UI Bold"); font-weight: 700; }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "UI Sans", sans-serif;
+      color: #1F1F29;
+      --accent: #7B68EE;
+    }
+    #take-ground { position: absolute; inset: 0; background: #F4F2FD; }
+
+    /* camera: everything in window coordinates (1920×1080), moved with x/y/scale from the top-left */
+    #take-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #take-win {
+      position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+      border-radius: 18px; overflow: hidden; background: #FFFFFF;
+      box-shadow: 0 30px 80px rgba(31, 31, 41, 0.18), 0 0 0 1px rgba(31, 31, 41, 0.08);
+    }
+
+    /* tab strip */
+    #take-tabs { position: absolute; left: 0; top: 0; width: 1920px; height: 50px; background: #ECEBF1; }
+    #take-tab-pill {
+      position: absolute; left: 12px; top: 8px; width: 240px; height: 42px;
+      background: #FFFFFF; border-radius: 10px 10px 0 0;
+    }
+    .take-tab {
+      position: absolute; top: 8px; width: 240px; height: 42px; padding: 0 16px;
+      display: flex; align-items: center; gap: 10px; font-size: 17px; color: #3B3B48;
+      white-space: nowrap; overflow: hidden; transform-origin: 0 50%;
+    }
+    .take-tab span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .take-fav { flex: none; width: 18px; height: 18px; border-radius: 5px; background: #B9B8C6; }
+    .take-fav.acme { background: #111827; color: #fff; font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+    .take-tab::after { content: ""; position: absolute; right: 0; top: 11px; width: 1px; height: 20px; background: #CFCEDA; }
+
+    /* toolbar */
+    #take-toolbar { position: absolute; left: 0; top: 50px; width: 1920px; height: 56px; background: #FFFFFF; border-bottom: 1px solid #E4E3EC; }
+    #take-nav { position: absolute; left: 22px; top: 14px; display: flex; gap: 22px; }
+    #take-nav svg { width: 28px; height: 28px; display: block; }
+    #take-url {
+      position: absolute; left: 160px; top: 9px; width: 1560px; height: 38px; border-radius: 19px;
+      background: #F1F0F5; display: flex; align-items: center; gap: 12px; padding-left: 18px;
+      font-size: 19px; color: #3B3B48;
+    }
+    #take-url b { font-weight: 400; color: #1F1F29; }
+    #take-ext { position: absolute; left: 1862px; top: 60px; width: 36px; height: 36px; }
+    #take-ext img { width: 36px; height: 36px; display: block; }
+    #take-avatar { position: absolute; left: 1800px; top: 64px; width: 28px; height: 28px; border-radius: 50%; background: #D4D2E2; }
+
+    /* page + side panel */
+    #take-content { position: absolute; left: 0; top: 106px; width: 1920px; height: 974px; overflow: hidden; background: #F4F6FB; }
+    #take-page { position: absolute; left: 0; top: 0; width: 1920px; height: 1200px; }
+    #take-page img { width: 1920px; height: 1200px; display: block; }
+
+    .take-skel { position: absolute; left: 0; top: 0; width: 1920px; height: 974px; background: #FFFFFF; opacity: 0; overflow: hidden; }
+    .take-skel i { position: absolute; display: block; background: #E7E6EE; border-radius: 8px; }
+    #take-thread { position: absolute; left: 0; top: 0; width: 1920px; }
+
+    #take-panel {
+      position: absolute; left: 1360px; top: 0; width: 560px; height: 974px; overflow: hidden;
+      background: #FFFFFF; border-left: 1px solid #E2E2E8; box-shadow: -14px 0 40px rgba(15, 23, 42, 0.10);
+    }
+    .take-p { position: absolute; left: 0; top: 0; width: 560px; height: 1260px; opacity: 0; }
+    .take-type { position: absolute; left: 0; top: 439.6px; width: 560px; height: 198.8px; opacity: 0; }
+    #take-tail { position: absolute; left: 0; top: 414.4px; width: 560px; height: 845.6px; opacity: 0; }
+    #take-stream { position: absolute; inset: 0; opacity: 0; }
+    .take-cover { position: absolute; left: 0; width: 560px; background: #FFFFFF; transform-origin: 100% 50%; }
+    .take-mark {
+      position: absolute; background: rgba(123, 104, 238, 0.30); mix-blend-mode: multiply;
+      border-radius: 4px; transform-origin: 0 50%; opacity: 0;
+    }
+
+    /* screen-space layers */
+    #take-toast {
+      position: absolute; left: 1384px; top: 132px; width: 496px; padding: 22px 24px 24px;
+      background: #FFFFFF; border-radius: 16px; box-shadow: 0 18px 50px rgba(31, 31, 41, 0.20), 0 0 0 1px rgba(31, 31, 41, 0.06);
+      display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 16px; row-gap: 6px;
+    }
+    #take-toast-av { grid-row: 1 / 3; width: 52px; height: 52px; border-radius: 50%; background: #B45309; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 20px; }
+    #take-toast-head { display: flex; align-items: baseline; gap: 8px; font-size: 20px; min-width: 0; }
+    #take-toast-head b { font-weight: 700; }
+    #take-toast-head em { font-style: normal; color: #6B6B7B; }
+    #take-toast-time { margin-left: auto; position: relative; width: 84px; height: 24px; color: #6B6B7B; font-size: 18px; }
+    #take-toast-time span { position: absolute; right: 0; top: 0; white-space: nowrap; }
+    #take-toast-msg { font-size: 24px; line-height: 1.3; }
+
+    .take-title {
+      position: absolute; left: 0; top: 72px; width: 1920px; height: 100px; text-align: center;
+      font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 76px; line-height: 100px; letter-spacing: -0.02em;
+    }
+    .take-title span { display: inline-block; opacity: 0; }
+    .take-title .acc { color: var(--accent); }
+
+    #take-cursor { position: absolute; left: 0; top: 0; width: 36px; height: 54px; transform-origin: 0 0; }
+    #take-cursor svg { display: block; width: 36px; height: 54px; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.25)); }
+  </style>
+
+  <div data-hf-id="hf-h5vc" id="root" data-composition-id="take" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-23z6" id="take-ground" class="clip" data-start="0" data-duration="32.6" data-track-index="0"></div>
+
+    <div data-hf-id="hf-tsee" id="take-stage" class="clip" data-start="0" data-duration="32.6" data-track-index="1">
+      <div data-hf-id="hf-530b" id="take-cam" data-layout-allow-overflow>
+        <div data-hf-id="hf-vw95" id="take-win">
+          <div data-hf-id="hf-h4qp" id="take-tabs">
+            <div data-hf-id="hf-tsv2" id="take-tab-pill"></div>
+            <div data-hf-id="hf-ldma" class="take-tab" id="take-tab-1" style="left:12px"><i data-hf-id="hf-yqlo" class="take-fav acme">a</i><span data-hf-id="hf-qbse">Checkout · Acme</span></div>
+            <div data-hf-id="hf-p2sv" class="take-tab" id="take-tab-2" style="left:256px"><i data-hf-id="hf-xued" class="take-fav"></i><span data-hf-id="hf-o1ed">Search · ClickUp</span></div>
+            <div data-hf-id="hf-6ax2" class="take-tab" id="take-tab-3" style="left:500px"><i data-hf-id="hf-860p" class="take-fav"></i><span data-hf-id="hf-6ykq">Pay button overlaps the order summary</span></div>
+            <div data-hf-id="hf-b92d" class="take-tab" id="take-tab-4" style="left:744px"><i data-hf-id="hf-9cxs" class="take-fav"></i><span data-hf-id="hf-b0hf">Checkout redesign spec</span></div>
+            <div data-hf-id="hf-93qc" class="take-tab" id="take-tab-5" style="left:988px"><i data-hf-id="hf-8ymr" class="take-fav"></i><span data-hf-id="hf-qf7u">QA release checklist</span></div>
+            <div data-hf-id="hf-mq0u" class="take-tab" id="take-tab-6" style="left:1232px"><i data-hf-id="hf-6z3m" class="take-fav"></i><span data-hf-id="hf-l5io">Release notes draft</span></div>
+          </div>
+          <div data-hf-id="hf-j37q" id="take-toolbar">
+            <div data-hf-id="hf-bln0" id="take-nav">
+              <svg data-hf-id="hf-ulu9" viewBox="0 0 24 24"><path data-hf-id="hf-kn2r" d="M15 5l-7 7 7 7" fill="none" stroke="#5B5B6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg data-hf-id="hf-1tol" viewBox="0 0 24 24"><path data-hf-id="hf-p5xe" d="M9 5l7 7-7 7" fill="none" stroke="#B9B8C6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg data-hf-id="hf-30lo" viewBox="0 0 24 24"><path data-hf-id="hf-j5me" d="M19 12a7 7 0 1 1-2.05-4.95M19 4v4h-4" fill="none" stroke="#5B5B6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div data-hf-id="hf-247o" id="take-url">
+              <svg data-hf-id="hf-sm8k" viewBox="0 0 24 24" width="18" height="18"><path data-hf-id="hf-ttlf" d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="#5B5B6B" stroke-width="2" stroke-linejoin="round"/></svg>
+              <b data-hf-id="hf-ak8z">shop.acme.dev/checkout</b>
+            </div>
+          </div>
+          <div data-hf-id="hf-hqk6" id="take-avatar"></div>
+          <div data-hf-id="hf-vi5e" id="take-ext"><img data-hf-id="hf-eivr" src="assets/brand-icon.svg" alt="" /></div>
+
+          <div data-hf-id="hf-ec04" id="take-content">
+            <div data-hf-id="hf-6seo" id="take-page"><img data-hf-id="hf-fbpy" src="assets/ui/page-checkout.png" alt="" /></div>
+
+            <!-- generic stand-ins for "other tabs" (search results, a task, a doc): grey blocks, no product UI -->
+            <div data-hf-id="hf-au0d" class="take-skel" id="take-skel-search">
+              <i data-hf-id="hf-ufgk" style="left:120px;top:60px;width:760px;height:52px;border-radius:26px"></i>
+              <i data-hf-id="hf-0trd" style="left:120px;top:170px;width:980px;height:28px"></i><i data-hf-id="hf-m7m7" style="left:120px;top:212px;width:620px;height:20px"></i>
+              <i data-hf-id="hf-hrys" style="left:120px;top:290px;width:900px;height:28px"></i><i data-hf-id="hf-jkpl" style="left:120px;top:332px;width:540px;height:20px"></i>
+              <i data-hf-id="hf-txy8" style="left:120px;top:410px;width:1020px;height:28px"></i><i data-hf-id="hf-unlu" style="left:120px;top:452px;width:700px;height:20px"></i>
+              <i data-hf-id="hf-ljcm" style="left:120px;top:530px;width:860px;height:28px"></i><i data-hf-id="hf-954u" style="left:120px;top:572px;width:480px;height:20px"></i>
+            </div>
+            <div data-hf-id="hf-nfp5" class="take-skel" id="take-skel-doc">
+              <i data-hf-id="hf-v3gu" style="left:420px;top:70px;width:900px;height:56px"></i>
+              <i data-hf-id="hf-yrlr" style="left:420px;top:180px;width:1080px;height:20px"></i><i data-hf-id="hf-vmw3" style="left:420px;top:214px;width:1040px;height:20px"></i><i data-hf-id="hf-643q" style="left:420px;top:248px;width:760px;height:20px"></i>
+              <i data-hf-id="hf-1say" style="left:420px;top:316px;width:1080px;height:20px"></i><i data-hf-id="hf-qvms" style="left:420px;top:350px;width:980px;height:20px"></i><i data-hf-id="hf-40sv" style="left:420px;top:384px;width:1060px;height:20px"></i><i data-hf-id="hf-ruy3" style="left:420px;top:418px;width:540px;height:20px"></i>
+              <i data-hf-id="hf-zz1g" style="left:420px;top:486px;width:1000px;height:220px"></i>
+            </div>
+            <div data-hf-id="hf-swiq" class="take-skel" id="take-skel-task">
+              <div data-hf-id="hf-73vl" id="take-thread">
+                <i data-hf-id="hf-abzr" style="left:120px;top:60px;width:1100px;height:50px"></i>
+                <i data-hf-id="hf-8rct" style="left:120px;top:140px;width:180px;height:30px;border-radius:15px"></i><i data-hf-id="hf-mr5t" style="left:316px;top:140px;width:220px;height:30px;border-radius:15px"></i>
+                <i data-hf-id="hf-264j" style="left:120px;top:210px;width:1200px;height:18px"></i><i data-hf-id="hf-s6oq" style="left:120px;top:240px;width:980px;height:18px"></i>
+                <i data-hf-id="hf-34gh" style="left:120px;top:320px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-aola" style="left:184px;top:324px;width:260px;height:18px"></i><i data-hf-id="hf-ckjg" style="left:184px;top:354px;width:1040px;height:18px"></i><i data-hf-id="hf-qskh" style="left:184px;top:384px;width:760px;height:18px"></i>
+                <i data-hf-id="hf-uckw" style="left:120px;top:440px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-n1tv" style="left:184px;top:444px;width:220px;height:18px"></i><i data-hf-id="hf-t5ir" style="left:184px;top:474px;width:980px;height:18px"></i>
+                <i data-hf-id="hf-ymws" style="left:120px;top:530px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-ujn8" style="left:184px;top:534px;width:300px;height:18px"></i><i data-hf-id="hf-an1w" style="left:184px;top:564px;width:1100px;height:18px"></i><i data-hf-id="hf-jkks" style="left:184px;top:594px;width:900px;height:18px"></i><i data-hf-id="hf-mhdt" style="left:184px;top:624px;width:640px;height:18px"></i>
+                <i data-hf-id="hf-51b2" style="left:120px;top:680px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-yd13" style="left:184px;top:684px;width:240px;height:18px"></i><i data-hf-id="hf-iuix" style="left:184px;top:714px;width:860px;height:18px"></i>
+                <i data-hf-id="hf-9vb2" style="left:120px;top:770px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-huvz" style="left:184px;top:774px;width:280px;height:18px"></i><i data-hf-id="hf-ze3m" style="left:184px;top:804px;width:1060px;height:18px"></i><i data-hf-id="hf-3z37" style="left:184px;top:834px;width:720px;height:18px"></i>
+                <i data-hf-id="hf-na23" style="left:120px;top:890px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-nrxy" style="left:184px;top:894px;width:200px;height:18px"></i><i data-hf-id="hf-h5b9" style="left:184px;top:924px;width:1000px;height:18px"></i><i data-hf-id="hf-zuny" style="left:184px;top:954px;width:560px;height:18px"></i>
+                <i data-hf-id="hf-rgs2" style="left:120px;top:1010px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-71cd" style="left:184px;top:1014px;width:260px;height:18px"></i><i data-hf-id="hf-8ma4" style="left:184px;top:1044px;width:1120px;height:18px"></i><i data-hf-id="hf-ea2f" style="left:184px;top:1074px;width:840px;height:18px"></i>
+                <i data-hf-id="hf-a92d" style="left:120px;top:1130px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-g24x" style="left:184px;top:1134px;width:230px;height:18px"></i><i data-hf-id="hf-xq54" style="left:184px;top:1164px;width:940px;height:18px"></i>
+                <i data-hf-id="hf-bfjd" style="left:120px;top:1220px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-w6rx" style="left:184px;top:1224px;width:300px;height:18px"></i><i data-hf-id="hf-n0vw" style="left:184px;top:1254px;width:1080px;height:18px"></i><i data-hf-id="hf-6qef" style="left:184px;top:1284px;width:700px;height:18px"></i>
+                <i data-hf-id="hf-5ily" style="left:120px;top:1340px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-2bog" style="left:184px;top:1344px;width:250px;height:18px"></i><i data-hf-id="hf-rir5" style="left:184px;top:1374px;width:1000px;height:18px"></i>
+                <i data-hf-id="hf-d92s" style="left:120px;top:1430px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-nfnl" style="left:184px;top:1434px;width:280px;height:18px"></i><i data-hf-id="hf-3myo" style="left:184px;top:1464px;width:1100px;height:18px"></i><i data-hf-id="hf-iug7" style="left:184px;top:1494px;width:820px;height:18px"></i>
+                <i data-hf-id="hf-4rff" style="left:120px;top:1550px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-s174" style="left:184px;top:1554px;width:220px;height:18px"></i><i data-hf-id="hf-6l7s" style="left:184px;top:1584px;width:960px;height:18px"></i>
+                <i data-hf-id="hf-g07b" style="left:120px;top:1640px;width:44px;height:44px;border-radius:22px"></i><i data-hf-id="hf-2ivn" style="left:184px;top:1644px;width:300px;height:18px"></i><i data-hf-id="hf-9po4" style="left:184px;top:1674px;width:1060px;height:18px"></i><i data-hf-id="hf-pbrv" style="left:184px;top:1704px;width:600px;height:18px"></i>
+              </div>
+            </div>
+
+            <!-- the extension's side panel: real captures of the Brain² tab (demo data), 400 CSS px at 1.4× -->
+            <div data-hf-id="hf-gu6c" id="take-panel" data-hold>
+              <img data-hf-id="hf-ye3d" class="take-p" id="take-p01" src="assets/ui/p01-empty.png" alt="" />
+              <img data-hf-id="hf-sgb0" class="take-p" id="take-p02" src="assets/ui/p02-plus.png" alt="" />
+              <img data-hf-id="hf-6fuz" class="take-p" id="take-p02p" src="assets/ui/p02-plus-p.png" alt="" />
+              <img data-hf-id="hf-ubjb" class="take-p" id="take-p02pa" src="assets/ui/p02-plus-pa.png" alt="" />
+              <img data-hf-id="hf-fk03" class="take-p" id="take-p02pay" src="assets/ui/p02-plus-pay.png" alt="" />
+              <img data-hf-id="hf-cfyu" class="take-p" id="take-p03" src="assets/ui/p03-chip.png" alt="" />
+              <img data-hf-id="hf-r7jj" class="take-type" id="take-t01" src="assets/ui/type/type-01.png" alt="" />
+              <img data-hf-id="hf-kxjp" class="take-type" id="take-t02" src="assets/ui/type/type-02.png" alt="" />
+              <img data-hf-id="hf-fwwj" class="take-type" id="take-t03" src="assets/ui/type/type-03.png" alt="" />
+              <img data-hf-id="hf-5r1h" class="take-type" id="take-t04" src="assets/ui/type/type-04.png" alt="" />
+              <img data-hf-id="hf-mp1z" class="take-type" id="take-t05" src="assets/ui/type/type-05.png" alt="" />
+              <img data-hf-id="hf-fngt" class="take-type" id="take-t06" src="assets/ui/type/type-06.png" alt="" />
+              <img data-hf-id="hf-lyo3" class="take-type" id="take-t07" src="assets/ui/type/type-07.png" alt="" />
+              <img data-hf-id="hf-y17h" class="take-type" id="take-t08" src="assets/ui/type/type-08.png" alt="" />
+              <img data-hf-id="hf-910v" class="take-type" id="take-t09" src="assets/ui/type/type-09.png" alt="" />
+              <img data-hf-id="hf-kruv" class="take-type" id="take-t10" src="assets/ui/type/type-10.png" alt="" />
+              <img data-hf-id="hf-zqkp" class="take-type" id="take-t11" src="assets/ui/type/type-11.png" alt="" />
+              <img data-hf-id="hf-3t33" class="take-type" id="take-t12" src="assets/ui/type/type-12.png" alt="" />
+              <img data-hf-id="hf-dzet" class="take-type" id="take-t13" src="assets/ui/type/type-13.png" alt="" />
+              <img data-hf-id="hf-6g9j" class="take-type" id="take-t14" src="assets/ui/type/type-14.png" alt="" />
+              <img data-hf-id="hf-m44x" class="take-type" id="take-t15" src="assets/ui/type/type-15.png" alt="" />
+              <img data-hf-id="hf-pnxr" class="take-type" id="take-t16" src="assets/ui/type/type-16.png" alt="" />
+              <img data-hf-id="hf-b41h" class="take-type" id="take-t17" src="assets/ui/type/type-17.png" alt="" />
+              <img data-hf-id="hf-ul4n" class="take-type" id="take-t18" src="assets/ui/type/type-18.png" alt="" />
+              <img data-hf-id="hf-m4mh" class="take-type" id="take-t19" src="assets/ui/type/type-19.png" alt="" />
+              <img data-hf-id="hf-sd1x" class="take-type" id="take-t20" src="assets/ui/type/type-20.png" alt="" />
+              <img data-hf-id="hf-6q2v" class="take-type" id="take-t21" src="assets/ui/type/type-21.png" alt="" />
+              <img data-hf-id="hf-v0nu" class="take-p" id="take-p05" src="assets/ui/p05-reading.png" alt="" />
+              <img data-hf-id="hf-za1i" class="take-p" id="take-p06" src="assets/ui/p06-answer.png" alt="" />
+              <!-- streaming: white covers over the answer's lines (CSS y × 1.4), the "Reading" composer pushed down -->
+              <div data-hf-id="hf-4d3l" id="take-stream">
+                <div data-hf-id="hf-9l4n" class="take-cover" id="take-c1" style="top:373.8px;height:33.6px"></div>
+                <div data-hf-id="hf-cn3f" class="take-cover" id="take-c2" style="top:407.4px;height:25.2px"></div>
+                <div data-hf-id="hf-7ac9" class="take-cover" id="take-c3" style="top:438.2px;height:35px"></div>
+                <div data-hf-id="hf-tkd1" class="take-cover" id="take-c4" style="top:473.2px;height:26.6px"></div>
+                <div data-hf-id="hf-vyf5" class="take-cover" id="take-c5" style="top:499.8px;height:32.2px"></div>
+                <div data-hf-id="hf-xybn" class="take-cover" id="take-c6" style="top:532px;height:35px"></div>
+                <div data-hf-id="hf-6275" class="take-cover" id="take-c7" style="top:571.2px;height:35px"></div>
+                <div data-hf-id="hf-l7s5" class="take-cover" id="take-c8" style="top:606.2px;height:28px"></div>
+                <div data-hf-id="hf-33tf" class="take-cover" id="take-c9" style="top:637px;height:38px"></div>
+                <img data-hf-id="hf-2xtf" id="take-tail" src="assets/ui/p05-composer-tail.png" alt="" />
+              </div>
+              <!-- highlighter marks on the answer (VO: what's left · who has it · the cart page) -->
+              <div data-hf-id="hf-zvx5" class="take-mark" id="take-m1" style="left:46px;top:444px;width:198px;height:28px"></div>
+              <div data-hf-id="hf-nir5" class="take-mark" id="take-m2" style="left:48px;top:506px;width:112px;height:28px"></div>
+              <div data-hf-id="hf-lnz6" class="take-mark" id="take-m3" style="left:177px;top:577px;width:290px;height:28px"></div>
+              <img data-hf-id="hf-x630" class="take-p" id="take-p07" src="assets/ui/p07-plus.png" alt="" />
+              <div data-hf-id="hf-iqpr" class="take-mark" id="take-m4" style="left:20px;top:381px;width:520px;height:58px;border-radius:10px"></div>
+              <img data-hf-id="hf-lbv2" class="take-p" id="take-p08" src="assets/ui/p08-skills.png" alt="" />
+              <img data-hf-id="hf-mrz1" class="take-p" id="take-p09" src="assets/ui/p09-model.png" alt="" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-hf-id="hf-23li" id="take-toast">
+        <div data-hf-id="hf-qn7i" id="take-toast-av">LP</div>
+        <div data-hf-id="hf-bx1t" id="take-toast-head">
+          <b data-hf-id="hf-tf55">Lena Park</b><em data-hf-id="hf-zobz">· Product</em>
+          <div data-hf-id="hf-b1ms" id="take-toast-time"><span data-hf-id="hf-6w37" id="take-time-a">4:52 PM</span><span data-hf-id="hf-975s" id="take-time-b" style="opacity:0">5:07 PM</span></div>
+        </div>
+        <div data-hf-id="hf-oatc" id="take-toast-msg">Can we close the checkout bug before release?</div>
+      </div>
+
+      <div data-hf-id="hf-ov54" class="take-title" id="take-title-1"><span data-hf-id="hf-x7qe">Ask</span> <span data-hf-id="hf-57re" class="acc">Brain²</span> <span data-hf-id="hf-gw8v">beside</span> <span data-hf-id="hf-3tds">the</span> <span data-hf-id="hf-7ltl">bug</span></div>
+      <div data-hf-id="hf-xj0z" class="take-title" id="take-title-2"><span data-hf-id="hf-ixae">Your</span> <span data-hf-id="hf-83nm" class="acc">answer,</span> <span data-hf-id="hf-4yf3">beside</span> <span data-hf-id="hf-5u2g">the</span> <span data-hf-id="hf-itxp">bug</span></div>
+
+      <div data-hf-id="hf-qhjf" id="take-cursor">
+        <svg data-hf-id="hf-pbbs" viewBox="0 0 32 48"><path data-hf-id="hf-3a0z" d="M2 2 L2 38 L11 29.5 L17.5 44 L24 41 L17.8 26.8 L29.5 26.8 Z" fill="#111111" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var R = document.querySelector('[data-composition-id="take"]');
+      var $ = function (id) { return R.querySelector("#take-" + id); };
+      var tl = gsap.timeline({ paused: true });
+
+      /* ---------- camera ---------- */
+      var CAM = {
+        hook:   { scale: 1.8, x: 960 - 1150 * 1.8, y: 540 - 775 * 1.8 },
+        full:   { scale: 1, x: 0, y: 0 },
+        tabs:   { scale: 1.3, x: 0, y: 0 },
+        ground: { scale: 0.72, x: 269, y: 242 },
+        type:   { scale: 1.75, x: 960 - 1371 * 1.75, y: 540 - 500 * 1.75 },
+        answer: { scale: 1.75, x: 960 - 1371 * 1.75, y: 540 - 666 * 1.75 },
+        icon:   { scale: 6.61, x: 960 - 1880 * 6.61, y: 540 - 78 * 6.61 }
+      };
+      var cam = $("cam");
+      gsap.set(cam, { transformOrigin: "0 0" });
+      tl.set(cam, CAM.hook, 0);
+      function camTo(state, t, dur, ease) {
+        tl.to(cam, Object.assign({ duration: dur || 0.6, ease: ease || "power2.inOut" }, CAM[state]), t);
+      }
+      camTo("tabs", 4.3);
+      camTo("full", 9.2, 0.55);
+      camTo("ground", 10.55);
+      camTo("type", 12.4);
+      camTo("answer", 16.7);
+      camTo("full", 23.2);
+      camTo("answer", 24.4);
+      camTo("ground", 29.4);
+      camTo("icon", 31.55, 0.8, "power2.inOut");
+
+      /* ---------- cursor (screen space; tip = top-left) ---------- */
+      var cur = $("cursor");
+      tl.set(cur, { x: 975, y: 818 }, 0);
+      function move(x, y, t, dur) { tl.to(cur, { x: x, y: y, duration: dur || 0.4, ease: "power2.inOut" }, t); }
+      function press(t) {
+        tl.to(cur, { scale: 0.88, duration: 0.08, ease: "power2.out" }, t);
+        tl.to(cur, { scale: 1, duration: 0.12, ease: "power2.out" }, t + 0.08);
+      }
+      move(1068, 792, 2.9, 0.5);           // "can we close the checkout bug?": onto the overlap
+      move(2000, 1120, 4.3, 0.5);          // leaves with the pull-back
+      move(1880, 78, 9.35, 0.5);           // the extension's toolbar button
+      press(9.9);
+      move(2000, 640, 10.3, 0.5);
+      move(1038.75, 821.9, 12.95, 0.5);    // + in the composer
+      press(13.6);
+      move(1430.75, 362.5, 14.1, 0.38);    // the task in the search results
+      press(14.55);
+      move(1827.6, 895.4, 16.05, 0.45);    // Send
+      press(16.6);
+      move(2000, 1120, 16.8, 0.5);
+      move(1038.75, 956, 24.75, 0.4);      // + again
+      press(25.2);
+      move(1163.7, 956, 27.0, 0.3);        // Skills
+      press(27.4);
+      move(1695.4, 956, 27.85, 0.35);      // model
+      press(28.3);
+      move(2000, 1120, 29.3, 0.5);
+
+      /* ---------- hook: the chat toast ---------- */
+      tl.fromTo($("toast"), { x: 560, opacity: 1 }, { x: 0, duration: 0.6, ease: "expo.out" }, 0.5);
+      tl.set($("time-a"), { opacity: 0 }, 8.3);
+      tl.set($("time-b"), { opacity: 1 }, 8.3);
+      tl.to($("toast"), { x: 560, duration: 0.35, ease: "power3.in" }, 9.6);
+
+      /* ---------- tension: tabs pile up ---------- */
+      var pill = $("tab-pill");
+      var skelS = $("skel-search"), skelD = $("skel-doc"), skelT = $("skel-task");
+      tl.set([$("tab-2"), $("tab-3"), $("tab-4"), $("tab-5"), $("tab-6")], { scaleX: 0, opacity: 0 }, 0);
+      function newTab(n, t, activate) {
+        tl.to($("tab-" + n), { scaleX: 1, opacity: 1, duration: 0.25, ease: "expo.out" }, t);
+        if (activate) tl.to(pill, { x: (n - 1) * 244, duration: 0.2, ease: "power2.out" }, t);
+      }
+      newTab(2, 5.2, true);  tl.set(skelS, { opacity: 1 }, 5.3);
+      newTab(3, 6.3, true);  tl.set(skelT, { opacity: 1 }, 6.4); tl.set(skelS, { opacity: 0 }, 6.4);
+      newTab(4, 6.9, true);  tl.set(skelD, { opacity: 1 }, 7.0); tl.set(skelT, { opacity: 0 }, 7.0);
+      tl.to(pill, { x: 2 * 244, duration: 0.2, ease: "power2.out" }, 7.15);         // back to the task …
+      tl.set(skelT, { opacity: 1 }, 7.25); tl.set(skelD, { opacity: 0 }, 7.25);
+      tl.fromTo($("thread"), { y: 0 }, { y: -820, duration: 1.6, ease: "none" }, 7.25); // … and its long comment thread
+      newTab(5, 7.6, false);
+      newTab(6, 8.0, false);
+      // the extra tabs fold away; back on the checkout page
+      tl.to([$("tab-6"), $("tab-5"), $("tab-4"), $("tab-3"), $("tab-2")], { scaleX: 0, opacity: 0, duration: 0.22, ease: "power3.in", stagger: 0.06 }, 8.95);
+      tl.to(pill, { x: 0, duration: 0.3, ease: "power2.inOut" }, 9.1);
+      tl.set(skelT, { opacity: 0 }, 9.2);
+
+      /* ---------- reveal: the side panel ---------- */
+      var panel = $("panel");
+      tl.set(panel, { x: 580 }, 0);
+      tl.set($("p01"), { opacity: 1 }, 0);
+      tl.to(panel, { x: 0, duration: 0.55, ease: "expo.out" }, 9.98);
+      tl.to($("page"), { scale: 1360 / 1920, transformOrigin: "0 0", duration: 0.55, ease: "expo.out" }, 9.98);
+
+      function title(n, tIn, tOut) {
+        var words = $("title-" + n).querySelectorAll("span");
+        tl.fromTo(words, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out", stagger: 0.08 }, tIn);
+        tl.to(words, { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in", stagger: 0.03 }, tOut);
+      }
+      title(1, 11.0, 12.3);
+      title(2, 29.95, 31.45);
+
+      /* ---------- proof: panel states (hard swaps, as the UI does) ---------- */
+      var states = ["p01", "p02", "p02p", "p02pa", "p02pay", "p03", "p05", "p06", "p07", "p08", "p09"];
+      function show(id, t) {
+        states.forEach(function (s) { tl.set($(s), { opacity: s === id ? 1 : 0 }, t); });
+      }
+      show("p02", 13.62);
+      show("p02p", 13.95);
+      show("p02pa", 14.08);
+      show("p02pay", 14.22);
+      show("p03", 14.58);
+      // typing: 21 crops of the real composer, 0.07 s apart
+      var tStart = 14.85, step = 0.07, prev = null;
+      for (var i = 1; i <= 21; i++) {
+        var id = "t" + (i < 10 ? "0" + i : i);
+        tl.set($(id), { opacity: 1 }, tStart + (i - 1) * step);
+        if (prev) tl.set($(prev), { opacity: 0 }, tStart + (i - 1) * step);
+        prev = id;
+      }
+      show("p05", 16.62);
+      tl.set($(prev), { opacity: 0 }, 16.62);
+
+      /* ---------- the answer streams in ---------- */
+      show("p06", 17.4);
+      tl.set($("stream"), { opacity: 1 }, 17.4);
+      tl.set($("tail"), { opacity: 1, y: 0 }, 17.4);
+      var bottoms = [291, 309, 338, 357, 380, 405, 433, 452, 481]; // line bottoms, CSS px
+      for (var k = 0; k < 9; k++) {
+        var t = 17.4 + k * 0.24;
+        var dy = k === 8 ? 196 : (bottoms[k] - 267) * 0.92;
+        tl.to($("tail"), { y: dy * 1.4, duration: 0.14, ease: "power2.out" }, t);
+        tl.fromTo($("c" + (k + 1)), { scaleX: 1 }, { scaleX: 0, duration: 0.22, ease: "power1.inOut" }, t + 0.03);
+      }
+      tl.set($("stream"), { opacity: 0 }, 19.75);
+
+      function mark(id, t) {
+        tl.fromTo($(id), { opacity: 1, scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power2.out", immediateRender: false }, t);
+      }
+      tl.set(["#take-m1", "#take-m2", "#take-m3", "#take-m4"].map(function (s) { return R.querySelector(s); }), { opacity: 0 }, 0);
+      mark("m1", 19.85);
+      mark("m2", 20.7);
+      mark("m3", 21.45);
+      tl.to([$("m1"), $("m2"), $("m3")], { opacity: 0, duration: 0.2, ease: "power1.out" }, 24.45);
+
+      /* ---------- extras: +, Deep Research, Skills, model ---------- */
+      show("p07", 25.22);
+      mark("m4", 26.2);
+      tl.set($("m4"), { opacity: 0 }, 27.42);
+      show("p08", 27.42);
+      show("p09", 28.32);
+
+      window.__timelines["take"] = tl;
+    })();
+  </script>
+</template>

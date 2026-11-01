@@ -1,0 +1,53 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+  <style>
+    @font-face { font-family: "Bricolage Grotesque"; src: url("assets/fonts/captured-bricolage-grotesque.woff2") format("woff2"); font-weight: 200 800; font-display: block; }
+    @font-face { font-family: "UI Sans"; src: local("Segoe UI"); font-weight: 400; }
+    @font-face { font-family: "UI Sans"; src: local("Segoe UI Semibold"); font-weight: 600; }
+
+    #root { position: absolute; inset: 0; overflow: hidden; color: #1F1F29; font-family: "Bricolage Grotesque", sans-serif; }
+    #end-ground { position: absolute; inset: 0; background: #FFFFFF; }
+    #end-card { position: absolute; inset: 0; }
+    #end-mark { position: absolute; left: 841px; top: 421px; width: 238px; height: 238px; transform-origin: 50% 50%; }
+    #end-mark img { width: 238px; height: 238px; display: block; }
+    #end-name { position: absolute; left: 0; top: 470px; width: 1920px; text-align: center; font-size: 80px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+    #end-for { position: absolute; left: 0; top: 566px; width: 1920px; text-align: center; font-size: 50px; font-weight: 600; color: #6B6B7B; }
+    #end-name span, #end-for span { display: inline-block; opacity: 0; }
+    #end-avail { position: absolute; left: 0; top: 676px; width: 1920px; text-align: center; font-size: 34px; font-weight: 600; opacity: 0; }
+    #end-url { position: absolute; left: 0; top: 752px; width: 1920px; text-align: center; opacity: 0; }
+    #end-url span { display: inline-block; padding: 12px 30px; border-radius: 14px; background: rgba(123, 104, 238, 0.10); color: #5B48D6; font-size: 34px; font-weight: 700; }
+    #end-note { position: absolute; left: 0; top: 930px; width: 1920px; text-align: center; font-family: "UI Sans", sans-serif; font-size: 28px; color: #6B6B7B; opacity: 0; }
+  </style>
+
+  <div data-hf-id="hf-32ii" id="root" data-composition-id="endcard" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-y0h3" id="end-ground" class="clip" data-start="0" data-duration="7.3" data-track-index="0"></div>
+    <div data-hf-id="hf-toxp" id="end-card" class="clip" data-start="0" data-duration="7.3" data-track-index="1">
+      <div data-hf-id="hf-d956" id="end-mark"><img data-hf-id="hf-eivr" src="assets/brand-icon.svg" alt="" /></div>
+      <div data-hf-id="hf-obt4" id="end-name"><span data-hf-id="hf-cf6o">Video</span> <span data-hf-id="hf-m5fp">&amp;</span> <span data-hf-id="hf-xr5x">Screenshot</span> <span data-hf-id="hf-88fz">Uploader</span></div>
+      <div data-hf-id="hf-93yi" id="end-for"><span data-hf-id="hf-p210">for</span> <span data-hf-id="hf-2zjy">ClickUp</span></div>
+      <div data-hf-id="hf-09j3" id="end-avail" data-var-text="avail">Free · Chrome and Firefox</div>
+      <div data-hf-id="hf-papg" id="end-url"><span data-hf-id="hf-zfpg" data-var-text="url">clickup-uploader.macawshub.com</span></div>
+      <div data-hf-id="hf-08ft" id="end-note">Brain² is ClickUp's AI and needs you signed in to ClickUp. Not affiliated with ClickUp.</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var R = document.querySelector('[data-composition-id="endcard"]');
+      var $ = function (id) { return R.querySelector("#end-" + id); };
+      var tl = gsap.timeline({ paused: true });
+
+      // the white opens from the icon the camera just flew into
+      tl.fromTo($("ground"), { clipPath: "circle(170px at 960px 540px)" }, { clipPath: "circle(1200px at 960px 540px)", duration: 0.35, ease: "power2.in" }, 0);
+      // the mark lifts to make room for the name
+      tl.fromTo($("mark"), { y: 0, scale: 1 }, { y: -250, scale: 0.8, duration: 0.6, ease: "power3.inOut" }, 0.45);
+      tl.fromTo($("name").querySelectorAll("span"), { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out", stagger: 0.08 }, 0.8);
+      tl.fromTo($("for").querySelectorAll("span"), { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out", stagger: 0.08 }, 1.25);
+      tl.fromTo($("avail"), { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 2.6);
+      tl.fromTo($("url"), { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 3.0);
+      tl.fromTo($("note"), { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, 3.4);
+
+      window.__timelines["endcard"] = tl;
+    })();
+  </script>
+</template>
