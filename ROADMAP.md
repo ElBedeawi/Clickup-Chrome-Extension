@@ -108,7 +108,7 @@ Wanted, but no good approach yet.
 - **Clip in a task comment.** ClickUp's "record in a comment" flow is the same upload with `parent=<task>`, a
   comment carrying a `link_preview` video block and a re-parent of the attachment to the comment. A natural
   follow-up to the workspace Clip, once that has proven stable.
-- **ClickUp Brain through a public API.** The Brain² tab (Unreleased) chats with Brain like ClickUp's own composer
+- **ClickUp Brain through a public API.** The Brain² tab (0.9.0) chats with Brain like ClickUp's own composer
   (tasks/docs/files as context, skills, models, Deep Research, live answers). It works, but on ClickUp's private
   web-app API (a question is a comment in the user's `ASK_AI` chat room, Brain answers in its thread; models, search
   and the live answer come from ClickUp's GraphQL gateway; see `lib/clickup-brain.js`), so like Clips it can break on

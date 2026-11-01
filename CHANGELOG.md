@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-01
+
 ### Added
 
 - **Brain² tab**: chat with **ClickUp Brain²**, ClickUp's own AI, from the side panel, in a composer that looks and works like ClickUp's:
@@ -98,7 +100,8 @@ First public release.
 - Automatic retry when ClickUp rate-limits requests (HTTP 429).
 - Settings page with token test and revoke, and a Buy Me a Coffee link.
 
-[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ElBedeawi/Clickup-Chrome-Extension/compare/v0.5.0...v0.6.0
