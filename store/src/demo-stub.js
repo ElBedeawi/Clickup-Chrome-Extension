@@ -176,14 +176,28 @@
       ],
     },
     '/space/10/tag': { tags: [{ name: 'checkout', tag_bg: '#f76b15' }, { name: 'frontend', tag_bg: '#7b68ee' }, { name: 'regression', tag_bg: '#e5484d' }] },
-    '/task/86c1x2y3z': { id: '86c1x2y3z', name: 'Pay button overlaps the order summary', url: 'https://app.clickup.com/t/86c1x2y3z', team_id: '1' },
+    '/task/86c1x2y3z': {
+      id: '86c1x2y3z',
+      name: 'Pay button overlaps the order summary',
+      url: 'https://app.clickup.com/t/86c1x2y3z',
+      team_id: '1',
+      status: { status: 'in review', color: '#f8ae00' },
+    },
     '/shard/v1/handshake/1': { appEnvironment: { apiUrlBase: 'https://frontdoor-demo.clickup.com' } },
+    // Brain² skills are tasks in a hidden list (see brainApi's feature_entities answer).
+    '/list/9900/task': {
+      tasks: [
+        { id: 'sk1', name: 'Bug triage', text_content: 'Classify a bug by severity and suggest an owner.' },
+        { id: 'sk2', name: 'Release notes', text_content: 'Turn finished tasks into short release notes.' },
+      ],
+    },
   };
 
-  // ClickUp Brain over the web-app API (lib/clickup-brain.js): the ASK_AI room, questions posted as
-  // comments, Brain's answer (after one empty poll, with a progress step) in the thread.
+  // ClickUp Brain² over the web-app API (lib/clickup-brain.js, lib/clickup-gateway.js): the ASK_AI room,
+  // questions posted as comments, Brain's answer in the thread (after one empty poll, with a progress
+  // step), and the GraphQL gateway (models over HTTP; search and the live answer over a websocket).
   const BRAIN_REPLY = [
-    { type: 'task_mention', task_mention: { task_id: '86c1x2y3z', team_id: '1' }, text: 'Pay button overlaps the order summary' },
+    { type: 'task_mention', task_mention: { task_id: '86c1x2y3z', team_id: '1' }, text: '86c1x2y3z' },
     { text: ' is ', attributes: {} },
     { text: 'in review', attributes: { bold: true } },
     { text: '. Before it can close:', attributes: {} },
@@ -197,15 +211,50 @@
     { text: 'Omar Khaled saw the same overlap on the cart page; it may need its own task.', attributes: {} },
     { text: '\n', attributes: {} },
   ];
-  const brain = { questions: [], polls: 0 };
+  const BRAIN_LIVE = 'Pay button overlaps the order summary is **in review**. Before it can close:\n- Check the fix on Safari';
+  const MODELS = [
+    { id: 'brain', type: 'brain', name: 'Brain²', description: 'Uses latest Anthropic models', reasoningLevels: [], canUse: true, features: [] },
+    {
+      id: 'agent-v1-unified-gpt-6-astra',
+      canonicalId: 'gpt-6-astra',
+      type: 'agent',
+      name: 'GPT-6 Astra',
+      description: "OpenAI's most capable model for complex end-to-end work",
+      badge: 'New',
+      canUse: true,
+      reasoningLevels: [{ key: 'low', label: 'Low' }, { key: 'medium', label: 'Medium' }, { key: 'high', label: 'High' }],
+    },
+    {
+      id: 'agent-v2-claude-opus-5-5',
+      canonicalId: 'claude-opus-5-5',
+      type: 'agent',
+      name: 'Claude Opus 5.5',
+      description: "Anthropic's most capable model",
+      canUse: true,
+      reasoningLevels: [{ key: 'low', label: 'Low' }, { key: 'medium', label: 'Medium' }, { key: 'high', label: 'High' }],
+    },
+    { id: 'gpt-image-2', type: 'image', name: 'GPT Image 2', canUse: true },
+  ];
+  const SEARCH = [
+    { externalID: 'task:86c1x2y3z', title: 'Pay button overlaps the order summary', type: 'clickup_task', data: '{"status_raw":"in review","status_color":"#f8ae00"}' },
+    { externalID: 'task:86c1x2y40', title: 'Cart summary card cut off on mobile', type: 'clickup_task', data: '{"status_raw":"to do","status_color":"#87909e"}' },
+    { externalID: 'doc:demo-doc-1', title: 'Checkout redesign spec', type: 'clickup_document_page', data: '{}' },
+  ];
+  // What the panel sent, for the smoke test (window.__brain).
+  const brain = (window.__brain = { questions: [], bodies: [], polls: 0, uploads: 0 });
   function brainApi(url, init) {
     const path = url.pathname;
     if (path === '/chat/v1/workspaces/1/chat/rooms/delta/0') {
       return { rooms: [{ status: 'found', data: { id: 'demo-ask-ai', type: 'ASK_AI', members: ['-4', '11'] } }] };
     }
+    if (path === '/v2/sd/team/1/access-token') {
+      return { origin: 'https://frontdoor-search.clickup-eu.com', accessToken: 'demo-gateway', expiresIn: 480 };
+    }
+    if (path === '/data/v3/workspaces/1/feature_entities/ai_skills') return { list_id: '9900' };
     if (/\/comments\/(view|comment)\//.test(path)) {
       const id = String(9000 + brain.questions.length);
       brain.questions.push(id);
+      brain.bodies.push(JSON.parse(init?.body || '{}'));
       brain.polls = 0;
       return { id: Number(id) };
     }
@@ -220,7 +269,7 @@
           id: `r${q}`,
           userid: -4,
           comment_type: 'ai',
-          text_content: 'Answer',
+          text_content: i ? 'Yes: the cart page uses the same summary card component.' : 'Answer',
           comment: i ? [{ text: 'Yes: the cart page uses the same summary card component.', attributes: {} }, { text: '\n', attributes: {} }] : BRAIN_REPLY,
           extra: { triggered_on: { externalID: `comment:${q}` }, conversation_id: '7000000000000000001' },
         },
@@ -230,11 +279,82 @@
     return {};
   }
 
+  // File uploads go through XHR (for progress): answer the Brain² upload host here too.
+  const RealXHR = window.XMLHttpRequest;
+  window.XMLHttpRequest = class extends RealXHR {
+    open(method, url, ...rest) {
+      this.__demo = /^https:\/\/frontdoor-demo\.clickup\.com\/v1\/attachment/.test(url);
+      if (!this.__demo) super.open(method, url, ...rest);
+    }
+    setRequestHeader(...args) {
+      if (!this.__demo) super.setRequestHeader(...args);
+    }
+    send(body) {
+      if (!this.__demo) return super.send(body);
+      const file = body.get('attachment');
+      brain.uploads++;
+      setTimeout(() => {
+        this.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 1 });
+        Object.defineProperty(this, 'status', { value: 200 });
+        Object.defineProperty(this, 'response', {
+          value: { id: `att${brain.uploads}.txt`, name: file.name, title: file.name, extension: 'txt', url: `https://t1.clickup-attachments.com/${file.name}` },
+        });
+        this.onload?.();
+      }, 100);
+    }
+  };
+
+  // The gateway's websocket (graphql-transport-ws): search results and Brain's answer as it's written.
+  const RealWebSocket = window.WebSocket;
+  window.WebSocket = class {
+    constructor(url, protocol) {
+      if (!String(url).startsWith('wss://frontdoor-search.clickup-eu.com/')) return new RealWebSocket(url, protocol);
+      this.readyState = 0;
+      setTimeout(() => {
+        this.readyState = 1;
+        this.onopen?.();
+      }, 20);
+    }
+    reply(msg) {
+      setTimeout(() => this.onmessage?.({ data: JSON.stringify(msg) }), 30);
+    }
+    send(raw) {
+      const msg = JSON.parse(raw);
+      if (msg.type === 'connection_init') return this.reply({ type: 'connection_ack' });
+      if (msg.type !== 'subscribe') return;
+      const { query, variables } = msg.payload;
+      if (query.includes('search(')) {
+        const q = new URLSearchParams(variables.q.slice(2));
+        const kind = q.get('assetType') === 'document' ? 'doc:' : 'task:';
+        const words = (q.get('keywords') || '').toLowerCase();
+        const items = SEARCH.filter((s) => s.externalID.startsWith(kind) && s.title.toLowerCase().includes(words));
+        this.reply({ id: msg.id, type: 'next', payload: { data: { result: { items: items.map((ent) => ({ ent })) } } } });
+        setTimeout(() => this.reply({ id: msg.id, type: 'complete' }), 40);
+      } else if (query.includes('activeAgentRuns')) {
+        const wait = setInterval(() => {
+          const q = brain.questions.at(-1);
+          if (!q) return;
+          clearInterval(wait);
+          this.reply({ id: msg.id, type: 'next', payload: { data: { activeAgentRuns: [{ conversationId: '7000000000000000001', status: 'GENERATING', invokeId: `comment:${q}` }] } } });
+        }, 50);
+      } else if (query.includes('aiConversationStatus')) {
+        [40, 70, 100].forEach((pct, i) =>
+          setTimeout(() => {
+            const answer = BRAIN_LIVE.slice(0, Math.round((BRAIN_LIVE.length * pct) / 100));
+            this.reply({ id: msg.id, type: 'next', payload: { data: { aiConversationStatus: { status: 'GENERATING', result: { answer, answerComplete: false } } } } });
+          }, 150 * (i + 1)),
+        );
+      }
+    }
+    close() {}
+  };
+
   const realFetch = window.fetch.bind(window);
   window.fetch = async (input, init) => {
     const url = new URL(typeof input === 'string' ? input : input.url);
     const json = (body) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.hostname === 'frontdoor-demo.clickup.com') return json(brainApi(url, init));
+    if (url.hostname === 'frontdoor-search.clickup-eu.com') return json({ data: { getAIModels: MODELS } });
     if (url.hostname !== 'api.clickup.com') return realFetch(input, init);
     return json(API[url.pathname.replace('/api/v2', '')] ?? {});
   };
@@ -252,7 +372,7 @@
     }
   }
   function setValue(id, value) {
-    const node = $(id);
+    const node = typeof id === 'string' ? $(id) : id;
     node.value = value;
     node.dispatchEvent(new Event('input', { bubbles: true }));
     node.dispatchEvent(new Event('change', { bubbles: true }));
@@ -338,13 +458,21 @@
     async brain() {
       await until(() => $('sel-list').value === '1000');
       setValue('task-ref', 'https://app.clickup.com/t/86c1x2y3z'); // as if detected from the current tab
-      $('tab-brain').click(); // looks the task up and offers it as context
-      await until(() => !$('brain-task').hidden);
+      $('tab-brain').click(); // looks the task up and offers it as a chip
+      await until(() => document.querySelector('.brain-chip.suggest'));
+      // &pop=plus|skills|model: open that menu of the composer (plus searches for "pay").
+      const pop = params.get('pop');
+      if (pop) {
+        $(`brain-${pop}`).click();
+        if (pop === 'plus') setValue(document.querySelector('#brain-pop input'), 'pay');
+        await until(() => (pop === 'plus' ? document.querySelector('#brain-pop .brain-results .brain-row') : document.querySelectorAll('#brain-pop .brain-row').length > 1));
+        return;
+      }
       if (params.get('ask') === '0') return;
-      $('brain-task').click();
+      document.querySelector('.brain-chip.suggest').click(); // ask about the detected task
       setValue('brain-input', "What's left before we can close this bug?");
       $('brain-send').click();
-      await until(() => document.querySelector('.brain-msg.brain .brain-body'));
+      await until(() => document.querySelector('.brain-msg.brain .brain-body .mention[title]'));
       window.scrollTo(0, 0);
     },
 

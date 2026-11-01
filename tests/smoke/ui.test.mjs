@@ -106,50 +106,102 @@ await withBrowser(async ({ openPage }) => {
       assert.deepEqual(state.back, { submit: 'Create task & upload', title: 'Attachments', shotTool: true, mode: 'new' });
     }));
 
-  await test('side panel: the Brain tab chats with ClickUp Brain, with the task as optional context', () =>
+  await test('side panel: the Brain² tab asks Brain with context, model, skill, files and Deep Research', () =>
     scene(openPage, '/sidepanel/sidepanel.html?demo=brain', async (page) => {
       const state = JSON.parse(
         await page.evaluate(`(async () => {
           const $ = (id) => document.getElementById(id);
           const shown = (node) => node.offsetParent !== null;
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           const until = async (fn) => {
-            for (let i = 0; i < 200 && !fn(); i++) await new Promise((r) => setTimeout(r, 50)); // Brain is polled every 1.5 s
+            for (let i = 0; i < 200 && !fn(); i++) await sleep(50); // Brain is polled every 1.5 s
           };
+          const rowNamed = (name) => [...document.querySelectorAll('#brain-pop .brain-row')].find((r) => r.querySelector('.name')?.textContent === name);
+          const q = (body) => new URLSearchParams(body.comment_type_data.query.slice(2));
           const reply = document.querySelector('.brain-msg.brain .brain-body');
+          const first = window.__brain.bodies[0];
           const before = {
             selected: $('tab-brain').getAttribute('aria-selected'),
             brainPanel: !$('panel-brain').hidden,
             attachments: shown($('att-title')),
             submit: shown($('btn-submit')),
             mode: (await chrome.storage.local.get('prefs')).prefs.mode,
-            chip: $('brain-task').getAttribute('aria-pressed'),
-            chipName: $('brain-task-name').textContent,
-            user: document.querySelector('.brain-msg.user').textContent,
+            userChips: [...document.querySelectorAll('.brain-msg.user .brain-chip .label')].map((c) => c.textContent),
+            sentItems: q(first).getAll('selectedItem').map((s) => JSON.parse(s).contextId),
+            sentModel: q(first).get('selectedModel'),
             items: reply.querySelectorAll('ul > li').length,
-            taskLink: reply.querySelector('a').getAttribute('href'),
+            mention: { href: reply.querySelector('a.mention').getAttribute('href'), name: reply.querySelector('a.mention .label').textContent },
             code: reply.querySelector('code').textContent,
             open: $('brain-open').hidden ? null : $('brain-open').getAttribute('href'),
-            send: $('brain-send').textContent,
             intro: $('brain-intro').hidden,
+            suggestion: !!document.querySelector('.brain-chip.suggest'),
           };
-          // A follow-up goes in the same thread, without the task unless the chip is on.
-          $('brain-task').click();
+
+          // Model + effort, remembered.
+          $('brain-model').click();
+          await until(() => rowNamed('GPT-6 Astra'));
+          rowNamed('GPT-6 Astra').click();
+          await until(() => document.querySelector('.brain-effort'));
+          [...document.querySelectorAll('.brain-effort button')].find((b) => b.textContent === 'Low').click();
+          await sleep(50);
+          const label = $('brain-model-label').textContent;
+          const prefs = (await chrome.storage.local.get('prefs')).prefs.brain;
+          document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); // click outside closes
+          const closed = $('brain-pop').hidden;
+
+          // A skill.
+          $('brain-skills').click();
+          await until(() => rowNamed('Bug triage'));
+          rowNamed('Bug triage').click();
+
+          // Deep Research and a searched task, from +.
+          $('brain-plus').click();
+          await until(() => rowNamed('Deep Research'));
+          rowNamed('Deep Research').click();
+          const search = document.querySelector('#brain-pop input[type=search]');
+          search.value = 'cart';
+          search.dispatchEvent(new Event('input', { bubbles: true }));
+          await until(() => rowNamed('Cart summary card cut off on mobile'));
+          rowNamed('Cart summary card cut off on mobile').click();
+
+          // A file dropped on the panel goes to the composer, not the attachments.
+          const dt = new DataTransfer();
+          dt.items.add(new File(['codename: BLUE HERON'], 'notes.txt', { type: 'text/plain' }));
+          document.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+          await until(() => document.querySelector('#brain-chips .brain-chip') && !document.querySelector('#brain-chips .pct'));
+          const chips = [...document.querySelectorAll('#brain-chips .brain-chip:not(.suggest) .label')].map((c) => c.textContent);
+          const research = !$('brain-research').hidden;
+
+          // The follow-up goes in the same thread with all of it.
           $('brain-input').value = 'Is the cart page affected too?';
+          $('brain-input').dispatchEvent(new Event('input', { bubbles: true }));
           $('brain-input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-          await until(() => document.querySelectorAll('.brain-msg.brain .brain-body, .brain-msg.brain > p').length >= 2);
-          const msgs = [...document.querySelectorAll('.brain-msg')].map((m) => m.className.replace('brain-msg ', '') + ': ' + m.textContent.trim());
-          // New chat clears the screen.
+          await until(() => document.querySelectorAll('.brain-msg.brain .brain-body').length >= 2);
+          const second = window.__brain.bodies[1];
+          const sq = q(second);
+          const followUp = {
+            parent: second.parent === String(window.__brain.questions[0]),
+            ops: second.comment.map((o) => o.type || 'text'),
+            skill: second.comment[1].task_mention,
+            attachmentIds: second.attachment_ids,
+            model: sq.get('selectedModel'),
+            effort: sq.get('selectedReasoningLevel'),
+            tool: sq.get('AIToolId'),
+            deepResearch: sq.get('deepResearch'),
+            items: sq.getAll('selectedItem').map((s) => JSON.parse(s).contextId),
+            files: sq.getAll('id'),
+            userChips: [...document.querySelectorAll('.brain-msg.user')].at(-1).querySelectorAll('.brain-chip').length,
+            answer: [...document.querySelectorAll('.brain-msg.brain .brain-body')].at(-1).textContent,
+            by: [...document.querySelectorAll('.brain-msg.brain .brain-by')].at(-1).textContent,
+            draftCleared: !document.querySelector('#brain-chips .brain-chip:not(.suggest)') && $('brain-research').hidden,
+          };
+
+          // New chat clears the screen; back in New task the form is back.
           $('brain-new').click();
           const cleared = { log: $('brain-log').children.length, intro: $('brain-intro').hidden, open: $('brain-open').hidden };
-          // Files dropped on the Brain tab are ignored.
-          const dt = new DataTransfer();
-          dt.items.add(new File(['x'], 'shot.png', { type: 'image/png' }));
-          document.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
-          await new Promise((r) => setTimeout(r, 50));
-          const dropped = document.querySelectorAll('.attachment').length;
           $('tab-new').click();
-          const back = { submit: shown($('btn-submit')), attachments: shown($('att-title')), brainPanel: !$('panel-brain').hidden };
-          return JSON.stringify({ before, msgs, cleared, dropped, back });
+          const back = { submit: shown($('btn-submit')), attachments: shown($('att-title')), brainPanel: !$('panel-brain').hidden, dropped: document.querySelectorAll('.attachment').length };
+          return JSON.stringify({ before, label, prefs, closed, chips, research, followUp, cleared, back });
         })()`),
       );
       assert.deepEqual(state.before, {
@@ -158,22 +210,39 @@ await withBrowser(async ({ openPage }) => {
         attachments: false,
         submit: false,
         mode: 'brain',
-        chip: 'true',
-        chipName: 'Pay button overlaps the order summary',
-        user: "What's left before we can close this bug?About: Pay button overlaps the order summary",
+        userChips: ['Pay button overlaps the order summary'],
+        sentItems: ['86c1x2y3z'],
+        sentModel: 'auto',
         items: 2,
-        taskLink: 'https://app.clickup.com/t/1/86c1x2y3z',
+        mention: { href: 'https://app.clickup.com/t/1/86c1x2y3z', name: 'Pay button overlaps the order summary' },
         code: 'checkout.css',
         open: 'https://app.clickup.com/1/ai/brain?conversationId=7000000000000000001',
-        send: 'Ask',
         intro: true,
+        suggestion: true,
       });
-      assert.equal(state.msgs.length, 4);
-      assert.equal(state.msgs[2], 'user: Is the cart page affected too?');
-      assert.match(state.msgs[3], /^brain: Yes: the cart page/);
+      assert.equal(state.label, 'GPT-6 Astra · Low');
+      assert.deepEqual(state.prefs, { model: 'gpt-6-astra', modelName: 'GPT-6 Astra', reasoning: 'low' });
+      assert.equal(state.closed, true);
+      assert.deepEqual(state.chips, ['Bug triage', 'Cart summary card cut off on mobile', 'notes.txt']);
+      assert.equal(state.research, true);
+      assert.deepEqual(state.followUp, {
+        parent: true,
+        ops: ['attachment', 'task_mention', 'text', 'text'],
+        skill: { task_id: 'sk1', team_id: '1', custom_type: 5, name: 'Bug triage' },
+        attachmentIds: ['att1.txt'],
+        model: 'gpt-6-astra',
+        effort: 'low',
+        tool: 'ASSISTANT',
+        deepResearch: 'true',
+        items: ['86c1x2y40'],
+        files: ['attachment:att1.txt'],
+        userChips: 4, // skill, task, file, Deep Research
+        answer: 'Yes: the cart page uses the same summary card component.',
+        by: 'Brain² · GPT-6 Astra',
+        draftCleared: true,
+      });
       assert.deepEqual(state.cleared, { log: 0, intro: false, open: true });
-      assert.equal(state.dropped, 0);
-      assert.deepEqual(state.back, { submit: true, attachments: true, brainPanel: false });
+      assert.deepEqual(state.back, { submit: true, attachments: true, brainPanel: false, dropped: 0 });
     }));
 
   await test('side panel: the location row opens when no list is picked and collapses once one is', () =>
@@ -426,6 +495,9 @@ await withBrowser(async ({ openPage }) => {
     'new&open=camera-check',
     'brain',
     'brain&ask=0',
+    'brain&pop=plus',
+    'brain&pop=skills',
+    'brain&pop=model',
   ];
   for (const font of ['system', 'wide (Verdana)']) {
     for (const demo of LAYOUT_SCENES) {
@@ -452,7 +524,7 @@ await withBrowser(async ({ openPage }) => {
     const problems = JSON.parse(
       await page.evaluate(`JSON.stringify([
         // Sticks out past the panel's edge
-        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, #rec-time, .rec-ctl, #btn-stop, .rc-countdown, .rc-icon-btn, #camera-check, .cc-stage, .cc-seg, .cc-foot, .rte, .rte-btn, .rte-block, #panel-brain, .brain-intro, .brain-msg, .brain-body > *, .brain-task, .brain-actions > *, #brain-input')]
+        ...[...document.querySelectorAll('.tabs, .tab, #panel-clips, .clips-intro, .clips-auto, #location, .loc-change, .toolbar-wrap, .tool-btn, .record-card, .rc-row, .bubble-ctl, .bubble-stage, .bubble-size, .rec-bubble, .attachment, .app-header, .recording, #rec-note, #rec-time, .rec-ctl, #btn-stop, .rc-countdown, .rc-icon-btn, #camera-check, .cc-stage, .cc-seg, .cc-foot, .rte, .rte-btn, .rte-block, #panel-brain, .brain-head, .brain-welcome, .brain-msg, .brain-body > *, .brain-composer, .brain-bar > *, .brain-chip, .brain-pop, .brain-row, #brain-input')]
           .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
           .map((el) => 'past edge: ' + (el.id || el.className)),
         // Content wider than its own button (spills out, or gets cut off)

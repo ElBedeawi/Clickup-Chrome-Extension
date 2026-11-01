@@ -33,7 +33,7 @@
     <strong>In short</strong>
     <ul>
       <li>Everything stays in your browser until you choose to send it to ClickUp.</li>
-      <li>Data goes to ClickUp only: its API (<code>api.clickup.com</code>), using your own token. The optional Clips tab (“Save to Clips”) and Brain tab (chat with ClickUp Brain) also talk to ClickUp’s web-app hosts (<code>id.app.clickup.com</code> and your workspace’s <code>*.clickup.com</code> API host), using your existing ClickUp sign-in in this browser.</li>
+      <li>Data goes to ClickUp only: its API (<code>api.clickup.com</code>), using your own token. The optional Clips tab (“Save to Clips”) and Brain tab (chat with ClickUp Brain) also talk to ClickUp’s web-app hosts (<code>id.app.clickup.com</code>, your workspace’s <code>*.clickup.com</code> API host and, for the Brain tab, ClickUp’s search service, <code>frontdoor-search.clickup-eu.com</code> for EU workspaces), using your existing ClickUp sign-in in this browser.</li>
       <li>The developer runs no servers for this extension and receives none of your data.</li>
       <li>No analytics, no tracking, no ads, and nothing is ever sold.</li>
     </ul>
@@ -70,9 +70,9 @@
       <td>Kept in memory while the panel is open, never written to disk. Sent only to ClickUp (<code>id.app.clickup.com</code> to obtain it, your workspace’s <code>*.clickup.com</code> API host to upload or chat). The recording goes to the same ClickUp host.</td>
     </tr>
     <tr>
-      <td>Questions you ask ClickUp Brain, and the task you choose to ask about (only if you use the Brain tab)</td>
-      <td>To get Brain’s answer. Brain is ClickUp’s own AI; it reads the task itself, in your workspace, when you include it.</td>
-      <td>Sent to your workspace’s <code>*.clickup.com</code> API host when you press Ask. ClickUp keeps the chat in your account, under AI Chats, like a chat started in ClickUp. The extension shows it only while the panel is open and does not store it.</td>
+      <td>Questions you ask ClickUp Brain, with the tasks, docs, skill and files you choose to add (only if you use the Brain tab)</td>
+      <td>To get Brain’s answer. Brain is ClickUp’s own AI; it reads the tasks and docs itself, in your workspace, when you include them. Searching for a task or doc to add sends what you type to ClickUp’s search.</td>
+      <td>Sent to ClickUp when you press Ask (files when you add them): your workspace’s <code>*.clickup.com</code> API host, and ClickUp’s search service for searches, the model list and the answer as it is written. ClickUp keeps the chat and its files in your account, under AI Chats, like a chat started in ClickUp. The extension shows the chat only while the panel is open and stores only your chosen model.</td>
     </tr>
     <tr>
       <td>Your last-used Workspace / Space / Folder / List</td>

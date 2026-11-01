@@ -80,7 +80,17 @@ test('the CSP allows wasm (background blur) but no eval, and connections only to
     assert.deepEqual(directives['script-src'], ["'self'", "'wasm-unsafe-eval'"]);
     assert.ok(!csp.includes("'unsafe-eval'"), 'no eval');
     // MediaPipe's bundle has built-in logging to Google: the browser itself must refuse it.
-    assert.deepEqual(directives['connect-src'], ["'self'", 'data:', 'blob:', 'https://*.clickup.com']);
+    // ClickUp's own hosts only: *.clickup.com, and *.clickup-eu.com, where ClickUp serves the EU
+    // workspaces' GraphQL gateway (Brain's models, search and live answers; wss for the latter two).
+    assert.deepEqual(directives['connect-src'], [
+      "'self'",
+      'data:',
+      'blob:',
+      'https://*.clickup.com',
+      'wss://*.clickup.com',
+      'https://*.clickup-eu.com',
+      'wss://*.clickup-eu.com',
+    ]);
   }
 });
 

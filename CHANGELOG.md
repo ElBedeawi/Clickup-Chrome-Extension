@@ -7,7 +7,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- **Brain tab**: chat with **ClickUp Brain**, ClickUp's own AI, from the side panel. Ask about your work and follow up in the same chat; **New chat** starts over and **Open in ClickUp** continues the chat there (it is also listed under AI Chats in ClickUp). When a task is found on the Existing task tab (or detected from the page you are on), an **About: …** chip lets you include it, so Brain reads that task with your question. Answers keep their formatting and task links. The public ClickUp API has no Brain access, so like the Clips tab this uses ClickUp's own web-app API: it needs you signed in to ClickUp in this browser, is undocumented, and may stop working after a ClickUp update. Brain answers when it's done rather than word by word.
+- **Brain² tab**: chat with **ClickUp Brain²**, ClickUp's own AI, from the side panel, in a composer that looks and works like ClickUp's:
+  - **+** adds context: turn on **Deep Research**, search your **tasks and docs** and add them (Brain reads them with your question), or **upload files** (images, PDFs, spreadsheets, text). Files can also be dropped or pasted on the panel.
+  - **Skills** (or `/` at the start of the box) applies one of your workspace's Brain skills.
+  - The **model** button picks Brain² or another model ClickUp offers (GPT, Claude, Gemini), with its thinking effort; your choice is remembered.
+  - The task found on the Existing task tab (or detected from the page you're on) is offered as a one-click chip.
+  - Answers appear as Brain writes them, then with ClickUp's formatting; task links show the task's name and status colour, and **Copy** copies an answer.
+  - Follow-ups continue the same chat; **New chat** starts over and **Open in ClickUp** continues it there (it is also listed under AI Chats in ClickUp).
+
+  The public ClickUp API has no Brain access, so like the Clips tab this uses ClickUp's own web-app API: it needs you signed in to ClickUp in this browser, is undocumented, and may stop working after a ClickUp update. Answers that ask you to approve an action (for example "Create this skill?") have to be approved in ClickUp.
+
+### Changed
+
+- The extension may now also connect to `*.clickup-eu.com`, where ClickUp runs the search service of EU workspaces (used by the Brain² tab). Connections are still limited to ClickUp's own domains.
 
 ## [0.8.0] - 2026-10-27
 

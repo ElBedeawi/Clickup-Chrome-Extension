@@ -30,6 +30,6 @@
   },
   "options_page": "options/options.html",
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' data: blob: https://*.clickup.com"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' data: blob: https://*.clickup.com wss://*.clickup.com https://*.clickup-eu.com wss://*.clickup-eu.com"
   }
 }

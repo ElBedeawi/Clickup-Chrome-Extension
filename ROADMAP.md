@@ -108,12 +108,14 @@ Wanted, but no good approach yet.
 - **Clip in a task comment.** ClickUp's "record in a comment" flow is the same upload with `parent=<task>`, a
   comment carrying a `link_preview` video block and a re-parent of the attachment to the comment. A natural
   follow-up to the workspace Clip, once that has proven stable.
-- **ClickUp Brain through a public API.** The Brain tab (Unreleased) chats with Brain, optionally about the task
-  found on the Existing tab. It works, but on ClickUp's private web-app API (a question is a comment in the user's
-  `ASK_AI` chat room, Brain answers in its thread; see `lib/clickup-brain.js`), so like Clips it can break on any
-  ClickUp deploy. Its answers arrive whole: ClickUp streams them only over a websocket on another domain
-  (`*.clickup-eu.com`), which the CSP doesn't allow. State of play (October 2026): **the public API has no Brain
-  endpoint**, and ClickUp's MCP server (`mcp.clickup.com`, OAuth only) has no Brain tool yet.
+- **ClickUp Brain through a public API.** The Brain² tab (Unreleased) chats with Brain like ClickUp's own composer
+  (tasks/docs/files as context, skills, models, Deep Research, live answers). It works, but on ClickUp's private
+  web-app API (a question is a comment in the user's `ASK_AI` chat room, Brain answers in its thread; models, search
+  and the live answer come from ClickUp's GraphQL gateway; see `lib/clickup-brain.js`), so like Clips it can break on
+  any ClickUp deploy. Not done yet: approving actions Brain proposes (its BlockKit buttons) and Talk to Text (the mic),
+  whose ClickUp endpoint isn't captured (the browser's own speech recognition would send audio to Google). State of
+  play (October 2026): **the public API has no Brain endpoint**, and ClickUp's MCP server (`mcp.clickup.com`, OAuth
+  only) has no Brain tool yet.
   [Make ClickUp Brain available via API](https://feedback.clickup.com/public-api/p/make-clickup-brain-available-via-api)
   (10 votes) got an answer from ClickUp on 2026-09-29: they are "actively working on providing access to Brain via
   our MCP Server". Next step: when that ships, check whether the panel can call the MCP server directly (HTTPS +

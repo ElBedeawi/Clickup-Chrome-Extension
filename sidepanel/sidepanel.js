@@ -814,14 +814,17 @@ document.addEventListener('drop', (e) => {
   e.preventDefault();
   dragDepth = 0;
   document.body.classList.remove('dragging');
-  if (e.dataTransfer?.files.length && !state.busy && state.mode !== 'brain') addFiles(e.dataTransfer.files);
+  if (!e.dataTransfer?.files.length || state.busy) return;
+  if (state.mode === 'brain') brain.addFiles([...e.dataTransfer.files]); // files for the next question
+  else addFiles(e.dataTransfer.files);
 });
 
 // Paste screenshots anywhere in the panel. Text pastes into inputs are left alone.
 document.addEventListener('paste', (e) => {
   const files = [...(e.clipboardData?.files || [])];
-  if (!files.length || state.busy || state.mode === 'brain') return;
+  if (!files.length || state.busy) return;
   e.preventDefault();
+  if (state.mode === 'brain') return brain.addFiles(files);
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   addFiles(
     files.map((f, i) =>

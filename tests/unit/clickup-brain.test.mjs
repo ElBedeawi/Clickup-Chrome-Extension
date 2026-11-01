@@ -208,7 +208,7 @@ describe('renderOps', () => {
   test('paragraphs, inline formats and a real task-mention reply', () => {
     assert.equal(
       render(aiReply('1').data.comment),
-      '<p><a href="https://app.clickup.com/t/18610284/123p6dmcj20" target="_blank" rel="noopener noreferrer">123p6dmcj20</a> is a research spike.</p>',
+      '<p><a href="https://app.clickup.com/t/18610284/123p6dmcj20" target="_blank" rel="noopener noreferrer" class="mention" data-task-id="123p6dmcj20">123p6dmcj20</a> is a research spike.</p>',
     );
     assert.equal(
       render([{ text: 'Also ' }, { text: 'SSO', attributes: { bold: true } }, { text: ' and ' }, { text: 'x', attributes: { italic: true, code: true } }, { text: '\n' }]),
@@ -260,7 +260,7 @@ describe('renderOps', () => {
   test('task mentions without a team id use the workspace; unknown ops and non-arrays are ignored', () => {
     assert.equal(
       render([{ type: 'task_mention', task_mention: { task_id: 'abc' }, text: 'abc' }, { text: '\n' }], { workspaceId: '42' }),
-      '<p><a href="https://app.clickup.com/t/42/abc" target="_blank" rel="noopener noreferrer">abc</a></p>',
+      '<p><a href="https://app.clickup.com/t/42/abc" target="_blank" rel="noopener noreferrer" class="mention" data-task-id="abc">abc</a></p>',
     );
     assert.equal(render([{ type: 'image', image: {} }, { insert: 'std quill\n' }]), '<p>std quill</p>');
     assert.equal(render(null), '');

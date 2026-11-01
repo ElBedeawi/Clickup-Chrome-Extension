@@ -48,8 +48,9 @@ SAVE TO CLIPS (OPTIONAL)
 • Needs you signed in to ClickUp in this browser; uses ClickUp's own web-app API, which is undocumented and may stop working after a ClickUp update
 
 ASK CLICKUP BRAIN (OPTIONAL)
-• A Brain tab lets you chat with ClickUp Brain, ClickUp's own AI, without leaving the page you're on
-• Include the task you're looking at with one click, so Brain answers about that task; follow up in the same chat, or continue it in ClickUp
+• A Brain² tab lets you chat with ClickUp Brain, ClickUp's own AI, without leaving the page you're on
+• Add the task you're looking at with one click, or search tasks and docs to add; attach files; pick a skill, the model and Deep Research, like in ClickUp
+• Answers appear as Brain writes them; follow up in the same chat, or continue it in ClickUp
 • Needs you signed in to ClickUp in this browser and Brain in your workspace; uses ClickUp's own web-app API, which is undocumented and may stop working after a ClickUp update
 
 PRIVATE BY DESIGN
@@ -107,7 +108,7 @@ A ClickUp companion in the side panel: capture screen recordings and screenshots
 **Remote code:** No, I am not using remote code. (All scripts are packaged; no eval or remotely hosted code. The
 optional camera-bubble background blur runs Google's MediaPipe as packaged WebAssembly, `vendor/mediapipe/`, hence
 `'wasm-unsafe-eval'` in the CSP; its model ships in the package too. The library's built-in usage logging is blocked:
-the extension refuses those requests, and the CSP `connect-src` only allows `https://*.clickup.com`.)
+the extension refuses those requests, and the CSP `connect-src` only allows ClickUp's own domains: `*.clickup.com` and `*.clickup-eu.com`, where ClickUp serves EU workspaces' search service.)
 
 **Data usage — what user data is collected** (check these):
 - ☑ **Authentication information** — the user's ClickUp API token (stored locally; sent only to api.clickup.com), and, only when they use the Clips tab ("Save to Clips") or the Brain tab, a short-lived ClickUp session token obtained from their existing sign-in (kept in memory; sent only to ClickUp's own hosts). (Questions typed in the Brain tab go to ClickUp Brain in the user's own workspace, like the task details they type; not stored by the extension.)

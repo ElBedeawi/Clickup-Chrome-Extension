@@ -53,7 +53,7 @@
           <span class="tab-label">Clips</span>
         </button>
         <button role="tab" id="tab-brain" class="tab" aria-selected="false" data-mode="brain">
-          <span class="tab-label">Brain</span>
+          <span class="tab-label">Brain²</span>
         </button>
       </nav>
 
@@ -164,28 +164,47 @@
         </label>
       </section>
 
-      <!-- Brain: a chat with ClickUp Brain (lib/clickup-brain.js, brain-chat.js). No attachments or
-           submit button in this mode (body.brain-mode). -->
+      <!-- Brain²: a chat with ClickUp Brain, styled after ClickUp's own Brain² page (lib/clickup-brain.js,
+           brain-chat.js). No attachments or submit button in this mode (body.brain-mode). -->
       <section id="panel-brain" class="panel brain" role="tabpanel" hidden>
-        <p id="brain-intro" class="brain-intro muted small">
-          <span class="brain-icon" data-icon="sparkles" data-size="16"></span>
-          <span>Ask <strong>ClickUp Brain</strong> about your work. Your questions go to Brain in your ClickUp
-            workspace and are kept there under AI Chats. Needs you signed in to ClickUp in this browser.</span>
-        </p>
-        <ol id="brain-log" class="brain-log" aria-live="polite"></ol>
-        <div class="brain-compose">
-          <button id="brain-task" class="brain-task" type="button" aria-pressed="false" hidden>
-            <span class="brain-task-icon" data-icon="check" data-size="12"></span>
-            <span class="brain-task-label">About: <span id="brain-task-name"></span></span>
-          </button>
-          <textarea id="brain-input" rows="3" placeholder="Ask Brain anything…" aria-label="Question for ClickUp Brain"></textarea>
-          <div class="brain-actions">
-            <button id="brain-new" class="secondary" type="button">New chat</button>
-            <a id="brain-open" class="brain-open small" target="_blank" rel="noopener" hidden>Open in ClickUp ↗</a>
-            <button id="brain-send" class="primary" type="button">Ask</button>
-          </div>
-          <p id="brain-where" class="muted small brain-where" hidden></p>
+        <div class="brain-head">
+          <span class="brain-mark" data-icon="brainLogo" data-size="22"></span>
+          <h2 class="brain-title">Brain²</h2>
+          <a id="brain-open" class="brain-icon-btn" target="_blank" rel="noopener" title="Open this chat in ClickUp"
+            aria-label="Open this chat in ClickUp" data-icon="external" hidden></a>
+          <button id="brain-new" class="brain-icon-btn" type="button" title="New chat" aria-label="New chat" data-icon="newChat"></button>
         </div>
+        <div id="brain-intro" class="brain-welcome">
+          <span class="brain-mark big" data-icon="brainLogo" data-size="48"></span>
+          <p class="brain-hello">How can I help?</p>
+          <p class="muted small">Ask Brain² about your work. Chats are kept in ClickUp under AI Chats. Needs you signed
+            in to ClickUp in this browser.</p>
+        </div>
+        <ol id="brain-log" class="brain-log" aria-live="polite"></ol>
+        <!-- The composer, like ClickUp's: context chips, the question, then + / Skills / model / send. -->
+        <div class="brain-composer">
+          <div id="brain-pop" class="brain-pop" role="dialog" hidden></div>
+          <div id="brain-chips" class="brain-chips"></div>
+          <textarea id="brain-input" rows="2" placeholder="Ask, search, or create…" aria-label="Question for ClickUp Brain²"></textarea>
+          <div class="brain-bar">
+            <button id="brain-plus" class="brain-round" type="button" title="Add context and files" aria-label="Add context and files"
+              aria-haspopup="dialog" aria-expanded="false" data-icon="plus"></button>
+            <button id="brain-skills" class="brain-pill" type="button" title="Skills" aria-haspopup="dialog" aria-expanded="false">
+              <span data-icon="slash" data-size="14"></span><span class="brain-pill-label">Skills</span>
+            </button>
+            <button id="brain-research" class="brain-pill on" type="button" title="Deep Research is on. Click to turn it off." hidden>
+              <span data-icon="research" data-size="14"></span><span class="brain-pill-label">Research</span>
+            </button>
+            <span class="brain-spacer"></span>
+            <button id="brain-model" class="brain-pill" type="button" title="Model" aria-haspopup="dialog" aria-expanded="false">
+              <span id="brain-model-label" class="brain-pill-label">Brain²</span><span data-icon="chevronDown" data-size="14"></span>
+            </button>
+            <button id="brain-send" class="brain-send" type="button" title="Ask (Enter)" aria-label="Ask Brain²" data-icon="arrowUp"></button>
+          </div>
+          <input id="brain-file" type="file" multiple hidden
+            accept="image/jpeg,image/png,image/webp,application/pdf,.xls,.xlsx,.csv,.txt,.md,.json" />
+        </div>
+        <p id="brain-where" class="muted small brain-where" hidden></p>
       </section>
       </fieldset>
 
